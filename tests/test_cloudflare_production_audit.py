@@ -11,9 +11,12 @@ Validates that the production distribution (`dist`) strictly adheres to:
 """
 
 import os
+import sys
 import json
 import re
 import unittest
+
+sys.stdout.reconfigure(encoding='utf-8')
 
 MAX_CLOUDFLARE_FILE_BYTES = 25 * 1024 * 1024  # 26,214,400 bytes
 MAX_CLOUDFLARE_FILE_COUNT = 20000
@@ -142,6 +145,9 @@ class TestCloudflareProductionAudit(unittest.TestCase):
             wrangler_text = f.read()
 
         self.assertIn('"directory": "./dist"', wrangler_text, "wrangler.jsonc must point assets directory to ./dist")
+        # Ensure no reserved binding error triggers
+        self.assertNotIn('"binding"', wrangler_text, "Assets-only Worker must not specify a binding")
+        self.assertNotIn('"pages_build_output_dir"', wrangler_text, "Workers configuration must not mix pages_build_output_dir")
 
         redirects_path = os.path.join(DIST_DIR, "_redirects")
         self.assertTrue(os.path.exists(redirects_path), "_redirects must exist in dist")
