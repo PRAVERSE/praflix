@@ -16,5 +16,8 @@
     "cloudflare-pages"
   ],
   "author": "PRAVERSE",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "wrangler": "^4.147.0"
+  }
 }
