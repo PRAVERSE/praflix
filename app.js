@@ -118,13 +118,38 @@
     cacheDom();
 
     try {
-      // 1. Load canonical and source datasets
-      if (window.PRAFLIX_DATA && Array.isArray(window.PRAFLIX_DATA)) {
+      // 1. Load canonical and source datasets (multi-tier resilient loader)
+      if (window.PRAFLIX_DATA && Array.isArray(window.PRAFLIX_DATA) && window.PRAFLIX_DATA.length > 0) {
         state.canonicalRecords = window.PRAFLIX_DATA;
         state.sourceRecords = window.PRAFLIX_SOURCES || [];
-      } else {
-        const resp = await fetch('data/catalog.json');
+      } else if (window.PRAFLIX_R2_URL) {
+        // Cloudflare R2 Remote Storage Integration
+        const r2Base = String(window.PRAFLIX_R2_URL).replace(/\/+$/, '');
+        const resp = await fetch(`${r2Base}/catalog.json`);
+        if (!resp.ok) throw new Error(`R2 catalog fetch failed with status ${resp.status}`);
         state.canonicalRecords = await resp.json();
+      } else {
+        // Asynchronous chunked loading via catalog-manifest.json
+        try {
+          const manifestResp = await fetch('data/catalog-manifest.json');
+          if (manifestResp.ok) {
+            const manifest = await manifestResp.json();
+            const chunkPromises = (manifest.chunks || []).map(async (cPath) => {
+              const cResp = await fetch(cPath);
+              if (!cResp.ok) throw new Error(`Failed to fetch chunk ${cPath}: ${cResp.status}`);
+              return await cResp.json();
+            });
+            const chunksData = await Promise.all(chunkPromises);
+            state.canonicalRecords = chunksData.flat();
+          } else {
+            const resp = await fetch('data/catalog.json');
+            state.canonicalRecords = await resp.json();
+          }
+        } catch (fetchErr) {
+          console.warn('[PRAFLIX] Manifest chunk loading failed, falling back to data/catalog.json:', fetchErr);
+          const resp = await fetch('data/catalog.json');
+          state.canonicalRecords = await resp.json();
+        }
       }
 
       // Pre-compute multi-token searchable text for every canonical item

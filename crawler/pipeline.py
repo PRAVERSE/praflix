@@ -28,6 +28,7 @@ from .ledger import (
 )
 from .poster import audit_and_cache_posters
 from .sync import SyncEngine
+from .export_chunks import export_catalog_chunks
 
 async def run_praflix_master_pipeline(skip_crawl=False, download_posters=False):
     print("=" * 70)
@@ -292,6 +293,10 @@ async def run_praflix_master_pipeline(skip_crawl=False, download_posters=False):
     js_content += f"window.PRAFLIX_SOURCES = {json.dumps(normalized_source_records, separators=(',', ':'), ensure_ascii=False)};\n"
     with open(CATALOG_DATA_JS, "w", encoding="utf-8") as f:
         f.write(js_content)
+
+    # Compliant chunked export for Cloudflare static assets (<25 MiB)
+    chunk_res = export_catalog_chunks(canonical_catalog, DATA_DIR, num_chunks=4)
+    print(f"Exported {chunk_res['totalRecords']:,} records across {chunk_res['chunkCount']} compliant static chunks.")
 
     # CSV Export
     with open(CATALOG_CSV, "w", encoding="utf-8-sig", newline="") as f:

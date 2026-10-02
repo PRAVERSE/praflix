@@ -1,0 +1,56 @@
+{
+  "catalog": "PRAFLIX Master Cinema & Web Series Catalog",
+  "publisher": "A PRAVERSE Company",
+  "version": "2026.10.02",
+  "totalRecords": 15433,
+  "chunkCount": 4,
+  "maxFileLimitBytes": 26214400,
+  "chunks": [
+    "data/catalog-chunk-1.json",
+    "data/catalog-chunk-2.json",
+    "data/catalog-chunk-3.json",
+    "data/catalog-chunk-4.json"
+  ],
+  "chunkMetadata": [
+    {
+      "chunk": 1,
+      "recordCount": 3859,
+      "startCanonicalId": 1,
+      "endCanonicalId": 3859,
+      "jsonFile": "data/catalog-chunk-1.json",
+      "jsFile": "data/catalog_chunk_1.js",
+      "jsonSizeBytes": 6206133,
+      "jsSizeBytes": 6206194
+    },
+    {
+      "chunk": 2,
+      "recordCount": 3859,
+      "startCanonicalId": 3860,
+      "endCanonicalId": 7718,
+      "jsonFile": "data/catalog-chunk-2.json",
+      "jsFile": "data/catalog_chunk_2.js",
+      "jsonSizeBytes": 6268598,
+      "jsSizeBytes": 6268659
+    },
+    {
+      "chunk": 3,
+      "recordCount": 3859,
+      "startCanonicalId": 7719,
+      "endCanonicalId": 11577,
+      "jsonFile": "data/catalog-chunk-3.json",
+      "jsFile": "data/catalog_chunk_3.js",
+      "jsonSizeBytes": 5677263,
+      "jsSizeBytes": 5677324
+    },
+    {
+      "chunk": 4,
+      "recordCount": 3856,
+      "startCanonicalId": 11578,
+      "endCanonicalId": 15433,
+      "jsonFile": "data/catalog-chunk-4.json",
+      "jsFile": "data/catalog_chunk_4.js",
+      "jsonSizeBytes": 5749593,
+      "jsSizeBytes": 5749654
+    }
+  ]
+}

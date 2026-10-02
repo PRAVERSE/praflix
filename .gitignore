@@ -50,3 +50,7 @@ scratch_*.py
 
 # Local Logs
 *.log
+
+# Production Output Directory
+dist/
+
