@@ -1,0 +1,41 @@
+{
+  "branding": "PRAFLIX - A PRAVERSE Company",
+  "website": "https://new1.hdhub4u.free/",
+  "audit_timestamp": "2026-09-30 15:56:06 UTC",
+  "crawl_duration_seconds": 105.58,
+  "metrics": {
+    "global_archive_pages_checked": 960,
+    "category_archives_checked": 19,
+    "genre_archives_checked": 19,
+    "platform_archives_checked": 10,
+    "sitemaps_checked": 14160,
+    "total_unique_detail_urls": 14395,
+    "total_unique_catalog_entries": 14395,
+    "movies": 12662,
+    "web_series": 1733,
+    "explicit_season_entries": 1662,
+    "entries_with_posters": 14321,
+    "entries_without_posters": 74,
+    "duplicate_urls_removed": 14984,
+    "pages_failed": 0
+  },
+  "platforms_breakdown": {
+    "Netflix": 212,
+    "Prime Video": 341,
+    "Disney+": 3,
+    "Apple TV+": 5,
+    "ZEE5": 25,
+    "SonyLIV": 21,
+    "JioHotstar": 48,
+    "HBO Max": 3,
+    "Peacock": 1,
+    "Crunchyroll": 1
+  },
+  "categories_breakdown": {
+    "Bollywood": 4210,
+    "Hollywood": 7055,
+    "South Indian": 1016,
+    "Web Series": 1733,
+    "Other": 381
+  }
+}

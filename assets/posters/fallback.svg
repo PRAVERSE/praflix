@@ -1,0 +1,25 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 342 513" width="342" height="513">
+  <defs>
+    <linearGradient id="prafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#141824"/>
+      <stop offset="50%" stop-color="#0d111a"/>
+      <stop offset="100%" stop-color="#06080c"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e50914"/>
+      <stop offset="100%" stop-color="#ff3333"/>
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#prafGrad)"/>
+  <rect x="16" y="16" width="310" height="481" rx="12" fill="none" stroke="#222a38" stroke-width="2"/>
+  <g transform="translate(171, 200)" text-anchor="middle">
+    <circle cx="0" cy="0" r="54" fill="#1b2333" stroke="#2d3748" stroke-width="2"/>
+    <text x="0" y="16" font-size="44" text-anchor="middle">🍿</text>
+  </g>
+  <g transform="translate(171, 310)" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, -apple-system, sans-serif">
+    <text x="0" y="0" font-size="24" font-weight="900" fill="#ffffff" letter-spacing="3">PRA<tspan fill="#e50914">FLIX</tspan></text>
+    <text x="0" y="24" font-size="10" font-weight="700" fill="#a0aec0" letter-spacing="2">A PRAVERSE COMPANY</text>
+    <rect x="-65" y="44" width="130" height="24" rx="12" fill="#1b2333" stroke="#e50914" stroke-width="1"/>
+    <text x="0" y="60" font-size="10" font-weight="600" fill="#e2e8f0" letter-spacing="1">CINEMA ARCHIVE</text>
+  </g>
+</svg>

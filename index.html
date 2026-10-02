@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PRAFLIX — A PRAVERSE Company | Movies &amp; Web Series Catalog</title>
+  <meta name="description" content="PRAFLIX (A PRAVERSE Company) — Premium cinema discovery catalog indexing verified movies and web series organized chronologically with official poster artwork and metadata.">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- PRAFLIX Sticky Header -->
+  <header class="site-header" id="site-header">
+    <div class="header-inner">
+      <a href="#" class="brand-wrapper" id="brand-logo" title="Reset to PRAFLIX Catalog">
+        <div class="brand-logo-badge">🍿</div>
+        <div class="brand-names">
+          <div class="brand-title">PRA<span>FLIX</span></div>
+          <div class="brand-subtext">A <span>PRAVERSE</span> COMPANY</div>
+        </div>
+      </a>
+
+      <!-- Desktop Navigation Menu -->
+      <nav class="nav-menu" id="nav-menu">
+        <button class="nav-link active" data-category="All" id="nav-all">All Titles</button>
+        <button class="nav-link" data-type="Movie" data-category="Movie" id="nav-movies">Movies</button>
+        <button class="nav-link" data-type="Web Series" data-category="Web Series" id="nav-series">Web Series</button>
+        <button class="nav-link" data-category="Bollywood" id="nav-bollywood">Bollywood</button>
+        <button class="nav-link" data-category="Hollywood" id="nav-hollywood">Hollywood</button>
+        <button class="nav-link" data-category="South Indian" id="nav-south">South Indian</button>
+        <button class="nav-link" data-platform="Netflix" id="nav-netflix">Netflix</button>
+        <button class="nav-link" data-platform="Prime Video" id="nav-prime">Prime Video</button>
+      </nav>
+
+      <div class="header-right">
+        <button class="mobile-menu-btn" id="mobile-toggle" aria-label="Toggle navigation">☰</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Clean Cinema Catalog Hero & Search Bar (Audit Section Completely Removed) -->
+  <section class="cinema-hero-section" id="cinema-hero-section">
+    <div class="cinema-hero-container">
+      
+      <!-- Clean Brand Focus -->
+      <div class="hero-brand-center">
+        <h1 class="hero-brand-heading">PRA<span>FLIX</span></h1>
+        <div class="hero-brand-subheading">A <span>PRAVERSE</span> COMPANY</div>
+      </div>
+
+      <!-- Prominent Instant Search -->
+      <div class="hero-search-container">
+        <div class="hero-search-box">
+          <span class="hero-search-icon">🔍</span>
+          <input 
+            type="text" 
+            id="search-input" 
+            class="hero-search-input" 
+            placeholder="Search movies, web series, releases... (Press / to search)" 
+            autocomplete="off"
+            spellcheck="false"
+          >
+          <button class="hero-search-clear" id="search-clear" title="Clear search">×</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Main Catalog Content Section -->
+  <main class="main-catalog-layout" id="main-catalog-layout">
+    <div class="catalog-container">
+
+      <!-- Catalog Header Bar: Section Heading + Result Counter -->
+      <div class="catalog-header-bar">
+        <div class="catalog-heading-wrap">
+          <h2 class="catalog-section-heading" id="catalog-section-heading">2026 MOVIES &amp; SERIES</h2>
+          <p class="catalog-status-text" id="catalog-status-text">Displaying verified titles</p>
+        </div>
+        <div class="view-density-selector">
+          <span class="active-count-badge" id="results-count-badge">0 Titles</span>
+        </div>
+      </div>
+
+      <!-- Dynamic Movie Grid -->
+      <div class="movie-grid" id="movie-grid">
+        <!-- Rendered dynamically by app.js -->
+      </div>
+
+      <!-- Enhanced Pagination Controls -->
+      <nav class="pagination-bar" id="pagination-bar" aria-label="Catalog pages">
+        <button class="btn-page" id="btn-first" title="First Page">« First</button>
+        <button class="btn-page" id="btn-prev" title="Previous Page">‹ Prev</button>
+        <div class="page-numbers-container" id="page-numbers-list">
+          <!-- Page pills inserted by app.js -->
+        </div>
+        <button class="btn-page" id="btn-next" title="Next Page">Next ›</button>
+        <button class="btn-page" id="btn-last" title="Last Page">Last »</button>
+        
+        <div class="jump-page-wrap">
+          <span>Go to page:</span>
+          <input type="number" id="jump-page-input" min="1" max="1000" class="jump-input" placeholder="Page #">
+          <button class="btn-page btn-jump-go" id="btn-jump-go">Go</button>
+        </div>
+      </nav>
+
+    </div>
+  </main>
+
+  <!-- =========================================================================
+       Dedicated Title Details View (Rich Movie & Series Discovery Experience)
+       ========================================================================= -->
+  <section class="title-details-view" id="title-details-view" style="display: none;" aria-label="Title Details">
+    
+    <!-- Top Details Navigation Bar -->
+    <header class="details-top-bar">
+      <div class="details-nav-inner">
+        <button class="btn-back-catalog" id="btn-back-catalog" title="Return to catalog">
+          <span class="back-arrow">←</span>
+          <span class="back-text">Back to Catalog</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Details Container -->
+    <div class="details-content-container">
+
+      <!-- Cinematic Hero Section -->
+      <section class="details-hero-section" id="details-hero-section">
+        <div class="hero-backdrop-glow" id="hero-backdrop-glow"></div>
+        <div class="details-hero-grid">
+          
+          <!-- Poster Column (Left on Desktop, Top on Mobile) -->
+          <div class="details-poster-wrap">
+            <div class="poster-card-frame">
+              <img id="details-poster-img" src="" alt="Title Poster" class="details-poster-img" />
+              <div class="poster-overlay-badges" id="details-poster-badges"></div>
+            </div>
+          </div>
+
+          <!-- Hero Details Column (Right on Desktop) -->
+          <div class="details-hero-info">
+            
+            <!-- Tags & Badges Row -->
+            <div class="details-badge-row">
+              <span class="badge badge-year" id="details-year-badge">2026</span>
+              <span class="badge badge-type" id="details-type-badge">Movie</span>
+              <span class="badge badge-season" id="details-season-badge" style="display:none;">Season 1</span>
+              <span class="badge badge-platform" id="details-platform-badge" style="display:none;">Netflix</span>
+              <span class="badge badge-variants" id="details-variants-badge" style="display:none;">2 Releases</span>
+            </div>
+
+            <!-- Title & Subtitle -->
+            <h1 class="details-hero-title" id="details-display-title">Title Name</h1>
+            <div class="details-original-source" id="details-source-title">Original Title</div>
+
+            <!-- Quick Specs Metadata Ribbon -->
+            <div class="details-quick-specs">
+              <span class="spec-pill" id="spec-audio"><span class="icon">🔊</span> <span id="val-audio">Hindi</span></span>
+              <span class="spec-pill" id="spec-quality"><span class="icon">📺</span> <span id="val-quality">4K UHD</span></span>
+              <span class="spec-pill" id="spec-release-type"><span class="icon">📀</span> <span id="val-release-type">WEB-DL</span></span>
+              <span class="spec-pill" id="spec-status"><span class="icon">🛡️</span> Verified Catalog</span>
+            </div>
+
+            <!-- Genres List -->
+            <div class="details-genres-list" id="details-genres-list"></div>
+
+            <!-- Concise Synopsis / Overview with Read More / Show Less toggle -->
+            <div class="details-synopsis-box">
+              <p class="synopsis-text" id="details-synopsis-text">Synopsis text...</p>
+              <button class="btn-toggle-synopsis" id="btn-toggle-synopsis" style="display:none;">Read More ▼</button>
+            </div>
+
+            <!-- Primary Actions Row -->
+            <div class="details-actions-bar">
+              <button class="btn-action btn-action-primary" id="btn-action-trailer">
+                <span class="action-icon">▶</span>
+                <span>Watch Official Trailer</span>
+              </button>
+              <a href="#" target="_blank" rel="noopener noreferrer" class="btn-action btn-action-secondary" id="btn-action-source">
+                <span class="action-icon">🔗</span>
+                <span>View Source Article</span>
+              </a>
+              <button class="btn-action btn-action-ghost" id="btn-action-seasons" style="display:none;">
+                <span class="action-icon">📑</span>
+                <span>Explore Seasons</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- Essential Metadata Summary Grid -->
+      <section class="details-section metadata-summary-section">
+        <h2 class="section-title"><span class="title-bar"></span>Essential Title Metadata</h2>
+        <div class="metadata-cards-grid" id="metadata-cards-grid"></div>
+      </section>
+
+      <!-- Official Trailer & Videos Section -->
+      <section class="details-section trailer-section" id="section-trailer">
+        <h2 class="section-title"><span class="title-bar"></span>Official Trailers &amp; Previews</h2>
+        <div class="trailer-preview-card" id="trailer-preview-card">
+          <div class="trailer-thumbnail-wrap" id="trailer-thumb-btn">
+            <img id="trailer-thumb-img" src="" alt="Trailer preview" class="trailer-thumb-img" />
+            <div class="trailer-play-overlay">
+              <div class="play-circle-btn">▶</div>
+              <span class="play-label">Play Official Trailer</span>
+            </div>
+          </div>
+          <div class="trailer-info-wrap">
+            <h3 class="trailer-card-title" id="trailer-card-title">Official Promotional Trailer</h3>
+            <p class="trailer-card-desc">
+              Watch the verified promotional trailer sourced for informational preview. PRAFLIX indexes trailers for discovery only and does not host unauthorized full-movie streams.
+            </p>
+            <div class="trailer-card-actions">
+              <button class="btn-trailer-embed" id="btn-trailer-modal-open">Watch in Player</button>
+              <a href="#" target="_blank" rel="noopener noreferrer" class="btn-trailer-yt" id="btn-trailer-yt-link">Open in YouTube ↗</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cast & Crew / Key Information Section -->
+      <section class="details-section cast-section" id="section-cast">
+        <h2 class="section-title"><span class="title-bar"></span>Cast &amp; Creative Credits</h2>
+        <div class="cast-cards-row" id="cast-cards-row"></div>
+      </section>
+
+      <!-- Seasons & Episodes Section (Web Series Only) -->
+      <section class="details-section seasons-section" id="section-seasons" style="display:none;">
+        <h2 class="section-title"><span class="title-bar"></span>Seasons &amp; Episode Guide</h2>
+        <div class="seasons-container">
+          <div class="seasons-tab-bar" id="seasons-tab-bar"></div>
+          <div class="season-content-card" id="season-content-card"></div>
+        </div>
+      </section>
+
+      <!-- Artwork Gallery & Posters Section -->
+      <section class="details-section artwork-section" id="section-artwork">
+        <h2 class="section-title"><span class="title-bar"></span>Artwork &amp; Posters Gallery</h2>
+        <div class="artwork-grid" id="artwork-grid"></div>
+      </section>
+
+      <!-- Technical Releases & Canonical Grouping Section -->
+      <section class="details-section tech-releases-section" id="section-technical">
+        <h2 class="section-title"><span class="title-bar"></span>Verified Source Releases (<span id="details-editions-count">1</span>)</h2>
+        <p class="section-subtitle">Catalog-consolidated releases for this canonical work across audio tracks, encodings, and resolutions.</p>
+        <div class="releases-list" id="details-releases-list"></div>
+      </section>
+
+      <!-- Source Article Information Panel -->
+      <section class="details-section source-article-section" id="section-source-article">
+        <h2 class="section-title"><span class="title-bar"></span>Verified Informational Source</h2>
+        <div class="source-article-card" id="source-article-card"></div>
+      </section>
+
+    </div>
+  </section>
+
+  <!-- Dedicated Trailer Lightbox Modal -->
+  <div class="trailer-lightbox" id="trailer-lightbox" role="dialog" aria-modal="true" aria-hidden="true" style="display:none;">
+    <div class="trailer-lightbox-dialog">
+      <div class="trailer-modal-header">
+        <h3 id="trailer-modal-title">Trailer Player</h3>
+        <button class="trailer-modal-close" id="trailer-modal-close" aria-label="Close trailer">×</button>
+      </div>
+      <div class="trailer-iframe-wrap">
+        <iframe id="trailer-iframe" src="" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dedicated Artwork Lightbox Modal -->
+  <div class="artwork-lightbox" id="artwork-lightbox" role="dialog" aria-modal="true" aria-hidden="true" style="display:none;">
+    <div class="artwork-lightbox-dialog">
+      <button class="artwork-modal-close" id="artwork-modal-close" aria-label="Close artwork preview">×</button>
+      <img id="artwork-lightbox-img" src="" alt="Artwork Preview" class="artwork-lightbox-img" />
+      <div class="artwork-lightbox-caption" id="artwork-lightbox-caption"></div>
+      <div class="artwork-nav-btns" id="artwork-nav-btns">
+        <button class="artwork-nav-btn prev" id="btn-art-prev" aria-label="Previous artwork">‹</button>
+        <button class="artwork-nav-btn next" id="btn-art-next" aria-label="Next artwork">›</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Backward-compatibility stub for legacy modal hooks -->
+  <div id="praflix-modal" style="display:none;">
+    <button id="modal-close" style="display:none;"></button>
+    <img id="modal-poster-img" style="display:none;" />
+    <span id="modal-display-title" style="display:none;"></span>
+    <span id="modal-year-badge" style="display:none;"></span>
+    <span id="modal-type-badge" style="display:none;"></span>
+    <span id="modal-season-badge" style="display:none;"></span>
+    <span id="modal-variants-badge" style="display:none;"></span>
+    <span id="modal-languages" style="display:none;"></span>
+    <span id="modal-quality" style="display:none;"></span>
+    <span id="modal-audio" style="display:none;"></span>
+    <span id="modal-platform" style="display:none;"></span>
+    <div id="modal-genres" style="display:none;"></div>
+    <span id="modal-variants-count" style="display:none;"></span>
+    <div id="modal-variants-list" style="display:none;"></div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="brand-title">PRA<span>FLIX</span></div>
+        <div class="brand-subtext">A <span>PRAVERSE</span> COMPANY</div>
+      </div>
+      <p class="footer-copy">
+        PRAFLIX — Complete Cinema &amp; Television Catalog. Master discovery archive indexing movies and web series across global archives.
+      </p>
+      <div class="footer-links">
+        <a href="#">All Titles</a>
+        <a href="#type=Movie">Movies</a>
+        <a href="#type=Web+Series">Web Series</a>
+        <a href="#cat=Bollywood">Bollywood</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts: Instant Offline Catalog Data Script + Search Controller -->
+  <script src="data/catalog_data.js"></script>
+  <script src="app.js?v=20261001"></script>
+</body>
+</html>

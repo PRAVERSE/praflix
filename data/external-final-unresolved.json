@@ -1,0 +1,17 @@
+[
+  {
+    "externalIndex": 4944,
+    "section": "movie",
+    "rawTitle": "Naaga",
+    "cleanTitle": "Naaga",
+    "normalizedTitle": "naaga",
+    "year": null,
+    "season": null,
+    "primaryClassification": "UNRESOLVED_OR_AMBIGUOUS",
+    "matchedCanonicalId": "praflix-6042",
+    "matchedCanonicalTitle": "Naaga Hindi Dubbed",
+    "confidence": 0.7,
+    "matchMethod": "manual_review_unspecified_year",
+    "notes": "External title lacks release year; plausibly maps to 'Naaga Hindi Dubbed' (2018), held in manual review for strict verification"
+  }
+]
