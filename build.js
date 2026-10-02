@@ -129,8 +129,11 @@ function main() {
   }
   console.log(`  Synced ${posterFiles.length.toLocaleString()} poster files into dist/assets/posters/`);
 
-  console.log('[6/6] Generating Cloudflare SPA _redirects and _headers...');
-  fs.writeFileSync(path.join(DIST_DIR, '_redirects'), '/*    /index.html   200\n', 'utf8');
+  console.log('[6/6] Configuring Cloudflare edge performance _headers (SPA handled via wrangler.jsonc)...');
+  const distRedirectsPath = path.join(DIST_DIR, '_redirects');
+  if (fs.existsSync(distRedirectsPath)) {
+    fs.unlinkSync(distRedirectsPath);
+  }
   const headers = `/assets/posters/*
   Cache-Control: public, max-age=31536000, immutable
 /data/*

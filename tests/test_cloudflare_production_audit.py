@@ -145,14 +145,27 @@ class TestCloudflareProductionAudit(unittest.TestCase):
             wrangler_text = f.read()
 
         self.assertIn('"directory": "./dist"', wrangler_text, "wrangler.jsonc must point assets directory to ./dist")
+        self.assertIn('"not_found_handling": "single-page-application"', wrangler_text, "SPA fallback must be handled via wrangler.jsonc")
         # Ensure no reserved binding error triggers
         self.assertNotIn('"binding"', wrangler_text, "Assets-only Worker must not specify a binding")
         self.assertNotIn('"pages_build_output_dir"', wrangler_text, "Workers configuration must not mix pages_build_output_dir")
 
+        # Regression check for Cloudflare error [code: 100324]
+        # Any catch-all redirect to /index.html in _redirects causes an infinite loop in Cloudflare
         redirects_path = os.path.join(DIST_DIR, "_redirects")
-        self.assertTrue(os.path.exists(redirects_path), "_redirects must exist in dist")
-        with open(redirects_path, "r", encoding="utf-8") as f:
-            self.assertIn("/*", f.read())
+        if os.path.exists(redirects_path):
+            with open(redirects_path, "r", encoding="utf-8") as f:
+                redirect_lines = f.readlines()
+            for line in redirect_lines:
+                clean = line.strip()
+                if not clean or clean.startswith("#"):
+                    continue
+                parts = clean.split()
+                if len(parts) >= 2:
+                    src, dst = parts[0], parts[1]
+                    self.assertNotEqual(src, dst, f"Infinite loop / self-redirect detected in _redirects: {clean}")
+                    self.assertFalse(src == "/*" and (dst == "/index.html" or dst == "/"),
+                                     f"Catch-all SPA infinite loop detected (Cloudflare code 100324): {clean}")
 
         headers_path = os.path.join(DIST_DIR, "_headers")
         self.assertTrue(os.path.exists(headers_path), "_headers must exist in dist")
@@ -183,5 +196,36 @@ class TestCloudflareProductionAudit(unittest.TestCase):
         self.assertIn("awarapan 2", titles, "Awarapan 2 must be present")
         self.assertEqual(titles["awarapan 2"]["year"], "2026")
 
+    def test_09_redirect_rules_regression_no_infinite_loops(self):
+        """Ensure no redirect rule causes Cloudflare 100324 infinite loop error."""
+        redirects_path = os.path.join(DIST_DIR, "_redirects")
+        # Workers Static Assets handles SPA fallback via wrangler.jsonc not_found_handling
+        # Any catch-all or self-referential redirect rule is strictly forbidden
+        if os.path.exists(redirects_path):
+            with open(redirects_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            # Explicit regression checks:
+            self.assertNotIn("/* /index.html", content)
+            self.assertNotIn("/*   /index.html", content)
+            self.assertNotIn("/* / 200", content)
+            self.assertNotIn("/ / 200", content)
+
+    def test_10_spa_routing_and_static_files_integrity(self):
+        """Ensure dist contains valid index.html entrypoint and static assets for SPA routing."""
+        index_path = os.path.join(DIST_DIR, "index.html")
+        self.assertTrue(os.path.exists(index_path), "dist/index.html must exist for SPA fallback")
+
+        # Verify index.html contains SPA root and router scripts
+        with open(index_path, "r", encoding="utf-8") as f:
+            html = f.read()
+        self.assertIn("PRAFLIX", html)
+        self.assertIn("app.js", html)
+        self.assertIn("styles.css", html)
+
+        # Check catalog manifest or chunk files exist
+        manifest_path = os.path.join(DIST_DIR, "data", "catalog-manifest.json")
+        self.assertTrue(os.path.exists(manifest_path), "catalog-manifest.json must exist in dist/data")
+
 if __name__ == "__main__":
     unittest.main()
+

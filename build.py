@@ -96,10 +96,14 @@ def build_production_distribution():
         link_or_copy(src, dst)
     print(f"  Synced {len(poster_files):,} poster files into dist/assets/posters/")
 
-    # Step 6: Create Cloudflare SPA redirects and edge caching headers
-    redirects_content = "/*    /index.html   200\n"
-    with open(os.path.join(DIST_DIR, "_redirects"), "w", encoding="utf-8") as f:
-        f.write(redirects_content)
+    # Step 6: Configure Cloudflare edge caching headers & ensure clean SPA routing
+    # Note: SPA fallback is natively handled by Workers Static Assets via
+    # `not_found_handling: "single-page-application"` in wrangler.jsonc.
+    # Cloudflare code 100324 explicitly rejects catch-all `/* /index.html 200` in _redirects
+    # as an infinite redirect loop with .html stripping.
+    dist_redirects_path = os.path.join(DIST_DIR, "_redirects")
+    if os.path.exists(dist_redirects_path):
+        os.remove(dist_redirects_path)
 
     headers_content = """/assets/posters/*
   Cache-Control: public, max-age=31536000, immutable
@@ -109,7 +113,7 @@ def build_production_distribution():
 """
     with open(os.path.join(DIST_DIR, "_headers"), "w", encoding="utf-8") as f:
         f.write(headers_content)
-    print(f"[6/6] Generated Cloudflare SPA _redirects and performance _headers.")
+    print(f"[6/6] Configured Cloudflare edge performance _headers (SPA handled via wrangler.jsonc).")
 
     # =========================================================================
     # Step 7: Comprehensive Production Asset Audit & Verification
