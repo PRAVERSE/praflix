@@ -6,7 +6,7 @@
   "scripts": {
     "build": "python build.py",
     "build:node": "node build.js",
-    "test": "node test_frontend_all_years.js; node test_details_experience.js",
+    "test": "node test_frontend_all_years.js && node test_details_experience.js",
     "test:python": "python run_tests.py",
     "deploy": "wrangler deploy"
   },
