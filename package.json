@@ -4,8 +4,9 @@
   "private": true,
   "description": "PRAFLIX — Master Cinema & Web Series Catalog (A PRAVERSE Company)",
   "scripts": {
-    "build": "python build.py",
+    "build": "node build.js",
     "build:node": "node build.js",
+    "sync": "node scripts/sync_catalog.js",
     "test": "node run_frontend_tests.js",
     "test:python": "python run_tests.py",
     "deploy": "wrangler deploy"

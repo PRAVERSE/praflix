@@ -10,7 +10,9 @@ const path = require('path');
 
 const tests = [
   'test_frontend_all_years.js',
-  'test_details_experience.js'
+  'test_details_experience.js',
+  path.join('tests', 'test_sync_and_telegram.js'),
+  path.join('tests', 'smoke_test_dom.js')
 ];
 
 let failed = false;

@@ -1,10 +1,14 @@
 {
   "$schema": "https://unpkg.com/wrangler@latest/config-schema.json",
   "name": "praflix",
+  "main": "worker.js",
   "compatibility_date": "2026-10-01",
   "assets": {
     "directory": "./dist",
     "html_handling": "auto-trailing-slash",
     "not_found_handling": "single-page-application"
+  },
+  "triggers": {
+    "crons": ["0 0 * * *"]
   }
 }

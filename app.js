@@ -2,7 +2,22 @@
  * PRAFLIX — A PRAVERSE Company
  * Catalog & Search Controller
  * Fully dynamic year navigation, resilient multi-token search,
- * canonical variant management, and dynamic pagination.
+ * canonical variant management, dynamic pagination,
+ * poster-priority catalogue ordering (pages 1-10 = real poster titles),
+ * and quality-wise download section on every detail page.
+ *
+ * POSTER PRIORITY SORT ALGORITHM
+ * ────────────────────────────────
+ * When sort = 'year-desc' (default):
+ *   Pages  1–10  → titles with confirmed real poster files (sorted: year desc, title asc)
+ *   Pages 11+    → all remaining titles mixed (poster + no-poster, sorted: year desc, title asc)
+ *
+ * Poster validity is determined at build time (poster-valid-ids.js generates
+ * window.PRAFLIX_POSTER_VALID_IDS as a Set of canonicalIds).
+ * If fewer than 10 pages of poster titles exist, all records are shown without
+ * artificial gaps (graceful degradation).
+ *
+ * All other sorts (year-asc, title-asc, etc.) bypass the poster-priority split.
  */
 
 (function () {
@@ -13,6 +28,8 @@
     canonicalRecords: [],
     sourceRecords: [],
     filteredRecords: [],
+    posterRecords: [],
+    nonPosterRecords: [],
     availableYears: [],
     availableLanguages: [],
     availableQualities: [],
@@ -36,7 +53,12 @@
     activeDetailItem: null,
     previousCatalogState: null,
     currentArtworkIndex: 0,
-    currentArtworkList: []
+    currentArtworkList: [],
+    currentScreenshotIndex: 0,
+    currentScreenshotList: [],
+    // Download links data — loaded once from data/downloads.json
+    downloadsData: null,        // null = not yet loaded, {} = loaded (may be empty)
+    downloadsMap: new Map()     // canonicalId → entry from downloads.json
   };
 
   // DOM Elements Cache
@@ -109,6 +131,604 @@
     if (matchPlat(item.platform)) return true;
     if ((item.variants || []).some(v => matchPlat(v.platform) || (v.sourceUrl && (v.sourceUrl.includes('/' + target + '/') || v.sourceUrl.includes('category/amazon-prime'))))) return true;
     return false;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // DYNAMIC TWO-SECTION CATALOGUE PAGINATION
+  // Section 1: Verified Real-Poster Titles (Pages 1–180 in default view)
+  // Section 2: Remaining Archive Titles (Pages 181–322 in default view)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Returns true if the given catalogue record has a confirmed real poster file
+   * (verified at build time via the poster-valid-ids.js index).
+   *
+   * @param {Object} item - canonical catalogue record
+   * @returns {boolean}
+   */
+  function hasRealPoster(item) {
+    if (!item) return false;
+    // Primary: use the build-time Set embedded in poster-valid-ids.js
+    const validSet = window.PRAFLIX_POSTER_VALID_IDS;
+    if (validSet instanceof Set) {
+      return validSet.has(item.canonicalId);
+    }
+    if (Array.isArray(validSet)) {
+      return validSet.includes(item.canonicalId);
+    }
+    if (validSet && typeof validSet.has === 'function') {
+      return validSet.has(item.canonicalId);
+    }
+    // Fallback: trust only confirmed local assets/posters files
+    // Explicitly reject fallback SVG, missing poster, and external HTTP(S) URLs
+    const p = String(item.poster || '').trim();
+    return Boolean(
+      p &&
+      p.startsWith('assets/posters/') &&
+      p !== 'assets/posters/fallback.svg' &&
+      p !== FALLBACK_POSTER &&
+      !p.startsWith('http://') &&
+      !p.startsWith('https://')
+    );
+  }
+
+  /**
+   * Dynamic Pagination Metadata
+   * Computes section page counts and overall total pages dynamically from actual record counts.
+   * Strictly prevents hardcoding 180 or 322 while perfectly producing them on the master dataset.
+   *
+   * @returns {Object} { posterCount, nonPosterCount, totalCount, pageSize, posterPages, nonPosterPages, totalPages }
+   */
+  function getPaginationMeta() {
+    const posterCount = (state.posterRecords || []).length;
+    const nonPosterCount = (state.nonPosterRecords || []).length;
+    const pageSize = state.pageSize || 48;
+    const posterPages = Math.ceil(posterCount / pageSize);
+    const nonPosterPages = Math.ceil(nonPosterCount / pageSize);
+    const totalPages = Math.max(1, posterPages + nonPosterPages);
+    return {
+      posterCount,
+      nonPosterCount,
+      totalCount: posterCount + nonPosterCount,
+      pageSize,
+      posterPages,
+      nonPosterPages,
+      totalPages
+    };
+  }
+
+  /**
+   * Retrieves the slice of records for the current active page.
+   * Strictly separates the Poster Section (pages 1 to posterPages) from the
+   * Non-Poster Section (pages posterPages + 1 to totalPages).
+   * A title is never mixed or duplicated between sections.
+   *
+   * @returns {Object} { section, pageRecords, sectionPage, sectionTotalPages, startIndex, endIndex, sectionTotal }
+   */
+  function getCurrentPageRecords() {
+    const { posterCount, nonPosterCount, pageSize, posterPages, totalPages } = getPaginationMeta();
+    const page = Math.min(Math.max(1, state.currentPage), totalPages);
+
+    if (posterCount > 0 && page <= posterPages) {
+      // Verified Real-Poster Section (Pages 1 to posterPages)
+      const startIndex = (page - 1) * pageSize;
+      const endIndex = Math.min(startIndex + pageSize, posterCount);
+      return {
+        section: 'poster',
+        pageRecords: state.posterRecords.slice(startIndex, endIndex),
+        sectionPage: page,
+        sectionTotalPages: posterPages,
+        startIndex,
+        endIndex,
+        sectionTotal: posterCount
+      };
+    } else {
+      // Remaining Non-Poster / Archive Section (Pages posterPages + 1 to totalPages)
+      const relativePage = posterCount > 0 ? (page - posterPages) : page;
+      const startIndex = (relativePage - 1) * pageSize;
+      const endIndex = Math.min(startIndex + pageSize, nonPosterCount);
+      return {
+        section: 'non-poster',
+        pageRecords: state.nonPosterRecords.slice(startIndex, endIndex),
+        sectionPage: relativePage,
+        sectionTotalPages: Math.ceil(nonPosterCount / pageSize),
+        startIndex,
+        endIndex,
+        sectionTotal: nonPosterCount
+      };
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // DOWNLOAD SECTION HELPERS
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Load data/downloads.json once and populate state.downloadsMap.
+   * Safe to call multiple times — subsequent calls are no-ops.
+   */
+  async function ensureDownloadsLoaded() {
+    if (state.downloadsData !== null) return;  // already loaded
+    try {
+      const resp = await fetch('data/downloads.json');
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      state.downloadsData = await resp.json();
+      const entries = (state.downloadsData && Array.isArray(state.downloadsData.entries))
+        ? state.downloadsData.entries
+        : [];
+      entries.forEach(e => {
+        if (e && e.catalogueId != null) {
+          state.downloadsMap.set(Number(e.catalogueId), e);
+        }
+      });
+    } catch (err) {
+      console.warn('[PRAFLIX] downloads.json could not be loaded:', err.message);
+      state.downloadsData = { entries: [] };  // treat as empty, not as error
+    }
+  }
+
+  /**
+   * Retrieve the download entry for a given canonicalId.
+   * Returns null if not found.
+   */
+  function getDownloadEntry(canonicalId) {
+    return state.downloadsMap.get(Number(canonicalId)) || null;
+  }
+
+  /**
+   * Returns a CSS class and resolution label for a resolution string.
+   */
+  function resolutionClass(resolution) {
+    const r = String(resolution || '').toLowerCase();
+    if (r.includes('2160') || r.includes('4k'))  return 'res-4k';
+    if (r.includes('1080'))  return 'res-1080';
+    if (r.includes('720'))   return 'res-720';
+    if (r.includes('480'))   return 'res-480';
+    if (r.includes('360'))   return 'res-360';
+    return '';
+  }
+
+  /**
+   * Returns a display label for a resolution string.
+   */
+  function resolutionLabel(resolution) {
+    const r = String(resolution || '').toLowerCase();
+    if (r.includes('2160') || r === '4k' || r.includes('4k'))  return '4K UHD';
+    if (r === '1080p' || r.includes('1080'))  return '1080p Full HD';
+    if (r === '720p'  || r.includes('720'))   return '720p HD';
+    if (r === '480p'  || r.includes('480'))   return '480p SD';
+    if (r === '360p'  || r.includes('360'))   return '360p';
+    return resolution || 'Unknown';
+  }
+
+  /**
+   * Format bytes to a human-readable size string.
+   */
+  function formatFileSize(bytes) {
+    if (!bytes || typeof bytes !== 'number' || bytes <= 0) return null;
+    if (bytes >= 1073741824) return `${(bytes / 1073741824).toFixed(1)} GB`;
+    if (bytes >= 1048576)    return `${(bytes / 1048576).toFixed(0)} MB`;
+    return `${Math.round(bytes / 1024)} KB`;
+  }
+
+  /**
+   * Render the Download Options section for a given catalogue item.
+   *
+   * States rendered:
+   *  1. Download links available  → quality cards per source
+   *  2. Searching / pending       → blue info banner
+   *  3. No verified links found   → neutral banner
+   *  4. Links expired/unavailable → amber banner
+   *
+   * This function uses existing variant data (sourceUrl + qualities) plus the
+   * optional downloads.json overlay for verified direct download links.
+   */
+  function renderDownloadSection(item) {
+    if (!DOM.sectionDownload || !DOM.downloadSectionInner) return;
+    DOM.sectionDownload.style.display = 'block';
+
+    const entry = getDownloadEntry(item.canonicalId);
+    const variants = item.variants || [];
+    const hasVariantSources = variants.some(v => v.sourceUrl);
+    const hasDirectLinks = entry && Array.isArray(entry.links) && entry.links.length > 0;
+
+    const PROVIDER_NAMES = {
+      '10moviez': '10Moviez',
+      'hdhub4u': 'HDHub4u',
+      'hdwall': 'HDWall'
+    };
+
+    // ── Build Quality-wise Available Versions ──
+    const qualityMap = new Map(); // key -> { key, sortOrder, label, resCls, providers: Map, directLinks: [], languages, releaseTypes, audios }
+
+    function addQualityOffering(rawRes, providerId, sourceUrl, releaseType, audio, languages) {
+      if (!rawRes) return;
+      const resStr = String(rawRes).toLowerCase();
+      let key = '720p';
+      let sortOrder = 30;
+
+      if (resStr.includes('2160') || resStr.includes('4k') || resStr.includes('uhd')) {
+        key = '2160p';
+        sortOrder = 10;
+      } else if (resStr.includes('1440') || resStr.includes('2k')) {
+        key = '1440p';
+        sortOrder = 20;
+      } else if (resStr.includes('1080') || resStr.includes('fhd')) {
+        key = '1080p';
+        sortOrder = 25;
+      } else if (resStr.includes('720') || resStr.includes('hd')) {
+        key = '720p';
+        sortOrder = 30;
+      } else if (resStr.includes('480') || resStr.includes('sd') || resStr.includes('cam')) {
+        key = '480p';
+        sortOrder = 40;
+      } else if (resStr.includes('360')) {
+        key = '360p';
+        sortOrder = 50;
+      }
+
+      if (!qualityMap.has(key)) {
+        qualityMap.set(key, {
+          key,
+          sortOrder,
+          label: resolutionLabel(key),
+          resCls: resolutionClass(key),
+          providers: new Map(),
+          directLinks: [],
+          languages: new Set(),
+          releaseTypes: new Set(),
+          audios: new Set()
+        });
+      }
+
+      const g = qualityMap.get(key);
+      if (languages) (Array.isArray(languages) ? languages : [languages]).forEach(l => l && g.languages.add(l));
+      if (releaseType) g.releaseTypes.add(releaseType);
+      if (audio) g.audios.add(audio);
+
+      const pid = providerId || 'source';
+      const pName = PROVIDER_NAMES[pid.toLowerCase()] || (pid.charAt(0).toUpperCase() + pid.slice(1));
+      if (!g.providers.has(pid)) {
+        g.providers.set(pid, {
+          id: pid,
+          name: pName,
+          sourceUrl: sourceUrl,
+          releaseType: releaseType || null,
+          audio: audio || null
+        });
+      }
+    }
+
+    // Process all variants
+    variants.forEach(v => {
+      const vQuals = Array.isArray(v.qualities) ? v.qualities : [];
+      if (vQuals.length > 0) {
+        vQuals.forEach(q => {
+          const rawQ = q.resolution || q.label || (typeof q === 'string' ? q : '');
+          addQualityOffering(rawQ, v.source, v.sourceUrl, v.releaseType, v.audio, v.languages);
+        });
+      } else if (v.sourceUrl) {
+        const itemQuals = Array.isArray(item.qualities) ? item.qualities : [];
+        if (itemQuals.length > 0) {
+          itemQuals.forEach(iq => {
+            const rawIQ = typeof iq === 'string' ? iq : (iq.resolution || iq.label || '');
+            addQualityOffering(rawIQ, v.source, v.sourceUrl, v.releaseType, v.audio, v.languages);
+          });
+        } else {
+          addQualityOffering('720p', v.source, v.sourceUrl, v.releaseType, v.audio, v.languages);
+        }
+      }
+    });
+
+    // Process direct authorized download links from downloads.json if present
+    if (hasDirectLinks) {
+      entry.links.forEach(l => {
+        if (l.verificationStatus === 'verified' || l.verificationStatus === 'unverified') {
+          const key = (l.resolution || '720p').toLowerCase();
+          if (!qualityMap.has(key)) {
+            addQualityOffering(l.resolution, l.sourceName, l.sourceUrl || l.downloadUrl, l.format, l.audio, l.language);
+          }
+          const g = qualityMap.get(key);
+          if (g) g.directLinks.push(l);
+        }
+      });
+    }
+
+    const sortedQualities = Array.from(qualityMap.values()).sort((a, b) => a.sortOrder - b.sortOrder);
+
+    // ── Primary View: Render Grouped Quality Cards (Available Versions) ──
+    if (sortedQualities.length > 0) {
+      let html = `<div class="available-versions-container">`;
+
+      sortedQualities.forEach(qGroup => {
+        const provList = Array.from(qGroup.providers.values());
+        const directLink = qGroup.directLinks.find(l => l.downloadUrl);
+
+        html += `
+          <div class="version-row-card dl-quality-card">
+            <div class="version-left-meta">
+              <span class="version-quality-badge dl-res-badge ${qGroup.resCls}">📺 ${escapeHtml(qGroup.label)}</span>
+              <div class="version-tech-tags">
+                ${Array.from(qGroup.releaseTypes).map(rt => `<span class="version-tag dl-format-tag">${escapeHtml(rt)}</span>`).join('')}
+                ${Array.from(qGroup.audios).map(au => `<span class="version-tag dl-format-tag">${escapeHtml(au)}</span>`).join('')}
+                ${Array.from(qGroup.languages).map(lg => `<span class="version-tag">${escapeHtml(lg)}</span>`).join('')}
+              </div>
+              <div class="version-provider-pills">
+                ${provList.map(p => `<span class="version-provider-pill" title="Available via ${escapeHtml(p.name)}">${escapeHtml(p.name)}</span>`).join('')}
+              </div>
+            </div>
+            <div class="version-actions-group">
+        `;
+
+        if (directLink) {
+          html += `
+            <a class="btn-version-download"
+               href="${escapeHtml(directLink.downloadUrl)}"
+               target="_blank"
+               rel="noopener noreferrer"
+               title="Authorized download link">
+              <span>⬇ Download (${escapeHtml(directLink.sourceName || 'Direct')})</span>
+            </a>
+          `;
+        }
+
+        // Render clear "View Source" actions opening verified source page
+        provList.forEach(p => {
+          if (p.sourceUrl) {
+            const btnLabel = provList.length > 1 ? `View Source (${escapeHtml(p.name)}) ↗` : `View Source ↗`;
+            html += `
+              <a class="btn-version-view-source"
+                 href="${escapeHtml(p.sourceUrl)}"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 title="View ${escapeHtml(qGroup.label)} on verified source page">
+                <span>${btnLabel}</span>
+              </a>
+            `;
+          }
+        });
+
+        html += `
+            </div>
+          </div>
+        `;
+      });
+
+      html += `</div>`;
+      DOM.downloadSectionInner.innerHTML = html;
+      return;
+    }
+
+    // ── Fallback Case 2: Variant source URLs as informational source references ──
+    if (hasVariantSources) {
+      DOM.downloadSectionInner.innerHTML = renderVariantSourceLinks(item, variants);
+      return;
+    }
+
+    // ── Fallback Case 3: No links found banner ──
+    if (entry && entry.discoveryStatus === 'no_links_found') {
+      DOM.downloadSectionInner.innerHTML = `
+        <div class="dl-state-banner dl-state-none">
+          <span class="dl-state-icon">🔍</span>
+          <div class="dl-state-text">
+            <div class="dl-state-title">No Verified Download Links Available Yet</div>
+            <div class="dl-state-desc">
+              The PRAFLIX discovery pipeline has searched for verified download options
+              for <strong>${escapeHtml(item.displayTitle)}</strong> but has not yet found
+              any authorized links from permitted sources. Check back later.
+            </div>
+          </div>
+        </div>`;
+      return;
+    }
+
+    // ── Fallback Case 4: Entry expired ──
+    if (entry && entry.discoveryStatus === 'expired') {
+      DOM.downloadSectionInner.innerHTML = `
+        <div class="dl-state-banner dl-state-expired">
+          <span class="dl-state-icon">⏳</span>
+          <div class="dl-state-text">
+            <div class="dl-state-title">Previously Found Links Are Unavailable</div>
+            <div class="dl-state-desc">
+              Download links for this title were previously found but are no longer
+              available. A recheck has been queued.
+            </div>
+          </div>
+        </div>`;
+      return;
+    }
+
+    // ── Fallback Case 5: Pending discovery ──
+    DOM.downloadSectionInner.innerHTML = `
+      <div class="dl-state-banner dl-state-searching">
+        <span class="dl-state-icon">⏺</span>
+        <div class="dl-state-text">
+          <div class="dl-state-title">Searching for Download Options</div>
+          <div class="dl-state-desc">
+            The PRAFLIX discovery pipeline is searching for verified download options
+            for <strong>${escapeHtml(item.displayTitle)}</strong> across authorized
+            sources. Download links will appear here once discovered and verified.
+          </div>
+        </div>
+      </div>`;
+  }
+
+  /**
+   * Render quality-wise download links from a verified downloads.json entry.
+   * Groups by source, then shows quality cards for each link.
+   */
+  function renderDownloadLinks(item, entry) {
+    const links = entry.links.filter(l => l.verificationStatus === 'verified' || l.verificationStatus === 'unverified');
+    if (!links.length) return renderVariantSourceLinks(item, item.variants || []);
+
+    // Group by sourceName
+    const bySource = new Map();
+    links.forEach(l => {
+      const src = l.sourceName || 'Source';
+      if (!bySource.has(src)) bySource.set(src, []);
+      bySource.get(src).push(l);
+    });
+
+    const ts = entry.lastCheckedAt
+      ? `Last checked: ${new Date(entry.lastCheckedAt).toLocaleDateString()}`
+      : '';
+
+    let html = '';
+    if (bySource.size > 1) {
+      html += `<div class="dl-sources-header">
+        <span class="dl-sources-label">Available Sources</span>
+        <span class="dl-sources-count">${bySource.size} Sources</span>
+      </div>`;
+    }
+
+    bySource.forEach((srcLinks, sourceName) => {
+      const langs = [...new Set(srcLinks.map(l => l.language).filter(Boolean))].join(', ');
+      html += `
+        <div class="dl-source-block">
+          <div class="dl-source-header">
+            <div class="dl-source-name">
+              <span class="dl-source-icon">📡</span>
+              ${escapeHtml(sourceName)}
+              ${langs ? `<span class="dl-source-lang-badge">${escapeHtml(langs)}</span>` : ''}
+            </div>
+            <span class="dl-verified-badge">✓ Verified Source</span>
+          </div>
+          <div class="dl-quality-grid">
+            ${srcLinks.map(l => renderQualityCard(l)).join('')}
+          </div>
+        </div>`;
+    });
+
+    if (ts) html += `<div class="dl-timestamp">${escapeHtml(ts)}</div>`;
+    return html;
+  }
+
+  /**
+   * Render a single quality download card.
+   */
+  function renderQualityCard(link) {
+    const res      = link.resolution || link.resolutionLabel || 'Unknown';
+    const resLbl   = link.resolutionLabel || resolutionLabel(res);
+    const resCls   = resolutionClass(res);
+    const sizeStr  = link.fileSizeLabel || formatFileSize(link.fileSizeBytes) || '';
+    const fmt      = link.format || '';
+    const audio    = link.audio || '';
+    const dlUrl    = link.downloadUrl || link.sourceUrl || '#';
+    const isPage   = !link.isDirectFile;
+
+    return `
+      <a class="dl-quality-card"
+         href="${escapeHtml(dlUrl)}"
+         target="_blank"
+         rel="noopener noreferrer"
+         title="${escapeHtml(resLbl)} — ${escapeHtml(link.sourceName || '')}">
+        <div class="dl-res-row">
+          <span class="dl-res-badge ${resCls}">⬇ ${escapeHtml(resLbl)}</span>
+          ${sizeStr ? `<span class="dl-size-label">${escapeHtml(sizeStr)}</span>` : ''}
+        </div>
+        <div class="dl-format-row">
+          ${fmt   ? `<span class="dl-format-tag">${escapeHtml(fmt)}</span>` : ''}
+          ${audio ? `<span class="dl-format-tag">${escapeHtml(audio)}</span>` : ''}
+          ${isPage ? `<span class="dl-format-tag">Info Page ↗</span>` : '<span class="dl-format-tag">Direct ↓</span>'}
+        </div>
+      </a>`;
+  }
+
+  /**
+   * Render download options from catalog variant data.
+   * Variants contain sourceUrl (info page) + qualities[] (resolutions).
+   * We show quality cards linking to the source info page.
+   * We do NOT fabricate direct download URLs.
+   */
+  function renderVariantSourceLinks(item, variants) {
+    const activeVariants = variants.filter(v => v.sourceUrl);
+    if (!activeVariants.length) return `
+      <div class="dl-state-banner dl-state-searching">
+        <span class="dl-state-icon">⏺</span>
+        <div class="dl-state-text">
+          <div class="dl-state-title">Searching for Download Options</div>
+          <div class="dl-state-desc">No source pages are currently indexed for this title. Discovery is ongoing.</div>
+        </div>
+      </div>`;
+
+    let html = '';
+    if (activeVariants.length > 1) {
+      html += `<div class="dl-sources-header">
+        <span class="dl-sources-label">Indexed Source Pages</span>
+        <span class="dl-sources-count">${activeVariants.length} Sources</span>
+      </div>`;
+    }
+
+    const PROVIDER_NAMES = {
+      '10moviez': '10Moviez',
+      'hdhub4u': 'HDHub4u',
+      'hdwall': 'HDWall'
+    };
+
+    activeVariants.forEach((v, idx) => {
+      const rawSrc = (v.source && String(v.source).trim().toLowerCase()) || '';
+      const sourceLabel = PROVIDER_NAMES[rawSrc]
+        || ((v.source && String(v.source).trim()) ? String(v.source).charAt(0).toUpperCase() + String(v.source).slice(1) : `Source ${idx + 1}`);
+      const langs = (v.languages && v.languages.length) ? v.languages.join(', ') : '';
+      const vQualities = Array.isArray(v.qualities) ? v.qualities : [];
+      const hasQualCards = vQualities.length > 0;
+
+      html += `
+        <div class="dl-source-block">
+          <div class="dl-source-header">
+            <div class="dl-source-name">
+              <span class="dl-source-icon">🌐</span>
+              ${escapeHtml(sourceLabel)}
+              ${langs ? `<span class="dl-source-lang-badge">${escapeHtml(langs)}</span>` : ''}
+            </div>
+          </div>`;
+
+      if (hasQualCards) {
+        html += `<div class="dl-quality-grid">`;
+        vQualities.forEach(q => {
+          const qRes   = q.resolution || q.label || String(q) || 'Unknown';
+          const qLabel = q.label || resolutionLabel(qRes);
+          const qCls   = resolutionClass(qRes);
+          html += `
+            <a class="dl-quality-card"
+               href="${escapeHtml(v.sourceUrl)}"
+               target="_blank"
+               rel="noopener noreferrer"
+               title="${escapeHtml(qLabel)} — opens source information page">
+              <div class="dl-res-row">
+                <span class="dl-res-badge ${qCls}">⬇ ${escapeHtml(qLabel)}</span>
+              </div>
+              <div class="dl-format-row">
+                ${v.releaseType ? `<span class="dl-format-tag">${escapeHtml(v.releaseType)}</span>` : ''}
+                ${v.audio      ? `<span class="dl-format-tag">${escapeHtml(v.audio)}</span>`      : ''}
+                <span class="dl-format-tag">Info Page ↗</span>
+              </div>
+              <div class="dl-source-ref-row">
+                <span class="dl-source-ref-btn">View Source Page ↗</span>
+              </div>
+            </a>`;
+        });
+        html += `</div>`;
+      }
+
+      html += `
+          <a class="dl-source-page-link"
+             href="${escapeHtml(v.sourceUrl)}"
+             target="_blank"
+             rel="noopener noreferrer">
+            <span class="dl-source-page-icon">🔗</span>
+            <span class="dl-source-page-text">
+              Open Source Information Page
+              <span class="dl-source-page-hint">
+                ${escapeHtml(sourceLabel)} — view available download options on the source site
+              </span>
+            </span>
+            <span class="dl-arrow-out">↗</span>
+          </a>
+        </div>`;
+    });
+
+    return html;
   }
 
   /**
@@ -203,6 +823,8 @@
       state.defaultYear = '';
       state.activeFilters.year = '';
 
+      // Pre-load downloads data in the background (does not block catalogue render)
+      ensureDownloadsLoaded().catch(() => {});
 
       // Apply initial filters & render
       applyFilters();
@@ -319,12 +941,20 @@
     DOM.sectionArtwork = document.getElementById('section-artwork');
     DOM.artworkGrid = document.getElementById('artwork-grid');
 
+    // Screenshots Section
+    DOM.sectionScreenshots = document.getElementById('section-screenshots');
+    DOM.screenshotsGalleryGrid = document.getElementById('screenshots-gallery-grid');
+
     DOM.sectionTechnical = document.getElementById('section-technical');
     DOM.detailsEditionsCount = document.getElementById('details-editions-count');
     DOM.detailsReleasesList = document.getElementById('details-releases-list');
 
     DOM.sectionSourceArticle = document.getElementById('section-source-article');
     DOM.sourceArticleCard = document.getElementById('source-article-card');
+
+    // Download Options Section
+    DOM.sectionDownload = document.getElementById('section-download');
+    DOM.downloadSectionInner = document.getElementById('download-section-inner');
 
     // Lightboxes
     DOM.trailerLightbox = document.getElementById('trailer-lightbox');
@@ -338,6 +968,14 @@
     DOM.artworkLightboxCaption = document.getElementById('artwork-lightbox-caption');
     DOM.btnArtPrev = document.getElementById('btn-art-prev');
     DOM.btnArtNext = document.getElementById('btn-art-next');
+
+    // Screenshots Lightbox
+    DOM.screenshotsLightbox = document.getElementById('screenshots-lightbox');
+    DOM.btnScreenshotsModalClose = document.getElementById('btn-screenshots-modal-close');
+    DOM.screenshotsLightboxImg = document.getElementById('screenshots-lightbox-img');
+    DOM.screenshotsLightboxCaption = document.getElementById('screenshots-lightbox-caption');
+    DOM.btnScreenshotsPrev = document.getElementById('btn-screenshots-prev');
+    DOM.btnScreenshotsNext = document.getElementById('btn-screenshots-next');
   }
 
 
@@ -439,25 +1077,76 @@
       filtered = filtered.filter(item => (item.qualities || []).some(q => q.toLowerCase().includes(quality.toLowerCase())));
     }
 
-    // 9. Sorting (Deterministic)
-    filtered = [...filtered];
-    if (sort === 'year-desc') {
-      filtered.sort((a, b) => (b.year || '0000').localeCompare(a.year || '0000') || a.displayTitle.localeCompare(b.displayTitle));
-    } else if (sort === 'year-asc') {
-      filtered.sort((a, b) => (a.year || '9999').localeCompare(b.year || '9999') || a.displayTitle.localeCompare(b.displayTitle));
-    } else if (sort === 'title-asc') {
-      filtered.sort((a, b) => a.displayTitle.localeCompare(b.displayTitle));
-    } else if (sort === 'title-desc') {
-      filtered.sort((a, b) => b.displayTitle.localeCompare(a.displayTitle));
-    } else if (sort === 'variants-desc') {
-      filtered.sort((a, b) => (b.variantCount || 1) - (a.variantCount || 1) || a.displayTitle.localeCompare(b.displayTitle));
+    // 9. Dynamic Two-Section Partitioning & Deterministic Sorting
+    // Section 1: Titles with confirmed real posters (Pages 1–180 in default master view)
+    // Section 2: Remaining titles without real posters (Pages 181–322 in default master view)
+    const posterItems = [];
+    const nonPosterItems = [];
+
+    for (let i = 0; i < filtered.length; i++) {
+      const item = filtered[i];
+      if (hasRealPoster(item)) {
+        posterItems.push(item);
+      } else {
+        nonPosterItems.push(item);
+      }
     }
 
-    state.filteredRecords = filtered;
+    // Default release-year descending comparator:
+    // 1. Release year descending (numeric years newest to oldest; unspecified/missing year = 0 at end)
+    // 2. Content Type: Movies first (0), Web Series second (1)
+    // 3. Alphabetical by displayTitle
+    const yearDescComparator = (a, b) => {
+      const yA = parseInt(a.year || '0', 10) || 0;
+      const yB = parseInt(b.year || '0', 10) || 0;
+      if (yB !== yA) return yB - yA;
+      const tA = (a.type === 'Movie') ? 0 : 1;
+      const tB = (b.type === 'Movie') ? 0 : 1;
+      if (tA !== tB) return tA - tB;
+      return (a.displayTitle || '').localeCompare(b.displayTitle || '', undefined, { sensitivity: 'base' });
+    };
 
-    // Boundary check for currentPage
-    const maxPage = Math.max(1, Math.ceil(filtered.length / state.pageSize));
-    if (state.currentPage > maxPage) state.currentPage = 1;
+    const orderMap = window.PRAFLIX_POSTER_ORDER_MAP;
+
+    if (sort === 'year-desc') {
+      if (orderMap && orderMap.size > 0) {
+        posterItems.sort((a, b) => {
+          const rA = orderMap.get(a.canonicalId);
+          const rB = orderMap.get(b.canonicalId);
+          if (rA !== undefined && rB !== undefined) return rA - rB;
+          if (rA !== undefined) return -1;
+          if (rB !== undefined) return 1;
+          return yearDescComparator(a, b);
+        });
+      } else {
+        posterItems.sort(yearDescComparator);
+      }
+      nonPosterItems.sort(yearDescComparator);
+    } else if (sort === 'year-asc') {
+      const yearAscComparator = (a, b) => (a.year || '9999').localeCompare(b.year || '9999') || (a.displayTitle || '').localeCompare(b.displayTitle || '');
+      posterItems.sort(yearAscComparator);
+      nonPosterItems.sort(yearAscComparator);
+    } else if (sort === 'title-asc') {
+      const titleAscComparator = (a, b) => (a.displayTitle || '').localeCompare(b.displayTitle || '');
+      posterItems.sort(titleAscComparator);
+      nonPosterItems.sort(titleAscComparator);
+    } else if (sort === 'title-desc') {
+      const titleDescComparator = (a, b) => (b.displayTitle || '').localeCompare(a.displayTitle || '');
+      posterItems.sort(titleDescComparator);
+      nonPosterItems.sort(titleDescComparator);
+    } else if (sort === 'variants-desc') {
+      const variantsDescComparator = (a, b) => ((b.variantCount || 1) - (a.variantCount || 1)) || (a.displayTitle || '').localeCompare(b.displayTitle || '');
+      posterItems.sort(variantsDescComparator);
+      nonPosterItems.sort(variantsDescComparator);
+    }
+
+    state.posterRecords = posterItems;
+    state.nonPosterRecords = nonPosterItems;
+    state.filteredRecords = [...posterItems, ...nonPosterItems];
+
+    // Dynamic boundary check for currentPage
+    const { totalPages } = getPaginationMeta();
+    if (state.currentPage > totalPages) state.currentPage = 1;
 
     // Update UI Elements
     updateCatalogHeading();
@@ -471,41 +1160,48 @@
    * Update Dynamic Section Heading & Result Counters
    */
   function updateCatalogHeading() {
-    const total = state.filteredRecords.length;
+    const { totalCount, posterCount, nonPosterCount, totalPages } = getPaginationMeta();
+    const { section, sectionPage } = getCurrentPageRecords();
     const { search, year, category, type, platform } = state.activeFilters;
 
     if (search) {
       DOM.catalogSectionHeading.textContent = `SEARCH RESULTS FOR "${search.toUpperCase()}"`;
-      DOM.catalogStatusText.textContent = `Found ${total.toLocaleString()} matching title${total === 1 ? '' : 's'}${year ? ` in ${year}` : ' across all years'}`;
+      DOM.catalogStatusText.textContent = `Page ${state.currentPage} of ${totalPages} — Found ${totalCount.toLocaleString()} matching title${totalCount === 1 ? '' : 's'} (${posterCount.toLocaleString()} verified posters, ${nonPosterCount.toLocaleString()} archive)`;
     } else if (type === 'Movie') {
       DOM.catalogSectionHeading.textContent = `MOVIES CATALOG`;
-      DOM.catalogStatusText.textContent = `Browsing ${total.toLocaleString()} verified movies`;
+      DOM.catalogStatusText.textContent = `Page ${state.currentPage} of ${totalPages} — Browsing ${totalCount.toLocaleString()} movies (${posterCount.toLocaleString()} with posters, ${nonPosterCount.toLocaleString()} archive)`;
     } else if (type === 'Web Series' || category === 'Web Series') {
       DOM.catalogSectionHeading.textContent = `WEB SERIES CATALOG`;
-      DOM.catalogStatusText.textContent = `Browsing ${total.toLocaleString()} verified web series`;
+      DOM.catalogStatusText.textContent = `Page ${state.currentPage} of ${totalPages} — Browsing ${totalCount.toLocaleString()} web series (${posterCount.toLocaleString()} with posters, ${nonPosterCount.toLocaleString()} archive)`;
     } else if (category && category !== 'All') {
       DOM.catalogSectionHeading.textContent = `${category.toUpperCase()} CATALOG`;
-      DOM.catalogStatusText.textContent = `Browsing ${total.toLocaleString()} verified titles`;
+      DOM.catalogStatusText.textContent = `Page ${state.currentPage} of ${totalPages} — Browsing ${totalCount.toLocaleString()} titles (${posterCount.toLocaleString()} with posters, ${nonPosterCount.toLocaleString()} archive)`;
     } else if (platform) {
       DOM.catalogSectionHeading.textContent = `${platform.toUpperCase()} RELEASES`;
-      DOM.catalogStatusText.textContent = `Browsing ${total.toLocaleString()} verified titles`;
+      DOM.catalogStatusText.textContent = `Page ${state.currentPage} of ${totalPages} — Browsing ${totalCount.toLocaleString()} titles (${posterCount.toLocaleString()} with posters, ${nonPosterCount.toLocaleString()} archive)`;
     } else if (year) {
-      if (year === '2010s') {
-        DOM.catalogSectionHeading.textContent = `2010–2014 MOVIES & SERIES`;
-      } else if (year === '2000s') {
-        DOM.catalogSectionHeading.textContent = `2000s MOVIES & SERIES`;
-      } else if (year === 'classic') {
-        DOM.catalogSectionHeading.textContent = `CLASSIC CINEMA (< 2000)`;
-      } else {
-        DOM.catalogSectionHeading.textContent = `${year} MOVIES & SERIES`;
-      }
-      DOM.catalogStatusText.textContent = `Displaying ${total.toLocaleString()} verified title${total === 1 ? '' : 's'}`;
+      let yLabel = year;
+      if (year === '2010s') yLabel = '2010–2014';
+      else if (year === '2000s') yLabel = '2000s';
+      else if (year === 'classic') yLabel = 'CLASSIC (< 2000)';
+      DOM.catalogSectionHeading.textContent = `${yLabel} MOVIES & SERIES`;
+      DOM.catalogStatusText.textContent = `Page ${state.currentPage} of ${totalPages} — Displaying ${totalCount.toLocaleString()} titles (${posterCount.toLocaleString()} with posters, ${nonPosterCount.toLocaleString()} archive)`;
     } else {
-      DOM.catalogSectionHeading.textContent = `ALL MOVIES & SERIES (CHRONOLOGICAL)`;
-      DOM.catalogStatusText.textContent = `Browsing ${total.toLocaleString()} verified titles`;
+      // Default: Highlight Section 1 (Verified Real Posters) vs Section 2 (Archive Titles)
+      if (section === 'poster') {
+        DOM.catalogSectionHeading.textContent = `ALL MOVIES & SERIES (CHRONOLOGICAL)`;
+        const startItem = ((state.currentPage - 1) * state.pageSize + 1);
+        const endItem = Math.min(state.currentPage * state.pageSize, posterCount);
+        DOM.catalogStatusText.textContent = `Page ${state.currentPage} of ${totalPages} — Verified Poster Section (Titles ${startItem.toLocaleString()}–${endItem.toLocaleString()} of ${posterCount.toLocaleString()})`;
+      } else {
+        DOM.catalogSectionHeading.textContent = `ALL MOVIES & SERIES (ARCHIVE & ADDITIONAL)`;
+        const startItem = ((sectionPage - 1) * state.pageSize + 1);
+        const endItem = Math.min(sectionPage * state.pageSize, nonPosterCount);
+        DOM.catalogStatusText.textContent = `Page ${state.currentPage} of ${totalPages} — Archive Section (Titles ${startItem.toLocaleString()}–${endItem.toLocaleString()} of ${nonPosterCount.toLocaleString()})`;
+      }
     }
 
-    DOM.resultsCountBadge.textContent = `${total.toLocaleString()} Title${total === 1 ? '' : 's'}`;
+    DOM.resultsCountBadge.textContent = `${totalCount.toLocaleString()} Titles (${posterCount.toLocaleString()} Posters)`;
     if (DOM.searchClear) DOM.searchClear.style.display = search ? 'flex' : 'none';
   }
 
@@ -537,9 +1233,9 @@
    * Render Movie Grid Cards
    */
   function renderMovieGrid() {
-    const total = state.filteredRecords.length;
+    const { totalCount } = getPaginationMeta();
 
-    if (total === 0) {
+    if (totalCount === 0) {
       DOM.movieGrid.innerHTML = `
         <div style="grid-column: 1/-1; text-align: center; padding: 70px 20px;">
           <div style="font-size: 44px; margin-bottom: 14px;">🎬</div>
@@ -557,8 +1253,7 @@
       return;
     }
 
-    const startIndex = (state.currentPage - 1) * state.pageSize;
-    const pageRecords = state.filteredRecords.slice(startIndex, startIndex + state.pageSize);
+    const { pageRecords } = getCurrentPageRecords();
 
     const html = pageRecords.map(item => {
       const posterSrc = item.poster || FALLBACK_POSTER;
@@ -616,8 +1311,7 @@
    * Render Pagination Controls (Strictly Dynamic)
    */
   function renderPagination() {
-    const total = state.filteredRecords.length;
-    const totalPages = Math.ceil(total / state.pageSize);
+    const { totalPages } = getPaginationMeta();
 
     if (totalPages <= 1) {
       DOM.paginationBar.style.display = 'none';
@@ -655,12 +1349,20 @@
     // Bind page pill clicks
     DOM.pageNumbersList.querySelectorAll('.page-pill').forEach(btn => {
       btn.addEventListener('click', () => {
-        state.currentPage = parseInt(btn.dataset.page, 10);
-        renderMovieGrid();
-        renderPagination();
-        scrollToCatalogTop();
+        const p = parseInt(btn.dataset.page, 10);
+        if (p && p !== state.currentPage) {
+          state.currentPage = p;
+          renderMovieGrid();
+          renderPagination();
+          scrollToCatalogTop();
+        }
       });
     });
+
+    if (DOM.jumpPageInput) {
+      DOM.jumpPageInput.max = totalPages;
+      DOM.jumpPageInput.placeholder = `${state.currentPage} / ${totalPages}`;
+    }
   }
 
   function scrollToCatalogTop() {
@@ -1031,6 +1733,127 @@
   }
 
   /**
+   * Render Screenshots / Movie Stills Section & Lightbox
+   * Feature 1: Movie Screenshots / Movie Stills
+   */
+  function renderScreenshotsSection(item) {
+    if (!DOM.sectionScreenshots || !DOM.screenshotsGalleryGrid) return;
+
+    // Collect all unique screenshots
+    const screenshots = [];
+    const seenUrls = new Set();
+
+    const PROVIDER_NAMES = {
+      '10moviez': '10Moviez',
+      'hdhub4u': 'HDHub4u',
+      'hdwall': 'HDWall'
+    };
+
+    // 1. From item.screenshots
+    (item.screenshots || []).forEach(s => {
+      const u = typeof s === 'string' ? s : (s && s.url);
+      if (u && !seenUrls.has(u)) {
+        seenUrls.add(u);
+        const src = (s && s.source) || 'source';
+        screenshots.push({
+          url: u,
+          source: src,
+          provider: (s && s.provider) || PROVIDER_NAMES[src.toLowerCase()] || src,
+          caption: (s && s.caption) || `${item.displayTitle} — Still`
+        });
+      }
+    });
+
+    // 2. From variants
+    (item.variants || []).forEach(v => {
+      (v.screenshots || []).forEach(u => {
+        if (u && !seenUrls.has(u)) {
+          seenUrls.add(u);
+          const src = v.source || 'source';
+          screenshots.push({
+            url: u,
+            source: src,
+            provider: PROVIDER_NAMES[src.toLowerCase()] || src,
+            caption: `${item.displayTitle} — ${PROVIDER_NAMES[src.toLowerCase()] || src} Movie Still`
+          });
+        }
+      });
+    });
+
+    // If no screenshots exist: hide section completely, do not show large empty placeholder
+    if (screenshots.length === 0) {
+      DOM.sectionScreenshots.style.display = 'none';
+      DOM.screenshotsGalleryGrid.innerHTML = '';
+      state.currentScreenshotList = [];
+      return;
+    }
+
+    DOM.sectionScreenshots.style.display = 'block';
+    state.currentScreenshotList = screenshots;
+
+    DOM.screenshotsGalleryGrid.innerHTML = screenshots.map((s, idx) => `
+      <div class="screenshot-card" data-index="${idx}" tabindex="0" title="Click to view full screenshot">
+        <img
+          src="${escapeHtml(s.url)}"
+          alt="${escapeHtml(item.displayTitle)} screenshot ${idx + 1}"
+          class="screenshot-img"
+          loading="lazy"
+          onerror="this.parentElement.style.display='none';"
+        />
+        <div class="screenshot-provider-badge">${escapeHtml(s.provider)}</div>
+        <div class="screenshot-hover-overlay">
+          <span class="screenshot-zoom-icon">🔍</span>
+        </div>
+      </div>
+    `).join('');
+
+    // Wire clicks to lightbox
+    DOM.screenshotsGalleryGrid.querySelectorAll('.screenshot-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const idx = parseInt(card.dataset.index, 10);
+        openScreenshotLightbox(idx);
+      });
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const idx = parseInt(card.dataset.index, 10);
+          openScreenshotLightbox(idx);
+        }
+      });
+    });
+  }
+
+  function openScreenshotLightbox(index) {
+    if (!DOM.screenshotsLightbox || !state.currentScreenshotList || !state.currentScreenshotList.length) return;
+
+    state.currentScreenshotIndex = (index + state.currentScreenshotList.length) % state.currentScreenshotList.length;
+    const item = state.currentScreenshotList[state.currentScreenshotIndex];
+
+    if (DOM.screenshotsLightboxImg) {
+      DOM.screenshotsLightboxImg.src = item.url;
+      DOM.screenshotsLightboxImg.alt = item.caption;
+      DOM.screenshotsLightboxImg.onerror = function() {
+        this.onerror = null;
+        this.src = FALLBACK_POSTER;
+      };
+    }
+    if (DOM.screenshotsLightboxCaption) {
+      DOM.screenshotsLightboxCaption.textContent = `${item.caption} (${state.currentScreenshotIndex + 1} of ${state.currentScreenshotList.length}) • ${item.provider}`;
+    }
+
+    DOM.screenshotsLightbox.style.display = 'flex';
+    DOM.screenshotsLightbox.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    if (DOM.btnScreenshotsModalClose) DOM.btnScreenshotsModalClose.focus();
+  }
+
+  function closeScreenshotLightbox() {
+    if (!DOM.screenshotsLightbox) return;
+    DOM.screenshotsLightbox.style.display = 'none';
+    DOM.screenshotsLightbox.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  /**
    * Render Consolidated Technical Releases List
    */
   function renderTechnicalReleases(item) {
@@ -1349,10 +2172,19 @@
     // 13. Artwork Gallery
     renderArtworkGallery(item);
 
+    // 13b. Movie Screenshots / Stills Gallery
+    renderScreenshotsSection(item);
+
     // 14. Technical Releases List
     renderTechnicalReleases(item);
 
-    // 15. Source Article Card
+    // 15. Download Options Section (every title gets this section)
+    // Ensure downloads data is available, then render synchronously.
+    // ensureDownloadsLoaded was called at init; if it hasn't resolved yet,
+    // the section will show the 'searching' state and can be refreshed.
+    renderDownloadSection(item);
+
+    // 16. Source Article Card
     renderSourceArticleCard(item);
 
     // Populate backward compatibility stubs
@@ -1607,7 +2439,7 @@
 
     if (DOM.btnNext) {
       DOM.btnNext.addEventListener('click', () => {
-        const totalPages = Math.ceil(state.filteredRecords.length / state.pageSize);
+        const { totalPages } = getPaginationMeta();
         if (state.currentPage < totalPages) {
           state.currentPage++;
           renderMovieGrid();
@@ -1619,7 +2451,7 @@
 
     if (DOM.btnLast) {
       DOM.btnLast.addEventListener('click', () => {
-        const totalPages = Math.ceil(state.filteredRecords.length / state.pageSize);
+        const { totalPages } = getPaginationMeta();
         state.currentPage = totalPages;
         renderMovieGrid();
         renderPagination();
@@ -1631,7 +2463,7 @@
       DOM.btnJumpGo.addEventListener('click', () => {
         if (!DOM.jumpPageInput) return;
         const val = parseInt(DOM.jumpPageInput.value, 10);
-        const totalPages = Math.ceil(state.filteredRecords.length / state.pageSize);
+        const { totalPages } = getPaginationMeta();
         if (val >= 1 && val <= totalPages) {
           state.currentPage = val;
           renderMovieGrid();
@@ -1710,6 +2542,26 @@
       });
     }
 
+    // 8b. Screenshots Lightbox Events
+    if (DOM.btnScreenshotsModalClose) {
+      DOM.btnScreenshotsModalClose.addEventListener('click', closeScreenshotLightbox);
+    }
+    if (DOM.screenshotsLightbox) {
+      DOM.screenshotsLightbox.addEventListener('click', (e) => {
+        if (e.target === DOM.screenshotsLightbox) closeScreenshotLightbox();
+      });
+    }
+    if (DOM.btnScreenshotsPrev) {
+      DOM.btnScreenshotsPrev.addEventListener('click', () => {
+        openScreenshotLightbox(state.currentScreenshotIndex - 1);
+      });
+    }
+    if (DOM.btnScreenshotsNext) {
+      DOM.btnScreenshotsNext.addEventListener('click', () => {
+        openScreenshotLightbox(state.currentScreenshotIndex + 1);
+      });
+    }
+
     // 9. Legacy Modal Events (Backward Compatibility)
     if (DOM.modalClose) {
       DOM.modalClose.addEventListener('click', closeDetailModal);
@@ -1735,6 +2587,8 @@
           closeTrailerLightbox();
         } else if (DOM.artworkLightbox && DOM.artworkLightbox.style.display !== 'none') {
           closeArtworkLightbox();
+        } else if (DOM.screenshotsLightbox && DOM.screenshotsLightbox.style.display !== 'none') {
+          closeScreenshotLightbox();
         } else if (state.inDetailsView) {
           closeDetailView();
         } else if (DOM.praflixModal && DOM.praflixModal.classList.contains('open')) {
@@ -1745,10 +2599,14 @@
       } else if (e.key === 'ArrowLeft') {
         if (DOM.artworkLightbox && DOM.artworkLightbox.style.display !== 'none') {
           openArtworkLightbox(state.currentArtworkIndex - 1);
+        } else if (DOM.screenshotsLightbox && DOM.screenshotsLightbox.style.display !== 'none') {
+          openScreenshotLightbox(state.currentScreenshotIndex - 1);
         }
       } else if (e.key === 'ArrowRight') {
         if (DOM.artworkLightbox && DOM.artworkLightbox.style.display !== 'none') {
           openArtworkLightbox(state.currentArtworkIndex + 1);
+        } else if (DOM.screenshotsLightbox && DOM.screenshotsLightbox.style.display !== 'none') {
+          openScreenshotLightbox(state.currentScreenshotIndex + 1);
         }
       }
 

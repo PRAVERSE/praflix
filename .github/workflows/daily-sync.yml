@@ -1,0 +1,110 @@
+name: PRAFLIX 24-Hour Catalog Synchronization & Deployment
+
+on:
+  schedule:
+    # Runs every 24 hours at 00:00 UTC (05:30 IST)
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    # Allows manual trigger testing via GitHub Actions UI
+
+concurrency:
+  group: praflix-catalog-sync
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  sync-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci || npm install
+
+      - name: Verify Baseline Catalog Safety
+        run: |
+          node -e "
+            const c = require('./data/catalog.json');
+            if (!Array.isArray(c) || c.length < 13642) {
+              throw new Error('Pre-sync catalog invariant violation: count=' + (c ? c.length : 'null'));
+            }
+            console.log('✓ Pre-sync catalog verified: ' + c.length.toLocaleString() + ' canonical titles.');
+          "
+
+      - name: 1. Provider Sync (HDHub4u, 10Moviez, HDWall)
+        run: npm run sync -- --defer-telegram
+
+      - name: 2. Catalog Integrity Validation
+        run: |
+          node -e "
+            const c = require('./data/catalog.json');
+            if (!Array.isArray(c) || c.length < 13642) {
+              throw new Error('Post-sync catalog invariant violation: count=' + (c ? c.length : 'null'));
+            }
+            console.log('✓ Post-sync catalog integrity verified: ' + c.length.toLocaleString() + ' canonical titles.');
+          "
+
+      - name: 3. Build Production Assets & Static Chunks
+        run: npm run build
+
+      - name: 4. Run Complete Acceptance Test Suite
+        run: npm test
+
+      - name: 5. Final Production Build Validation
+        run: |
+          node -e "
+            const fs = require('fs');
+            const requiredFiles = [
+              'dist/index.html',
+              'dist/styles.css',
+              'dist/app.js',
+              'dist/data/catalog.json',
+              'dist/data/catalog-manifest.json',
+              'dist/data/catalog-chunk-1.json',
+              'dist/data/catalog_chunk_1.js'
+            ];
+            for (const f of requiredFiles) {
+              if (!fs.existsSync(f)) throw new Error('Missing production asset: ' + f);
+            }
+            const cat = JSON.parse(fs.readFileSync('dist/data/catalog.json', 'utf8'));
+            if (!Array.isArray(cat) || cat.length < 13642) {
+              throw new Error('dist/ catalog invalid: length=' + (cat ? cat.length : 0));
+            }
+            console.log('✓ Final production build validated: ' + cat.length.toLocaleString() + ' titles ready for edge.');
+          "
+
+      - name: 6. Dispatch Validated Telegram Report
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: node scripts/send_report.js
+
+      - name: 7. Persist Catalog & Source Records to Repository
+        run: |
+          git config user.name "PRAFLIX Automated Sync Bot"
+          git config user.email "bot@praflix.us.ci"
+          git add data/catalog.json data/source-records.json data/catalog-manifest.json data/catalog-chunk-*.json data/catalog_chunk_*.js data/catalog.csv data/catalog-normalized.json data/poster-valid-ids.js data/poster-index.json
+          if git diff --staged --quiet; then
+            echo "No catalog modifications to commit today."
+          else
+            echo "Committing and pushing updated catalog files..."
+            git commit -m "Auto-sync PRAFLIX catalog: $(date -u +'%Y-%m-%d %H:%M UTC') [skip ci]"
+            git push origin ${{ github.ref_name }}
+          fi
+
+      - name: 8. Deploy Production Build to Cloudflare Edge
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npx wrangler deploy

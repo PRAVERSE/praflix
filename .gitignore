@@ -1,7 +1,8 @@
-# Environments & Secrets
+# Environment and Secrets
 .env
 .env.*
 !.env.example
+.dev.vars
 *.pem
 *.key
 *.cert
@@ -9,48 +10,23 @@
 *.pfx
 secrets.*
 credentials.json
-
-# Python & Testing Caches
-__pycache__/
-*.py[cod]
-*.class
-.pytest_cache/
-.coverage
-htmlcov/
-*.egg-info/
-.eggs/
-.venv/
-venv/
-ENV/
-
-# Node.js
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# OS & IDE Metadata
-.DS_Store
-Thumbs.db
-ehthumbs.db
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-
-# Crawler Cache (raw downloaded HTML pages)
 data/cache/
-
-# Redundant Backups and Scratch Analysis Scripts
 data/backup_*/
-data/pre_final_verification_backup/
-data/*.backup.*
-scratch_*.py
 
-# Local Logs
-*.log
+# Dependencies
+node_modules/
 
-# Production Output Directory
+# Build output
 dist/
 
+# Logs and temporary files
+*.log
+.pytest_cache/
+__pycache__/
+.sync-report.json
+data/.sync-report.json
+new catalog of movie/
+poster-yearwise-report/
+data/poster-yearwise-report/
+data/scripts/
+data/tests/

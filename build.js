@@ -78,12 +78,17 @@ function main() {
 
     const jsonFilename = `catalog-chunk-${chunkNum}.json`;
     const jsonPath = path.join(distDataDir, jsonFilename);
+    const rootJsonPath = path.join(DATA_DIR, jsonFilename);
     const jsonStr = JSON.stringify(chunk);
     fs.writeFileSync(jsonPath, jsonStr, 'utf8');
+    fs.writeFileSync(rootJsonPath, jsonStr, 'utf8');
 
     const jsFilename = `catalog_chunk_${chunkNum}.js`;
     const jsPath = path.join(distDataDir, jsFilename);
-    fs.writeFileSync(jsPath, `window.PRAFLIX_DATA = (window.PRAFLIX_DATA || []).concat(${jsonStr});\n`, 'utf8');
+    const rootJsPath = path.join(DATA_DIR, jsFilename);
+    const jsContent = `window.PRAFLIX_DATA = (window.PRAFLIX_DATA || []).concat(${jsonStr});\n`;
+    fs.writeFileSync(jsPath, jsContent, 'utf8');
+    fs.writeFileSync(rootJsPath, jsContent, 'utf8');
 
     const jsonSize = fs.statSync(jsonPath).size;
     const jsSize = fs.statSync(jsPath).size;
@@ -113,7 +118,19 @@ function main() {
     chunks: manifestChunks,
     chunkMetadata
   };
-  fs.writeFileSync(path.join(distDataDir, 'catalog-manifest.json'), JSON.stringify(manifestData, null, 2), 'utf8');
+  const manifestStr = JSON.stringify(manifestData, null, 2);
+  fs.writeFileSync(path.join(distDataDir, 'catalog-manifest.json'), manifestStr, 'utf8');
+  fs.writeFileSync(path.join(DATA_DIR, 'catalog-manifest.json'), manifestStr, 'utf8');
+
+  // Copy supplementary data files if present (poster index, valid IDs, downloads)
+  const supplementaryFiles = ['poster-valid-ids.js', 'poster-index.json', 'downloads.json'];
+  for (const sf of supplementaryFiles) {
+    const src = path.join(DATA_DIR, sf);
+    const dst = path.join(distDataDir, sf);
+    if (fs.existsSync(src)) {
+      fs.copyFileSync(src, dst);
+    }
+  }
 
   // Minified monolithic catalog.json (22.79 MiB, < 25 MiB)
   const minCatalogPath = path.join(distDataDir, 'catalog.json');

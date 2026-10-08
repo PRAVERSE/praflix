@@ -245,11 +245,28 @@
         <div class="artwork-grid" id="artwork-grid"></div>
       </section>
 
+      <!-- Movie Screenshots / Movie Stills Section -->
+      <section class="details-section screenshots-section" id="section-screenshots" style="display:none;">
+        <h2 class="section-title"><span class="title-bar"></span>SCREENSHOTS / MOVIE STILLS</h2>
+        <div class="screenshots-gallery-grid" id="screenshots-gallery-grid"></div>
+      </section>
+
       <!-- Technical Releases & Canonical Grouping Section -->
       <section class="details-section tech-releases-section" id="section-technical">
         <h2 class="section-title"><span class="title-bar"></span>Verified Source Releases (<span id="details-editions-count">1</span>)</h2>
         <p class="section-subtitle">Catalog-consolidated releases for this canonical work across audio tracks, encodings, and resolutions.</p>
         <div class="releases-list" id="details-releases-list"></div>
+      </section>
+
+      <!-- ===================================================================
+           AVAILABLE VERSIONS (DOWNLOAD / SOURCE OPTIONS) SECTION
+           Shows quality-wise options for every movie & series.
+           ================================================================ -->
+      <section class="details-section download-section" id="section-download">
+        <h2 class="section-title"><span class="title-bar"></span>AVAILABLE VERSIONS</h2>
+        <div class="download-section-inner" id="download-section-inner">
+          <!-- Rendered dynamically by app.js renderDownloadSection() -->
+        </div>
       </section>
 
       <!-- Source Article Information Panel -->
@@ -283,6 +300,19 @@
       <div class="artwork-nav-btns" id="artwork-nav-btns">
         <button class="artwork-nav-btn prev" id="btn-art-prev" aria-label="Previous artwork">‹</button>
         <button class="artwork-nav-btn next" id="btn-art-next" aria-label="Next artwork">›</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dedicated Movie Screenshots / Movie Stills Lightbox Modal -->
+  <div class="screenshots-lightbox" id="screenshots-lightbox" role="dialog" aria-modal="true" aria-hidden="true" style="display:none;">
+    <div class="screenshots-lightbox-dialog">
+      <button class="screenshots-modal-close" id="btn-screenshots-modal-close" aria-label="Close screenshot preview">×</button>
+      <img id="screenshots-lightbox-img" src="" alt="Movie Screenshot Preview" class="screenshots-lightbox-img" />
+      <div class="screenshots-lightbox-caption" id="screenshots-lightbox-caption"></div>
+      <div class="screenshots-nav-btns" id="screenshots-nav-btns">
+        <button class="screenshots-nav-btn prev" id="btn-screenshots-prev" aria-label="Previous screenshot">‹</button>
+        <button class="screenshots-nav-btn next" id="btn-screenshots-next" aria-label="Next screenshot">›</button>
       </div>
     </div>
   </div>
@@ -329,6 +359,8 @@
   <script src="data/catalog_chunk_2.js"></script>
   <script src="data/catalog_chunk_3.js"></script>
   <script src="data/catalog_chunk_4.js"></script>
-  <script src="app.js?v=20261002"></script>
+  <!-- Poster Validity Index: build-time computed set of canonicalIds with real poster files -->
+  <script src="data/poster-valid-ids.js?v=20261003_v2"></script>
+  <script src="app.js?v=20261003_v2"></script>
 </body>
 </html>

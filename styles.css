@@ -1826,3 +1826,674 @@ body {
 .footer-links a:hover {
   color: #fff;
 }
+
+/* ==========================================================================
+   DOWNLOAD OPTIONS SECTION — Detail Page
+   Professional quality-wise download interface
+   ========================================================================== */
+
+.download-section {
+  margin-top: 0;
+}
+
+.download-section-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── State Banners ── */
+.dl-state-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 20px 22px;
+}
+
+.dl-state-banner.dl-state-searching {
+  border-color: rgba(59, 130, 246, 0.30);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.06) 0%, var(--bg-elevated) 100%);
+}
+
+.dl-state-banner.dl-state-none {
+  border-color: rgba(100, 116, 139, 0.30);
+}
+
+.dl-state-banner.dl-state-expired {
+  border-color: rgba(245, 158, 11, 0.30);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, var(--bg-elevated) 100%);
+}
+
+.dl-state-icon {
+  font-size: 26px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.dl-state-text {
+  flex: 1;
+}
+
+.dl-state-title {
+  color: var(--text-main);
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.dl-state-desc {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* ── Download Source Block ── */
+.dl-source-block {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: border-color var(--transition-fast);
+}
+
+.dl-source-block:hover {
+  border-color: rgba(229, 9, 20, 0.30);
+}
+
+.dl-source-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.dl-source-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-main);
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.dl-source-icon {
+  font-size: 14px;
+}
+
+.dl-source-lang-badge {
+  background: rgba(59, 130, 246, 0.18);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.dl-verified-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #34d399;
+  font-size: 11.5px;
+  font-weight: 700;
+  background: rgba(52, 211, 153, 0.10);
+  border: 1px solid rgba(52, 211, 153, 0.20);
+  border-radius: 4px;
+  padding: 3px 9px;
+}
+
+/* ── Quality Cards Grid ── */
+.dl-quality-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  padding: 14px 18px;
+}
+
+.dl-quality-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  padding: 13px 14px;
+  transition: border-color var(--transition-fast), transform var(--transition-fast),
+              box-shadow var(--transition-fast);
+  cursor: pointer;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.dl-quality-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(229, 9, 20, 0.04) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.dl-quality-card:hover {
+  border-color: rgba(229, 9, 20, 0.45);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px -4px rgba(229, 9, 20, 0.20);
+}
+
+.dl-quality-card:hover::before {
+  opacity: 1;
+}
+
+.dl-quality-card:focus-visible {
+  outline: 2px solid var(--praflix-red);
+  outline-offset: 2px;
+}
+
+.dl-res-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.dl-res-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+
+.dl-res-badge.res-4k  { color: #f59e0b; }
+.dl-res-badge.res-1080 { color: #34d399; }
+.dl-res-badge.res-720  { color: #60a5fa; }
+.dl-res-badge.res-480  { color: #94a3b8; }
+.dl-res-badge.res-360  { color: #64748b; }
+
+.dl-size-label {
+  color: var(--text-faint);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.dl-format-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.dl-format-tag {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-muted);
+  border-radius: 3px;
+  padding: 1px 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.dl-source-ref-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dl-source-ref-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--praflix-red);
+  font-size: 11.5px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: opacity var(--transition-fast);
+}
+
+.dl-source-ref-btn:hover { opacity: 0.75; }
+
+/* ── Source-Page Button (when no direct download URL) ── */
+.dl-source-page-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  background: rgba(229, 9, 20, 0.05);
+  border-top: 1px solid rgba(229, 9, 20, 0.12);
+  text-decoration: none;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background var(--transition-fast);
+}
+
+.dl-source-page-link:hover {
+  background: rgba(229, 9, 20, 0.10);
+}
+
+.dl-source-page-icon {
+  font-size: 16px;
+}
+
+.dl-source-page-text {
+  flex: 1;
+}
+
+.dl-source-page-hint {
+  display: block;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.dl-arrow-out {
+  color: var(--text-faint);
+  font-size: 15px;
+  margin-left: auto;
+}
+
+/* ── Multi-source header ── */
+.dl-sources-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0 12px 0;
+}
+
+.dl-sources-label {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.dl-sources-count {
+  background: rgba(229, 9, 20, 0.15);
+  color: var(--praflix-red);
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 20px;
+  padding: 2px 10px;
+}
+
+/* ── Timestamp ── */
+.dl-timestamp {
+  color: var(--text-faint);
+  font-size: 11px;
+  text-align: right;
+  padding-top: 6px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .dl-quality-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .dl-source-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 380px) {
+  .dl-quality-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===================================================================
+   FEATURE 1: SCREENSHOTS / MOVIE STILLS GALLERY & LIGHTBOX
+   =================================================================== */
+.screenshots-section {
+  margin-top: 36px;
+}
+
+.screenshots-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.screenshot-card {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: #111827;
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.screenshot-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(229, 9, 20, 0.6);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.7);
+}
+
+.screenshot-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.screenshot-card:hover .screenshot-img {
+  transform: scale(1.04);
+}
+
+.screenshot-provider-badge {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(4px);
+  color: #f1f5f9;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.screenshot-hover-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  z-index: 1;
+}
+
+.screenshot-card:hover .screenshot-hover-overlay {
+  opacity: 1;
+}
+
+.screenshot-zoom-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(229, 9, 20, 0.85);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Screenshots Lightbox */
+.screenshots-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1150;
+  background: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: lightbox-fade 0.2s ease;
+}
+
+.screenshots-lightbox-dialog {
+  position: relative;
+  max-width: 92vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.screenshots-modal-close {
+  position: absolute;
+  top: -42px;
+  right: 0;
+  background: transparent;
+  border: none;
+  color: #cbd5e1;
+  font-size: 32px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px;
+  transition: color var(--transition-fast);
+}
+
+.screenshots-modal-close:hover {
+  color: #fff;
+}
+
+.screenshots-lightbox-img {
+  max-width: 88vw;
+  max-height: 78vh;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.screenshots-lightbox-caption {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e2e8f0;
+  text-align: center;
+  background: rgba(15, 23, 42, 0.7);
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.screenshots-nav-btns {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: absolute;
+  width: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0 10px;
+  pointer-events: none;
+}
+
+.screenshots-nav-btn {
+  pointer-events: auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: 26px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.screenshots-nav-btn:hover {
+  background: var(--praflix-red);
+  border-color: var(--praflix-red);
+}
+
+/* ===================================================================
+   FEATURE 2: AVAILABLE VERSIONS ENHANCED QUALITY CARDS
+   =================================================================== */
+.available-versions-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.version-row-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  background: #111827;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 14px 20px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.version-row-card:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+.version-left-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.version-quality-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #fff;
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.version-quality-badge.res-4k {
+  background: linear-gradient(135deg, #7c3aed, #4c1d95);
+  border-color: #a78bfa;
+}
+
+.version-quality-badge.res-1080 {
+  background: linear-gradient(135deg, #e50914, #991b1b);
+  border-color: #f87171;
+}
+
+.version-quality-badge.res-720 {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  border-color: #38bdf8;
+}
+
+.version-quality-badge.res-480 {
+  background: linear-gradient(135deg, #475569, #334155);
+  border-color: #94a3b8;
+}
+
+.version-tech-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.version-tag {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.version-provider-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.version-provider-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 3px;
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--praflix-gold);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.version-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-version-view-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-version-view-source:hover {
+  background: var(--praflix-red);
+  border-color: var(--praflix-red);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.btn-version-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  border: 1px solid #22c55e;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-version-download:hover {
+  background: #15803d;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.4);
+}
+
+
