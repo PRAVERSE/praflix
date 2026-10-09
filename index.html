@@ -180,10 +180,6 @@
                 <span class="action-icon">▶</span>
                 <span>Watch Official Trailer</span>
               </button>
-              <a href="#" target="_blank" rel="noopener noreferrer" class="btn-action btn-action-secondary" id="btn-action-source">
-                <span class="action-icon">🔗</span>
-                <span>View Source Article</span>
-              </a>
               <button class="btn-action btn-action-ghost" id="btn-action-seasons" style="display:none;">
                 <span class="action-icon">📑</span>
                 <span>Explore Seasons</span>
@@ -239,10 +235,22 @@
         </div>
       </section>
 
-      <!-- Artwork Gallery & Posters Section -->
+      <!-- Artwork Gallery & Posters Section (Responsive Landscape Single-Image Viewer) -->
       <section class="details-section artwork-section" id="section-artwork">
-        <h2 class="section-title"><span class="title-bar"></span>Artwork &amp; Posters Gallery</h2>
-        <div class="artwork-grid" id="artwork-grid"></div>
+        <div class="section-title-bar-row">
+          <h2 class="section-title"><span class="title-bar"></span>Artwork &amp; Posters Gallery</h2>
+          <div class="artwork-counter-wrap">
+            <span class="artwork-counter-badge" id="artwork-counter" aria-live="polite">1 of 1</span>
+          </div>
+        </div>
+        <div class="artwork-viewer-frame" id="artwork-viewer-frame">
+          <button class="artwork-viewer-nav-btn prev" id="btn-art-viewer-prev" aria-label="Previous artwork" title="Previous image (Left Arrow)">‹</button>
+          <div class="artwork-stage" id="artwork-stage" tabindex="0" role="region" aria-label="Artwork landscape viewer. Press Enter to view full size.">
+            <img id="artwork-stage-img" src="" alt="Artwork Preview" class="artwork-stage-img" />
+            <div class="artwork-stage-caption" id="artwork-stage-caption"></div>
+          </div>
+          <button class="artwork-viewer-nav-btn next" id="btn-art-viewer-next" aria-label="Next artwork" title="Next image (Right Arrow)">›</button>
+        </div>
       </section>
 
       <!-- Movie Screenshots / Movie Stills Section -->
@@ -251,15 +259,8 @@
         <div class="screenshots-gallery-grid" id="screenshots-gallery-grid"></div>
       </section>
 
-      <!-- Technical Releases & Canonical Grouping Section -->
-      <section class="details-section tech-releases-section" id="section-technical">
-        <h2 class="section-title"><span class="title-bar"></span>Verified Source Releases (<span id="details-editions-count">1</span>)</h2>
-        <p class="section-subtitle">Catalog-consolidated releases for this canonical work across audio tracks, encodings, and resolutions.</p>
-        <div class="releases-list" id="details-releases-list"></div>
-      </section>
-
       <!-- ===================================================================
-           AVAILABLE VERSIONS (DOWNLOAD / SOURCE OPTIONS) SECTION
+           AVAILABLE VERSIONS (DOWNLOAD OPTIONS) SECTION
            Shows quality-wise options for every movie & series.
            ================================================================ -->
       <section class="details-section download-section" id="section-download">
@@ -267,12 +268,6 @@
         <div class="download-section-inner" id="download-section-inner">
           <!-- Rendered dynamically by app.js renderDownloadSection() -->
         </div>
-      </section>
-
-      <!-- Source Article Information Panel -->
-      <section class="details-section source-article-section" id="section-source-article">
-        <h2 class="section-title"><span class="title-bar"></span>Verified Informational Source</h2>
-        <div class="source-article-card" id="source-article-card"></div>
       </section>
 
     </div>
@@ -361,6 +356,8 @@
   <script src="data/catalog_chunk_4.js"></script>
   <!-- Poster Validity Index: build-time computed set of canonicalIds with real poster files -->
   <script src="data/poster-valid-ids.js?v=20261003_v2"></script>
-  <script src="app.js?v=20261003_v2"></script>
+  <!-- Central Destination Resolver (Rule A & Rule B fallback priority rules) -->
+  <script src="destination_resolver.js?v=20261009_v1"></script>
+  <script src="app.js?v=20261009_v1"></script>
 </body>
 </html>

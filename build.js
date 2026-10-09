@@ -128,7 +128,14 @@ function main() {
     const src = path.join(DATA_DIR, sf);
     const dst = path.join(distDataDir, sf);
     if (fs.existsSync(src)) {
-      fs.copyFileSync(src, dst);
+      if (sf === 'downloads.json') {
+        const raw = fs.readFileSync(src, 'utf8');
+        const parsed = JSON.parse(raw);
+        fs.writeFileSync(dst, JSON.stringify(parsed), 'utf8');
+        console.log(`  - downloads.json minified: ${(fs.statSync(dst).size / (1024 * 1024)).toFixed(2)} MiB`);
+      } else {
+        fs.copyFileSync(src, dst);
+      }
     }
   }
 

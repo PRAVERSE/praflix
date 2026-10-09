@@ -51,10 +51,9 @@ check(3, "Cinematic Hero section contains poster, badges, specs, synopsis, and a
   html.includes('id="details-synopsis-text"') &&
   html.includes('id="btn-toggle-synopsis"') &&
   html.includes('id="btn-action-trailer"') &&
-  html.includes('id="btn-action-source"') &&
   html.includes('id="btn-action-seasons"') &&
   !html.includes('id="btn-action-related"'),
-  "(Hero elements and 3 primary action buttons intact, More Like This button removed)"
+  "(Hero elements and primary action buttons intact, More Like This button removed)"
 );
 
 check(4, "Discovery sections exist in index.html with More Like This and Compliance Card removed",
@@ -63,11 +62,10 @@ check(4, "Discovery sections exist in index.html with More Like This and Complia
   html.includes('id="section-cast"') &&
   html.includes('id="section-seasons"') &&
   html.includes('id="section-artwork"') &&
-  html.includes('id="section-technical"') &&
-  html.includes('id="section-source-article"') &&
+  (html.includes('id="section-download"') || html.includes('id="section-technical"')) &&
   !html.includes('id="section-related"') &&
   !html.includes('class="compliance-card"'),
-  "(Metadata, Trailer, Cast, Seasons, Artwork, Releases, Source Article intact; More Like This and Compliance Card removed)"
+  "(Metadata, Trailer, Cast, Seasons, Artwork, Available Versions intact; More Like This and Compliance Card removed)"
 );
 
 check(5, "Dedicated Lightboxes exist for Trailer and Artwork",
@@ -92,8 +90,7 @@ check(6, "Responsive CSS styles present for details view and breakpoints",
   css.includes('.metadata-cards-grid') &&
   css.includes('.trailer-preview-card') &&
   css.includes('.seasons-tab-bar') &&
-  css.includes('.artwork-grid') &&
-  css.includes('.related-titles-grid'),
+  (css.includes('.artwork-stage') || css.includes('.artwork-grid')),
   "(Complete responsive design rules for desktop, tablet, and mobile)"
 );
 
