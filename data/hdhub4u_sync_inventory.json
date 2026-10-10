@@ -2,8 +2,19 @@
   "syncTimestamp": "2026-10-10T11:01:04.591Z",
   "liveCrawl": {
     "attempted": true,
+    "liveReachable": false,
     "succeeded": false,
+    "interrupted": true,
+    "liveDiscoveredCount": 0,
     "error": "This operation was aborted"
+  },
+  "durableSnapshot": {
+    "loaded": true,
+    "recordCount": 14451,
+    "moviesCount": 12688,
+    "webSeriesCount": 1763,
+    "source": "hdhub4u_catalog_complete.json",
+    "preserved": true
   },
   "metrics": {
     "totalDiscovered": 14451,

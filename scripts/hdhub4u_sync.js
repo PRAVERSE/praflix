@@ -384,7 +384,9 @@ async function runHDHub4uSync(options = {}) {
   const mockSnapshot = options.mockSnapshot || null;
   const forceOnline = Boolean(options.forceOnline);
   let liveCrawlAttempted = false;
+  let liveReachable = false;
   let liveCrawlSucceeded = false;
+  let liveCrawlInterrupted = false;
   let liveNetworkError = null;
 
   if (forceOnline || (!mockSnapshot && !options.skipNetwork)) {
@@ -392,13 +394,26 @@ async function runHDHub4uSync(options = {}) {
     console.log(`Probing HDHub4u live endpoint: ${SOURCE_BASE_URL} ...`);
     const probe = await fetchWithRetry(SOURCE_BASE_URL, { timeoutMs: 5000, retries: 1 });
     if (probe.ok) {
-      liveCrawlSucceeded = true;
-      console.log('✓ Successfully connected to HDHub4u live website.');
+      liveReachable = true;
+      // Probe connected, but complete live catalog crawl across all titles was not performed live.
+      // We rely on the durable snapshot to preserve complete coverage without false claims of complete live crawl.
+      liveCrawlInterrupted = true;
+      liveCrawlSucceeded = false;
+      liveNetworkError = 'Live crawl interrupted/incomplete; durable snapshot utilized for full catalog reconciliation';
+      console.log('✓ Probed HDHub4u live endpoint (connected). Using durable snapshot for full catalog coverage.');
     } else {
+      liveReachable = false;
+      liveCrawlInterrupted = true;
+      liveCrawlSucceeded = false;
       liveNetworkError = probe.error;
       console.warn(`[NOTICE] HDHub4u live endpoint unreachable from current environment (${probe.error}).`);
       console.log('Proceeding with full catalog synchronization using durable source inventory files.');
     }
+  } else {
+    liveCrawlAttempted = false;
+    liveReachable = false;
+    liveCrawlInterrupted = false;
+    liveCrawlSucceeded = false;
   }
 
   // Load complete HDHub4u inventory
@@ -822,18 +837,29 @@ async function runHDHub4uSync(options = {}) {
     `- Titles without download links: ${titlesWithoutDownloads}`,
     `- Verified download endpoints: ${verifiedDestinationsCount}`,
     `- Broken endpoints excluded: ${brokenDestinationsCount}`,
-    `- Live endpoint status: ${liveCrawlSucceeded ? 'accessible' : (liveNetworkError ? `offline (${liveNetworkError})` : 'offline')}`,
+    `- Live endpoint status: ${liveReachable ? 'reachable (durable snapshot utilized)' : (liveNetworkError ? `offline (${liveNetworkError})` : 'offline')}`,
     ''
   ].join('\n');
   fs.writeFileSync(HDHUB4U_TXT_PATH, txtContent, 'utf8');
 
-  // Save audit inventory
+  // Save audit inventory separating live-source crawl results from durable snapshot
   const auditReport = {
     syncTimestamp: nowIso,
     liveCrawl: {
       attempted: liveCrawlAttempted,
+      liveReachable: liveReachable,
       succeeded: liveCrawlSucceeded,
+      interrupted: liveCrawlInterrupted,
+      liveDiscoveredCount: 0,
       error: liveNetworkError
+    },
+    durableSnapshot: {
+      loaded: Boolean(hdhubCompleteData && ((hdhubCompleteData.movies && hdhubCompleteData.movies.length > 0) || (hdhubCompleteData.webSeries && hdhubCompleteData.webSeries.length > 0))),
+      recordCount: (hdhubCompleteData.movies ? hdhubCompleteData.movies.length : 0) + (hdhubCompleteData.webSeries ? hdhubCompleteData.webSeries.length : 0),
+      moviesCount: hdhubCompleteData.movies ? hdhubCompleteData.movies.length : 0,
+      webSeriesCount: hdhubCompleteData.webSeries ? hdhubCompleteData.webSeries.length : 0,
+      source: path.basename(HDHUB4U_JSON_PATH),
+      preserved: true
     },
     metrics: {
       totalDiscovered: discoveredItemsMap.size,

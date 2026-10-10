@@ -219,10 +219,25 @@ check(10, "Duplicate link prevention across entries",
 // ---------------------------------------------------------------------------
 const syncInvPath = path.join(BASE_DIR, 'data', 'hdhub4u_sync_inventory.json');
 let syncInvValid = false;
+let syncInv = null;
 if (fs.existsSync(syncInvPath)) {
-  const syncInv = JSON.parse(fs.readFileSync(syncInvPath, 'utf8'));
-  syncInvValid = syncInv.liveCrawl && (syncInv.liveCrawl.succeeded === false || syncInv.liveCrawl.liveReachable === false);
+  syncInv = JSON.parse(fs.readFileSync(syncInvPath, 'utf8'));
+  syncInvValid = Boolean(
+    syncInv &&
+    syncInv.liveCrawl &&
+    (syncInv.liveCrawl.succeeded === false || syncInv.liveCrawl.liveReachable === false)
+  );
 }
+
+// Print actual and expected values immediately before the assertion
+console.log(`[Test 11 Diagnostics] syncInvPath: ${syncInvPath}`);
+console.log(`[Test 11 Diagnostics] File exists: ${fs.existsSync(syncInvPath)}`);
+if (syncInv) {
+  console.log(`[Test 11 Diagnostics] liveCrawl:`, JSON.stringify(syncInv.liveCrawl));
+  console.log(`[Test 11 Diagnostics] durableSnapshot:`, JSON.stringify(syncInv.durableSnapshot || null));
+}
+console.log(`[Test 11 Diagnostics] Actual syncInvValid: ${syncInvValid}, Expected: true`);
+
 check(11, "Crawl interruption and live-source coverage documented separately",
   syncInvValid === true,
   "(Live crawl recorded as unreachable without false claims; durable snapshot preserved)"
