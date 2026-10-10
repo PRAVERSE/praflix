@@ -260,6 +260,20 @@ async function syncProvider(providerName, catalog, sourceRecords, options = {}) 
   };
 
   try {
+    if (providerName.toLowerCase() === 'hdhub4u' && !options.mockItems && !options.mockFailures) {
+      try {
+        const hdhubSync = require('./hdhub4u_sync');
+        const syncReport = await hdhubSync.runHDHub4uSync(options);
+        result.newMovies = syncReport.metrics.newlyAddedToCatalog;
+        result.newSeries = 0;
+        result.updatedExisting = syncReport.metrics.existingUpdatedWithLinks;
+        result.itemsProcessed = syncReport.metrics.totalDiscovered;
+        return result;
+      } catch (hErr) {
+        console.warn('[WARN] HDHub4u comprehensive sync notice, falling back to incremental parser:', hErr.message);
+      }
+    }
+
     const items = await fetchProviderLatest(providerName, options);
     result.itemsProcessed = items.length;
 

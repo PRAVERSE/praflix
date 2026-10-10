@@ -12,7 +12,15 @@ const tests = [
   'test_frontend_all_years.js',
   'test_details_experience.js',
   path.join('tests', 'test_sync_and_telegram.js'),
-  path.join('tests', 'smoke_test_dom.js')
+  path.join('tests', 'smoke_test_dom.js'),
+  path.join('tests', 'test_available_versions_download_mapping.js'),
+  path.join('tests', 'test_hdhub4u_catalog_sync.js'),
+  path.join('tests', 'test_download_verification_repair.js'),
+  path.join('tests', 'test_problem9_audit_and_posters.js'),
+  path.join('tests', 'test_problem10_production_verification.js'),
+  path.join('tests', 'test_problem11_poster_and_download_verification.js'),
+  path.join('tests', 'test_problem12_recovery.js'),
+  path.join('tests', 'test_workflow_persistence.js')
 ];
 
 let failed = false;

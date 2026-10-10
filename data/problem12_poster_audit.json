@@ -1,0 +1,24 @@
+{
+  "generated": "2026-10-10T16:42:03.145Z",
+  "auditScope": "Full 13,678 catalog records",
+  "totalCatalogRecords": 13678,
+  "totalValidPostersInIndex": 9172,
+  "posterCoveragePercent": 67.06,
+  "validLocalOnDisk": 627,
+  "validRemotePosters": 8545,
+  "neutralFallbackPosters": 4506,
+  "repairedInProblem12": {
+    "downloadedLocalPosters": 60,
+    "uniqueRemoteCdnPosters": 5314,
+    "totalRecovered": 5374
+  },
+  "breakdown": {
+    "existing_valid_local": 567,
+    "recovered_downloaded_local": 60,
+    "existing_valid_remote_tmdb": 3231,
+    "recovered_unique_remote_cdn": 5314,
+    "retained_neutral_fallback": 4506
+  },
+  "unresolvedCasesCount": 4506,
+  "unresolvedExplanation": "Titles without high-fidelity distributor artwork retain neutral branded fallback.svg. Zero mismatched or broken artwork assigned."
+}

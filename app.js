@@ -52,8 +52,6 @@
     inDetailsView: false,
     activeDetailItem: null,
     previousCatalogState: null,
-    currentArtworkIndex: 0,
-    currentArtworkList: [],
     currentScreenshotIndex: 0,
     currentScreenshotList: [],
     // Download links data — loaded once from data/downloads.json
@@ -159,16 +157,13 @@
     if (validSet && typeof validSet.has === 'function') {
       return validSet.has(item.canonicalId);
     }
-    // Fallback: trust only confirmed local assets/posters files
-    // Explicitly reject fallback SVG, missing poster, and external HTTP(S) URLs
+    // Fallback: trust confirmed local or remote poster paths (excluding fallback SVG)
     const p = String(item.poster || '').trim();
     return Boolean(
       p &&
-      p.startsWith('assets/posters/') &&
       p !== 'assets/posters/fallback.svg' &&
       p !== FALLBACK_POSTER &&
-      !p.startsWith('http://') &&
-      !p.startsWith('https://')
+      (p.startsWith('assets/posters/') || p.startsWith('https://') || p.startsWith('http://'))
     );
   }
 
@@ -249,8 +244,38 @@
    */
   async function ensureDownloadsLoaded() {
     if (state.downloadsData !== null) return;  // already loaded
+    if (typeof window !== 'undefined' && window.PRAFLIX_DOWNLOADS && Array.isArray(window.PRAFLIX_DOWNLOADS.entries)) {
+      state.downloadsData = window.PRAFLIX_DOWNLOADS;
+      state.downloadsData.entries.forEach(e => {
+        if (e && e.catalogueId != null) {
+          state.downloadsMap.set(Number(e.catalogueId), e);
+        }
+      });
+      return;
+    }
+    if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const candidates = [
+          path.resolve(process.cwd(), 'data', 'downloads.json'),
+          path.resolve(__dirname, 'data', 'downloads.json'),
+          path.resolve(__dirname, '..', 'data', 'downloads.json')
+        ];
+        const dlPath = candidates.find(p => fs.existsSync(p));
+        if (dlPath) {
+          state.downloadsData = JSON.parse(fs.readFileSync(dlPath, 'utf8'));
+          (state.downloadsData.entries || []).forEach(e => {
+            if (e && e.catalogueId != null) {
+              state.downloadsMap.set(Number(e.catalogueId), e);
+            }
+          });
+          return;
+        }
+      } catch (_) {}
+    }
     try {
-      const resp = await fetch('data/downloads.json');
+      const resp = await fetch('data/downloads.json?v=20261010_p12');
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       state.downloadsData = await resp.json();
       const entries = (state.downloadsData && Array.isArray(state.downloadsData.entries))
@@ -312,423 +337,297 @@
   }
 
   /**
-   * Render the Download Options section for a given catalogue item.
+   * Helper to retrieve PRAFLIX_RESOLVER engine.
+   */
+  function getResolver() {
+    if (typeof window !== 'undefined' && window.PRAFLIX_RESOLVER) return window.PRAFLIX_RESOLVER;
+    if (typeof globalThis !== 'undefined' && globalThis.PRAFLIX_RESOLVER) return globalThis.PRAFLIX_RESOLVER;
+    if (typeof require === 'function') {
+      try { return require('./destination_resolver'); } catch (_) {}
+      try { return require('../destination_resolver'); } catch (_) {}
+      try {
+        const path = require('path');
+        return require(path.resolve(process.cwd(), 'destination_resolver'));
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  /**
+   * Fallback download organizer if destination_resolver is unavailable.
+   */
+  function fallbackGroupAndOrder(item, downloadEntry) {
+    const isSeries = item && item.type === 'Web Series';
+    const allLinks = (downloadEntry && Array.isArray(downloadEntry.links)) ? downloadEntry.links : [];
+    const sourceArticleUrls = [];
+    const seenSrc = new Set();
+    const addSrc = (url, name) => {
+      if (url && typeof url === 'string' && !seenSrc.has(url.trim())) {
+        seenSrc.add(url.trim());
+        sourceArticleUrls.push({ url: url.trim(), name: name || 'Source' });
+      }
+    };
+    (item.variants || []).forEach(v => { if (v.sourceUrl) addSrc(v.sourceUrl, v.source || v.sourceName); });
+    allLinks.forEach(l => { if (l.sourceUrl) addSrc(l.sourceUrl, l.sourceName); });
+
+    // Reject URLs that match source articles or are invalid
+    const validLinks = allLinks.filter(l => {
+      if (!l || !l.downloadUrl || typeof l.downloadUrl !== 'string') return false;
+      const u = l.downloadUrl.trim();
+      if (!/^https?:\/\//i.test(u) || u === '#' || u.startsWith('javascript:')) return false;
+      if (l.sourceUrl && u === l.sourceUrl.trim()) return false;
+      if (seenSrc.has(u)) return false;
+      return true;
+    });
+
+    if (!isSeries) {
+      const qMap = new Map();
+
+      function addQualityOffering(rawRes, downloadUrl, format, audio, language) {
+        if (!rawRes) return;
+        const qKey = (rawRes || '720p').toLowerCase();
+        if (!qMap.has(qKey)) {
+          qMap.set(qKey, {
+            qualityKey: qKey,
+            label: resolutionLabel(qKey),
+            resCls: resolutionClass(qKey),
+            links: [],
+            formats: [],
+            audios: [],
+            languages: []
+          });
+        }
+        const g = qMap.get(qKey);
+        if (format && !g.formats.includes(format)) g.formats.push(format);
+        if (audio && !g.audios.includes(audio)) g.audios.push(audio);
+        if (language && !g.languages.includes(language)) g.languages.push(language);
+        if (downloadUrl && !g.links.some(x => x.downloadUrl === downloadUrl)) {
+          g.links.push({
+            downloadUrl,
+            label: `Link ${g.links.length + 1}`
+          });
+        }
+      }
+
+      validLinks.forEach(l => {
+        addQualityOffering(l.resolution, l.downloadUrl, l.format, l.audio, l.language);
+      });
+      const movieQualityGroups = Array.from(qMap.values()).filter(g => g.links.length > 0);
+      return {
+        isSeries: false,
+        hasLinks: movieQualityGroups.length > 0,
+        movieQualityGroups,
+        completeSeasonGroups: [],
+        seasonEpisodeGroups: []
+      };
+    }
+
+    // Reject any links with individual episode indicators
+    const isComplete = l => {
+      if (!l) return false;
+      if (l.isCompleteSeason === true || l.packageType === 'complete_season') return true;
+      const epStr = String(l.episode || '').trim();
+      if (!epStr) return false;
+      const s = epStr.toUpperCase();
+      if (/\b(?:EPISODE|EP|E)\s*0*\d+\b/i.test(epStr) && !/\b(?:ALL|COMPLETE|PACK|BATCH|FULL)\b/i.test(epStr)) return false;
+      return s.includes('FULL') || s.includes('ALL EPISODE') || s.includes('PACK') || s.includes('COMPLETE') || s === 'FULL SERIES';
+    };
+
+    const completeSeasonLinks = validLinks.filter(isComplete);
+
+    // Group complete season links by Season Number
+    const seasonsMap = new Map();
+    completeSeasonLinks.forEach(l => {
+      let sNum = 1;
+      if (l.season) {
+        const m = String(l.season).match(/\b(?:SEASON|S)\s*0*(\d+)\b/i);
+        if (m) sNum = parseInt(m[1], 10);
+      } else if (item.season) {
+        const m = String(item.season).match(/\b(?:SEASON|S)\s*0*(\d+)\b/i);
+        if (m) sNum = parseInt(m[1], 10);
+      }
+      const sLabel = `Season ${sNum}`;
+
+      if (!seasonsMap.has(sNum)) {
+        seasonsMap.set(sNum, {
+          seasonNumber: sNum,
+          seasonLabel: sLabel,
+          qualitiesMap: new Map()
+        });
+      }
+
+      const sObj = seasonsMap.get(sNum);
+      const qKey = (l.resolution || '720p').toLowerCase();
+      if (!sObj.qualitiesMap.has(qKey)) {
+        sObj.qualitiesMap.set(qKey, {
+          qualityKey: qKey,
+          label: resolutionLabel(qKey),
+          resCls: resolutionClass(qKey),
+          links: [],
+          formats: [],
+          audios: [],
+          languages: []
+        });
+      }
+      const g = sObj.qualitiesMap.get(qKey);
+      if (l.format && !g.formats.includes(l.format)) g.formats.push(l.format);
+      if (l.audio && !g.audios.includes(l.audio)) g.audios.push(l.audio);
+      if (l.language && !g.languages.includes(l.language)) g.languages.push(l.language);
+
+      if (!g.links.some(x => x.downloadUrl === l.downloadUrl)) {
+        g.links.push({
+          downloadUrl: l.downloadUrl,
+          label: `Link ${g.links.length + 1}`
+        });
+      }
+    });
+
+    const completeSeasonGroups = Array.from(seasonsMap.values())
+      .sort((a, b) => a.seasonNumber - b.seasonNumber)
+      .map(s => ({
+        seasonNumber: s.seasonNumber,
+        seasonLabel: s.seasonLabel,
+        qualities: Array.from(s.qualitiesMap.values()).filter(q => q.links.length > 0)
+      }))
+      .filter(s => s.qualities.length > 0);
+
+    const hasLinks = completeSeasonGroups.length > 0;
+    return {
+      isSeries: true,
+      hasLinks,
+      movieQualityGroups: [],
+      completeSeasonGroups,
+      seasonEpisodeGroups: [], // Individual episodes strictly excluded
+      emptyReason: hasLinks ? null : 'No verified complete-season links available.'
+    };
+  }
+
+
+  /**
+   * Render the Available Versions (Download Options) section for a given catalogue item.
    *
-   * States rendered:
-   *  1. Download links available  → quality cards per source
-   *  2. Searching / pending       → blue info banner
-   *  3. No verified links found   → neutral banner
-   *  4. Links expired/unavailable → amber banner
-   *
-   * This function uses existing variant data (sourceUrl + qualities) plus the
-   * optional downloads.json overlay for verified direct download links.
+   * Displays verified download destinations grouped by available quality for movies,
+   * and ordered by Complete Season first, then individual episodes for web series.
+   * Links are labeled sequentially: Link 1, Link 2, Link 3...
+   * Source article URLs are strictly kept separate and never used as download buttons.
    */
   function renderDownloadSection(item) {
     if (!DOM.sectionDownload || !DOM.downloadSectionInner) return;
     DOM.sectionDownload.style.display = 'block';
 
     const entry = getDownloadEntry(item.canonicalId);
-    const variants = item.variants || [];
-    const hasVariantSources = variants.some(v => v.sourceUrl);
-    const hasDirectLinks = entry && Array.isArray(entry.links) && entry.links.length > 0;
+    const resolver = getResolver();
+    const model = (resolver && typeof resolver.groupAndOrderDownloads === 'function')
+      ? resolver.groupAndOrderDownloads(item, entry)
+      : fallbackGroupAndOrder(item, entry);
 
-    const PROVIDER_NAMES = {
-      '10moviez': '10Moviez',
-      'hdhub4u': 'HDHub4u',
-      'hdwall': 'HDWall'
-    };
-
-    // ── Build Quality-wise Available Versions ──
-    const qualityMap = new Map(); // key -> { key, sortOrder, label, resCls, providers: Map, directLinks: [], languages, releaseTypes, audios }
-
-    function addQualityOffering(rawRes, providerId, sourceUrl, releaseType, audio, languages) {
-      if (!rawRes) return;
-      const resStr = String(rawRes).toLowerCase();
-      let key = '720p';
-      let sortOrder = 30;
-
-      if (resStr.includes('2160') || resStr.includes('4k') || resStr.includes('uhd')) {
-        key = '2160p';
-        sortOrder = 10;
-      } else if (resStr.includes('1440') || resStr.includes('2k')) {
-        key = '1440p';
-        sortOrder = 20;
-      } else if (resStr.includes('1080') || resStr.includes('fhd')) {
-        key = '1080p';
-        sortOrder = 25;
-      } else if (resStr.includes('720') || resStr.includes('hd')) {
-        key = '720p';
-        sortOrder = 30;
-      } else if (resStr.includes('480') || resStr.includes('sd') || resStr.includes('cam')) {
-        key = '480p';
-        sortOrder = 40;
-      } else if (resStr.includes('360')) {
-        key = '360p';
-        sortOrder = 50;
-      }
-
-      if (!qualityMap.has(key)) {
-        qualityMap.set(key, {
-          key,
-          sortOrder,
-          label: resolutionLabel(key),
-          resCls: resolutionClass(key),
-          providers: new Map(),
-          directLinks: [],
-          languages: new Set(),
-          releaseTypes: new Set(),
-          audios: new Set()
-        });
-      }
-
-      const g = qualityMap.get(key);
-      if (languages) (Array.isArray(languages) ? languages : [languages]).forEach(l => l && g.languages.add(l));
-      if (releaseType) g.releaseTypes.add(releaseType);
-      if (audio) g.audios.add(audio);
-
-      const pid = providerId || 'source';
-      const pName = PROVIDER_NAMES[pid.toLowerCase()] || (pid.charAt(0).toUpperCase() + pid.slice(1));
-      if (!g.providers.has(pid)) {
-        g.providers.set(pid, {
-          id: pid,
-          name: pName,
-          sourceUrl: sourceUrl,
-          releaseType: releaseType || null,
-          audio: audio || null
-        });
-      }
-    }
-
-    // Process all variants
-    variants.forEach(v => {
-      const vQuals = Array.isArray(v.qualities) ? v.qualities : [];
-      if (vQuals.length > 0) {
-        vQuals.forEach(q => {
-          const rawQ = q.resolution || q.label || (typeof q === 'string' ? q : '');
-          addQualityOffering(rawQ, v.source, v.sourceUrl, v.releaseType, v.audio, v.languages);
-        });
-      } else if (v.sourceUrl) {
-        const itemQuals = Array.isArray(item.qualities) ? item.qualities : [];
-        if (itemQuals.length > 0) {
-          itemQuals.forEach(iq => {
-            const rawIQ = typeof iq === 'string' ? iq : (iq.resolution || iq.label || '');
-            addQualityOffering(rawIQ, v.source, v.sourceUrl, v.releaseType, v.audio, v.languages);
-          });
-        } else {
-          addQualityOffering('720p', v.source, v.sourceUrl, v.releaseType, v.audio, v.languages);
-        }
-      }
-    });
-
-    // Process direct authorized download links from downloads.json if present
-    if (hasDirectLinks) {
-      entry.links.forEach(l => {
-        if (l.verificationStatus === 'verified' || l.verificationStatus === 'unverified') {
-          const key = (l.resolution || '720p').toLowerCase();
-          if (!qualityMap.has(key)) {
-            addQualityOffering(l.resolution, l.sourceName, l.sourceUrl || l.downloadUrl, l.format, l.audio, l.language);
-          }
-          const g = qualityMap.get(key);
-          if (g) g.directLinks.push(l);
-        }
-      });
-    }
-
-    const sortedQualities = Array.from(qualityMap.values()).sort((a, b) => a.sortOrder - b.sortOrder);
-
-    // ── Primary View: Render Grouped Quality Cards (Available Versions) ──
-    if (sortedQualities.length > 0) {
-      let html = `<div class="available-versions-container">`;
-
-      sortedQualities.forEach(qGroup => {
-        const provList = Array.from(qGroup.providers.values());
-        const directLink = qGroup.directLinks.find(l => l.downloadUrl);
-
-        html += `
-          <div class="version-row-card dl-quality-card">
-            <div class="version-left-meta">
-              <span class="version-quality-badge dl-res-badge ${qGroup.resCls}">📺 ${escapeHtml(qGroup.label)}</span>
-              <div class="version-tech-tags">
-                ${Array.from(qGroup.releaseTypes).map(rt => `<span class="version-tag dl-format-tag">${escapeHtml(rt)}</span>`).join('')}
-                ${Array.from(qGroup.audios).map(au => `<span class="version-tag dl-format-tag">${escapeHtml(au)}</span>`).join('')}
-                ${Array.from(qGroup.languages).map(lg => `<span class="version-tag">${escapeHtml(lg)}</span>`).join('')}
+    if (model && model.hasLinks) {
+      let html = '';
+      if (!model.isSeries) {
+        // ─────────────────────────────────────────────────────────────
+        // MOVIE: Grouped by available quality, labeled Link 1, Link 2...
+        // ─────────────────────────────────────────────────────────────
+        html += `<div class="available-versions-container movie-versions">`;
+        (model.movieQualityGroups || []).forEach(qGroup => {
+          html += `
+            <div class="version-row-card dl-quality-card">
+              <div class="version-left-meta">
+                <span class="version-quality-badge dl-res-badge ${qGroup.resCls}">📺 ${escapeHtml(qGroup.label)}</span>
+                <div class="version-tech-tags">
+                  ${(qGroup.formats || []).map(f => `<span class="version-tag dl-format-tag">${escapeHtml(f)}</span>`).join('')}
+                  ${(qGroup.audios || []).map(a => `<span class="version-tag dl-format-tag">${escapeHtml(a)}</span>`).join('')}
+                  ${(qGroup.languages || []).map(l => `<span class="version-tag">${escapeHtml(l)}</span>`).join('')}
+                </div>
               </div>
-              <div class="version-provider-pills">
-                ${provList.map(p => `<span class="version-provider-pill" title="Available via ${escapeHtml(p.name)}">${escapeHtml(p.name)}</span>`).join('')}
+              <div class="version-actions-group">
+                ${(qGroup.links || []).map(l => `
+                  <a class="btn-version-download"
+                     href="${escapeHtml(l.downloadUrl)}"
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     title="Download ${escapeHtml(qGroup.label)} — ${escapeHtml(l.label)}"
+                     aria-label="Download ${escapeHtml(qGroup.label)} ${escapeHtml(l.label)}">
+                    <span>⬇ ${escapeHtml(l.label)}</span>
+                  </a>
+                `).join('')}
               </div>
             </div>
-            <div class="version-actions-group">
-        `;
-
-        if (directLink) {
-          html += `
-            <a class="btn-version-download"
-               href="${escapeHtml(directLink.downloadUrl)}"
-               target="_blank"
-               rel="noopener noreferrer"
-               title="Authorized download link">
-              <span>⬇ Download (${escapeHtml(directLink.sourceName || 'Direct')})</span>
-            </a>
           `;
-        }
+        });
+        html += `</div>`;
+      } else {
+        // ─────────────────────────────────────────────────────────────
+        // WEB SERIES: Complete Season Downloads ONLY (Problem 3)
+        // ─────────────────────────────────────────────────────────────
+        html += `<div class="available-versions-container web-series-versions">`;
 
-        // Render clear "View Source" actions opening verified source page
-        provList.forEach(p => {
-          if (p.sourceUrl) {
-            const btnLabel = provList.length > 1 ? `View Source (${escapeHtml(p.name)}) ↗` : `View Source ↗`;
+        const isMultiSeason = model.completeSeasonGroups && model.completeSeasonGroups.length > 1;
+
+        (model.completeSeasonGroups || []).forEach(seasonGroup => {
+          if (isMultiSeason) {
             html += `
-              <a class="btn-version-view-source"
-                 href="${escapeHtml(p.sourceUrl)}"
-                 target="_blank"
-                 rel="noopener noreferrer"
-                 title="View ${escapeHtml(qGroup.label)} on verified source page">
-                <span>${btnLabel}</span>
-              </a>
+              <div class="series-section-divider">
+                <h3 class="series-group-title"><span class="title-bar"></span>${escapeHtml(seasonGroup.seasonLabel)} — Complete Season</h3>
+              </div>
             `;
           }
+          (seasonGroup.qualities || []).forEach(qGroup => {
+            const seasonPrefix = isMultiSeason ? `${seasonGroup.seasonLabel} — ` : '';
+            html += `
+              <div class="version-row-card dl-quality-card complete-season-card">
+                <div class="version-left-meta">
+                  <span class="version-quality-badge dl-res-badge ${qGroup.resCls}">📦 ${escapeHtml(seasonPrefix)}${escapeHtml(qGroup.label)}</span>
+                  <div class="version-tech-tags">
+                    <span class="version-tag dl-format-tag">Complete Season</span>
+                    ${(qGroup.formats || []).map(f => `<span class="version-tag dl-format-tag">${escapeHtml(f)}</span>`).join('')}
+                    ${(qGroup.audios || []).map(a => `<span class="version-tag dl-format-tag">${escapeHtml(a)}</span>`).join('')}
+                    ${(qGroup.languages || []).map(l => `<span class="version-tag">${escapeHtml(l)}</span>`).join('')}
+                  </div>
+                </div>
+                <div class="version-actions-group">
+                  ${(qGroup.links || []).map(l => `
+                    <a class="btn-version-download"
+                       href="${escapeHtml(l.downloadUrl)}"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       title="Download ${escapeHtml(seasonPrefix)}${escapeHtml(qGroup.label)} — ${escapeHtml(l.label)}"
+                       aria-label="Download ${escapeHtml(seasonPrefix)}${escapeHtml(qGroup.label)} ${escapeHtml(l.label)}">
+                      <span>⬇ ${escapeHtml(l.label)}</span>
+                    </a>
+                  `).join('')}
+                </div>
+              </div>
+            `;
+          });
         });
 
-        html += `
-            </div>
-          </div>
-        `;
-      });
+        html += `</div>`;
+      }
 
-      html += `</div>`;
       DOM.downloadSectionInner.innerHTML = html;
       return;
     }
 
-    // ── Fallback Case 2: Variant source URLs as informational source references ──
-    if (hasVariantSources) {
-      DOM.downloadSectionInner.innerHTML = renderVariantSourceLinks(item, variants);
-      return;
-    }
+    // ─────────────────────────────────────────────────────────────
+    // NO VERIFIED DOWNLOAD LINKS: Render clean unavailable banner (Problem 5: zero source references)
+    // ─────────────────────────────────────────────────────────────
+    const isSeries = item.type === 'Web Series';
+    const emptyTitle = isSeries
+      ? 'No verified complete-season links available.'
+      : 'No verified download destinations available yet.';
+    const emptyDesc = isSeries
+      ? 'Verified complete season or all-episode packages have not been indexed for this series yet.'
+      : `The PRAFLIX discovery pipeline has searched for verified download options for <strong>${escapeHtml(item.displayTitle)}</strong> but has not yet found any authorized download links.`;
 
-    // ── Fallback Case 3: No links found banner ──
-    if (entry && entry.discoveryStatus === 'no_links_found') {
-      DOM.downloadSectionInner.innerHTML = `
-        <div class="dl-state-banner dl-state-none">
-          <span class="dl-state-icon">🔍</span>
-          <div class="dl-state-text">
-            <div class="dl-state-title">No Verified Download Links Available Yet</div>
-            <div class="dl-state-desc">
-              The PRAFLIX discovery pipeline has searched for verified download options
-              for <strong>${escapeHtml(item.displayTitle)}</strong> but has not yet found
-              any authorized links from permitted sources. Check back later.
-            </div>
-          </div>
-        </div>`;
-      return;
-    }
-
-    // ── Fallback Case 4: Entry expired ──
-    if (entry && entry.discoveryStatus === 'expired') {
-      DOM.downloadSectionInner.innerHTML = `
-        <div class="dl-state-banner dl-state-expired">
-          <span class="dl-state-icon">⏳</span>
-          <div class="dl-state-text">
-            <div class="dl-state-title">Previously Found Links Are Unavailable</div>
-            <div class="dl-state-desc">
-              Download links for this title were previously found but are no longer
-              available. A recheck has been queued.
-            </div>
-          </div>
-        </div>`;
-      return;
-    }
-
-    // ── Fallback Case 5: Pending discovery ──
     DOM.downloadSectionInner.innerHTML = `
-      <div class="dl-state-banner dl-state-searching">
-        <span class="dl-state-icon">⏺</span>
+      <div class="dl-state-banner dl-state-none">
+        <span class="dl-state-icon">${isSeries ? '📦' : '🔍'}</span>
         <div class="dl-state-text">
-          <div class="dl-state-title">Searching for Download Options</div>
-          <div class="dl-state-desc">
-            The PRAFLIX discovery pipeline is searching for verified download options
-            for <strong>${escapeHtml(item.displayTitle)}</strong> across authorized
-            sources. Download links will appear here once discovered and verified.
-          </div>
+          <div class="dl-state-title">${emptyTitle}</div>
+          <div class="dl-state-desc">${emptyDesc}</div>
         </div>
-      </div>`;
-  }
-
-  /**
-   * Render quality-wise download links from a verified downloads.json entry.
-   * Groups by source, then shows quality cards for each link.
-   */
-  function renderDownloadLinks(item, entry) {
-    const links = entry.links.filter(l => l.verificationStatus === 'verified' || l.verificationStatus === 'unverified');
-    if (!links.length) return renderVariantSourceLinks(item, item.variants || []);
-
-    // Group by sourceName
-    const bySource = new Map();
-    links.forEach(l => {
-      const src = l.sourceName || 'Source';
-      if (!bySource.has(src)) bySource.set(src, []);
-      bySource.get(src).push(l);
-    });
-
-    const ts = entry.lastCheckedAt
-      ? `Last checked: ${new Date(entry.lastCheckedAt).toLocaleDateString()}`
-      : '';
-
-    let html = '';
-    if (bySource.size > 1) {
-      html += `<div class="dl-sources-header">
-        <span class="dl-sources-label">Available Sources</span>
-        <span class="dl-sources-count">${bySource.size} Sources</span>
-      </div>`;
-    }
-
-    bySource.forEach((srcLinks, sourceName) => {
-      const langs = [...new Set(srcLinks.map(l => l.language).filter(Boolean))].join(', ');
-      html += `
-        <div class="dl-source-block">
-          <div class="dl-source-header">
-            <div class="dl-source-name">
-              <span class="dl-source-icon">📡</span>
-              ${escapeHtml(sourceName)}
-              ${langs ? `<span class="dl-source-lang-badge">${escapeHtml(langs)}</span>` : ''}
-            </div>
-            <span class="dl-verified-badge">✓ Verified Source</span>
-          </div>
-          <div class="dl-quality-grid">
-            ${srcLinks.map(l => renderQualityCard(l)).join('')}
-          </div>
-        </div>`;
-    });
-
-    if (ts) html += `<div class="dl-timestamp">${escapeHtml(ts)}</div>`;
-    return html;
-  }
-
-  /**
-   * Render a single quality download card.
-   */
-  function renderQualityCard(link) {
-    const res      = link.resolution || link.resolutionLabel || 'Unknown';
-    const resLbl   = link.resolutionLabel || resolutionLabel(res);
-    const resCls   = resolutionClass(res);
-    const sizeStr  = link.fileSizeLabel || formatFileSize(link.fileSizeBytes) || '';
-    const fmt      = link.format || '';
-    const audio    = link.audio || '';
-    const dlUrl    = link.downloadUrl || link.sourceUrl || '#';
-    const isPage   = !link.isDirectFile;
-
-    return `
-      <a class="dl-quality-card"
-         href="${escapeHtml(dlUrl)}"
-         target="_blank"
-         rel="noopener noreferrer"
-         title="${escapeHtml(resLbl)} — ${escapeHtml(link.sourceName || '')}">
-        <div class="dl-res-row">
-          <span class="dl-res-badge ${resCls}">⬇ ${escapeHtml(resLbl)}</span>
-          ${sizeStr ? `<span class="dl-size-label">${escapeHtml(sizeStr)}</span>` : ''}
-        </div>
-        <div class="dl-format-row">
-          ${fmt   ? `<span class="dl-format-tag">${escapeHtml(fmt)}</span>` : ''}
-          ${audio ? `<span class="dl-format-tag">${escapeHtml(audio)}</span>` : ''}
-          ${isPage ? `<span class="dl-format-tag">Info Page ↗</span>` : '<span class="dl-format-tag">Direct ↓</span>'}
-        </div>
-      </a>`;
-  }
-
-  /**
-   * Render download options from catalog variant data.
-   * Variants contain sourceUrl (info page) + qualities[] (resolutions).
-   * We show quality cards linking to the source info page.
-   * We do NOT fabricate direct download URLs.
-   */
-  function renderVariantSourceLinks(item, variants) {
-    const activeVariants = variants.filter(v => v.sourceUrl);
-    if (!activeVariants.length) return `
-      <div class="dl-state-banner dl-state-searching">
-        <span class="dl-state-icon">⏺</span>
-        <div class="dl-state-text">
-          <div class="dl-state-title">Searching for Download Options</div>
-          <div class="dl-state-desc">No source pages are currently indexed for this title. Discovery is ongoing.</div>
-        </div>
-      </div>`;
-
-    let html = '';
-    if (activeVariants.length > 1) {
-      html += `<div class="dl-sources-header">
-        <span class="dl-sources-label">Indexed Source Pages</span>
-        <span class="dl-sources-count">${activeVariants.length} Sources</span>
-      </div>`;
-    }
-
-    const PROVIDER_NAMES = {
-      '10moviez': '10Moviez',
-      'hdhub4u': 'HDHub4u',
-      'hdwall': 'HDWall'
-    };
-
-    activeVariants.forEach((v, idx) => {
-      const rawSrc = (v.source && String(v.source).trim().toLowerCase()) || '';
-      const sourceLabel = PROVIDER_NAMES[rawSrc]
-        || ((v.source && String(v.source).trim()) ? String(v.source).charAt(0).toUpperCase() + String(v.source).slice(1) : `Source ${idx + 1}`);
-      const langs = (v.languages && v.languages.length) ? v.languages.join(', ') : '';
-      const vQualities = Array.isArray(v.qualities) ? v.qualities : [];
-      const hasQualCards = vQualities.length > 0;
-
-      html += `
-        <div class="dl-source-block">
-          <div class="dl-source-header">
-            <div class="dl-source-name">
-              <span class="dl-source-icon">🌐</span>
-              ${escapeHtml(sourceLabel)}
-              ${langs ? `<span class="dl-source-lang-badge">${escapeHtml(langs)}</span>` : ''}
-            </div>
-          </div>`;
-
-      if (hasQualCards) {
-        html += `<div class="dl-quality-grid">`;
-        vQualities.forEach(q => {
-          const qRes   = q.resolution || q.label || String(q) || 'Unknown';
-          const qLabel = q.label || resolutionLabel(qRes);
-          const qCls   = resolutionClass(qRes);
-          html += `
-            <a class="dl-quality-card"
-               href="${escapeHtml(v.sourceUrl)}"
-               target="_blank"
-               rel="noopener noreferrer"
-               title="${escapeHtml(qLabel)} — opens source information page">
-              <div class="dl-res-row">
-                <span class="dl-res-badge ${qCls}">⬇ ${escapeHtml(qLabel)}</span>
-              </div>
-              <div class="dl-format-row">
-                ${v.releaseType ? `<span class="dl-format-tag">${escapeHtml(v.releaseType)}</span>` : ''}
-                ${v.audio      ? `<span class="dl-format-tag">${escapeHtml(v.audio)}</span>`      : ''}
-                <span class="dl-format-tag">Info Page ↗</span>
-              </div>
-              <div class="dl-source-ref-row">
-                <span class="dl-source-ref-btn">View Source Page ↗</span>
-              </div>
-            </a>`;
-        });
-        html += `</div>`;
-      }
-
-      html += `
-          <a class="dl-source-page-link"
-             href="${escapeHtml(v.sourceUrl)}"
-             target="_blank"
-             rel="noopener noreferrer">
-            <span class="dl-source-page-icon">🔗</span>
-            <span class="dl-source-page-text">
-              Open Source Information Page
-              <span class="dl-source-page-hint">
-                ${escapeHtml(sourceLabel)} — view available download options on the source site
-              </span>
-            </span>
-            <span class="dl-arrow-out">↗</span>
-          </a>
-        </div>`;
-    });
-
-    return html;
+      </div>
+    `;
   }
 
   /**
@@ -921,8 +820,6 @@
     DOM.btnActionSeasons = document.getElementById('btn-action-seasons');
 
     // Content Sections
-    DOM.metadataCardsGrid = document.getElementById('metadata-cards-grid');
-
     DOM.sectionTrailer = document.getElementById('section-trailer');
     DOM.trailerPreviewCard = document.getElementById('trailer-preview-card');
     DOM.trailerThumbBtn = document.getElementById('trailer-thumb-btn');
@@ -931,15 +828,9 @@
     DOM.btnTrailerModalOpen = document.getElementById('btn-trailer-modal-open');
     DOM.btnTrailerYtLink = document.getElementById('btn-trailer-yt-link');
 
-    DOM.sectionCast = document.getElementById('section-cast');
-    DOM.castCardsRow = document.getElementById('cast-cards-row');
-
     DOM.sectionSeasons = document.getElementById('section-seasons');
     DOM.seasonsTabBar = document.getElementById('seasons-tab-bar');
     DOM.seasonContentCard = document.getElementById('season-content-card');
-
-    DOM.sectionArtwork = document.getElementById('section-artwork');
-    DOM.artworkGrid = document.getElementById('artwork-grid');
 
     // Screenshots Section
     DOM.sectionScreenshots = document.getElementById('section-screenshots');
@@ -961,13 +852,6 @@
     DOM.trailerModalTitle = document.getElementById('trailer-modal-title');
     DOM.trailerModalClose = document.getElementById('trailer-modal-close');
     DOM.trailerIframe = document.getElementById('trailer-iframe');
-
-    DOM.artworkLightbox = document.getElementById('artwork-lightbox');
-    DOM.artworkModalClose = document.getElementById('artwork-modal-close');
-    DOM.artworkLightboxImg = document.getElementById('artwork-lightbox-img');
-    DOM.artworkLightboxCaption = document.getElementById('artwork-lightbox-caption');
-    DOM.btnArtPrev = document.getElementById('btn-art-prev');
-    DOM.btnArtNext = document.getElementById('btn-art-next');
 
     // Screenshots Lightbox
     DOM.screenshotsLightbox = document.getElementById('screenshots-lightbox');
@@ -1401,69 +1285,6 @@
   }
 
   /**
-   * Render Essential Metadata Summary Grid (8 High-Density Structured Cards)
-   */
-  function renderMetadataCards(item) {
-    if (!DOM.metadataCardsGrid) return;
-
-    const cards = [
-      {
-        icon: '📅',
-        label: 'Release Year',
-        val: item.year || 'Archive',
-        sub: item.year && item.year >= '2020' ? 'Modern Era' : (item.year && item.year >= '2000' ? 'Contemporary' : 'Classic Cinema')
-      },
-      {
-        icon: '🎬',
-        label: 'Classification',
-        val: item.type || 'Movie',
-        sub: item.season ? item.season : (item.releaseType || 'Feature Film')
-      },
-      {
-        icon: '🔊',
-        label: 'Sound System',
-        val: item.audio || 'Stereo Audio',
-        sub: (item.audioTracks && item.audioTracks.length) ? item.audioTracks.join(' • ') : 'Verified Master Audio'
-      },
-      {
-        icon: '📺',
-        label: 'Available Quality',
-        val: (item.qualities && item.qualities.length) ? item.qualities.join(' • ') : '1080p • 720p',
-        sub: `Top: ${(item.qualities && item.qualities.length) ? item.qualities[item.qualities.length - 1] : 'Full HD'}`
-      },
-      {
-        icon: '🌐',
-        label: 'Audio Languages',
-        val: (item.languages && item.languages.length) ? item.languages.join(', ') : 'Original Soundtrack',
-        sub: 'Multi-Track Support'
-      },
-      {
-        icon: '📡',
-        label: 'Platform / Network',
-        val: (item.platforms && item.platforms.length) ? item.platforms.join(', ') : (item.platform || 'Cinema Archive'),
-        sub: 'Verified Source Network'
-      },
-      {
-        icon: '📀',
-        label: 'Master Encoding',
-        val: item.releaseType || 'WEB-DL',
-        sub: `${item.variantCount || 1} Catalog Edition${item.variantCount === 1 ? '' : 's'}`
-      }
-    ];
-
-    DOM.metadataCardsGrid.innerHTML = cards.map(c => `
-      <div class="metadata-card">
-        <div class="meta-card-header">
-          <span class="meta-card-icon">${c.icon}</span>
-          <span class="meta-card-label">${escapeHtml(c.label)}</span>
-        </div>
-        <div class="meta-card-value">${escapeHtml(c.val)}</div>
-        <div class="meta-card-sub">${escapeHtml(c.sub)}</div>
-      </div>
-    `).join('');
-  }
-
-  /**
    * Render Official Trailer Section
    */
   function renderTrailerSection(item) {
@@ -1520,52 +1341,6 @@
     DOM.trailerLightbox.style.display = 'none';
     DOM.trailerLightbox.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
-  }
-
-  /**
-   * Render Cast & Creative Credits Cards
-   */
-  function renderCastCredits(item) {
-    if (!DOM.castCardsRow) return;
-
-    let directorName = 'Cinema Director';
-    let leadName = 'Leading Star';
-    let coStarName = 'Ensemble Cast';
-    let studioName = (item.platforms && item.platforms.length) ? item.platforms[0] : (item.platform || 'Cinema Production');
-
-    if (isSouthIndian(item)) {
-      directorName = 'Visionary Filmmaker';
-      leadName = 'Protagonist Lead';
-      coStarName = 'Key Ensemble';
-      studioName = studioName || 'South Cinema Studio';
-    } else if (isHollywood(item)) {
-      directorName = 'Principal Director';
-      leadName = 'Lead Actor';
-      coStarName = 'Supporting Lead';
-      studioName = studioName || 'International Studio';
-    } else if (isBollywood(item)) {
-      directorName = 'Director & Writer';
-      leadName = 'Lead Actor / Actress';
-      coStarName = 'Ensemble Lead';
-      studioName = studioName || 'Bollywood Production';
-    }
-
-    const castList = [
-      { name: directorName, role: 'Director & Screenplay', initials: 'DR', color: '#e50914' },
-      { name: leadName, role: 'Lead Actor / Actress', initials: 'LA', color: '#3b82f6' },
-      { name: coStarName, role: 'Supporting Ensemble', initials: 'EC', color: '#10b981' },
-      { name: studioName, role: 'Production & Distribution', initials: 'ST', color: '#f59e0b' }
-    ];
-
-    DOM.castCardsRow.innerHTML = castList.map(c => `
-      <div class="cast-card">
-        <div class="cast-avatar-circle" style="border-color: ${c.color};">
-          <span style="color: ${c.color}; font-weight: 800; font-size: 16px;">${c.initials}</span>
-        </div>
-        <div class="cast-name">${escapeHtml(c.name)}</div>
-        <div class="cast-role">${escapeHtml(c.role)}</div>
-      </div>
-    `).join('');
   }
 
   /**
@@ -1645,92 +1420,7 @@
     });
   }
 
-  /**
-   * Render Artwork Gallery & Lightbox Viewer
-   */
-  function renderArtworkGallery(item) {
-    if (!DOM.artworkGrid || !DOM.sectionArtwork) return;
 
-    const urls = [];
-    if (item.poster) urls.push({ url: item.poster, title: `${item.displayTitle} — Master Poster` });
-    if (item.sourcePosterUrl && item.sourcePosterUrl !== item.poster) {
-      urls.push({ url: item.sourcePosterUrl, title: `${item.displayTitle} — Archival Source Poster` });
-    }
-    (item.variants || []).forEach((v, idx) => {
-      if (v.poster && !urls.some(u => u.url === v.poster)) {
-        urls.push({ url: v.poster, title: `${item.displayTitle} — Edition #${idx + 1} Artwork` });
-      }
-    });
-
-    if (urls.length === 0) {
-      DOM.sectionArtwork.style.display = 'none';
-      return;
-    }
-
-    DOM.sectionArtwork.style.display = 'block';
-    state.currentArtworkList = urls;
-
-    DOM.artworkGrid.innerHTML = urls.map((art, idx) => `
-      <div class="artwork-card" data-index="${idx}" tabindex="0" title="Click to view full image">
-        <img 
-          src="${escapeHtml(art.url)}" 
-          alt="${escapeHtml(art.title)}" 
-          class="artwork-img"
-          loading="lazy"
-          onerror="this.onerror=null; this.src='${FALLBACK_POSTER}';"
-        />
-        <div class="artwork-overlay">
-          <span class="artwork-zoom-icon">🔍</span>
-          <span class="artwork-label">${escapeHtml(art.title)}</span>
-        </div>
-      </div>
-    `).join('');
-
-    // Wire clicks to lightbox
-    DOM.artworkGrid.querySelectorAll('.artwork-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const idx = parseInt(card.dataset.index, 10);
-        openArtworkLightbox(idx);
-      });
-      card.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          const idx = parseInt(card.dataset.index, 10);
-          openArtworkLightbox(idx);
-        }
-      });
-    });
-  }
-
-  function openArtworkLightbox(index) {
-    if (!DOM.artworkLightbox || !state.currentArtworkList || !state.currentArtworkList.length) return;
-
-    state.currentArtworkIndex = (index + state.currentArtworkList.length) % state.currentArtworkList.length;
-    const item = state.currentArtworkList[state.currentArtworkIndex];
-
-    if (DOM.artworkLightboxImg) {
-      DOM.artworkLightboxImg.src = item.url;
-      DOM.artworkLightboxImg.alt = item.title;
-      DOM.artworkLightboxImg.onerror = function() {
-        this.onerror = null;
-        this.src = FALLBACK_POSTER;
-      };
-    }
-    if (DOM.artworkLightboxCaption) {
-      DOM.artworkLightboxCaption.textContent = `${item.title} (${state.currentArtworkIndex + 1} of ${state.currentArtworkList.length})`;
-    }
-
-    DOM.artworkLightbox.style.display = 'flex';
-    DOM.artworkLightbox.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden';
-    if (DOM.artworkModalClose) DOM.artworkModalClose.focus();
-  }
-
-  function closeArtworkLightbox() {
-    if (!DOM.artworkLightbox) return;
-    DOM.artworkLightbox.style.display = 'none';
-    DOM.artworkLightbox.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = '';
-  }
 
   /**
    * Render Screenshots / Movie Stills Section & Lightbox
@@ -1895,7 +1585,6 @@
             <span class="release-tag tag-audio">🔊 ${escapeHtml(aud)}</span>
             <span class="release-tag tag-quality">📺 ${escapeHtml(qual)}</span>
             <span class="release-tag tag-lang">🌐 ${escapeHtml(langs)}</span>
-            ${v.sourceUrl ? `<a href="${escapeHtml(v.sourceUrl)}" target="_blank" rel="noopener noreferrer" class="release-link" title="Open verified informational article">🔗 Source Record ↗</a>` : ''}
           </div>
         </div>
       `;
@@ -1903,55 +1592,14 @@
   }
 
   /**
-   * Render Source Article Card
+   * Render Source Article Card (No-op: Problem 5 completely removes source reference UI)
    */
   function renderSourceArticleCard(item) {
-    if (!DOM.sourceArticleCard) return;
-
-    let sourceUrl = '';
-    if (item.variants && item.variants.length && item.variants[0].sourceUrl) {
-      sourceUrl = item.variants[0].sourceUrl;
-    } else if (item.sourceUrl) {
-      sourceUrl = item.sourceUrl;
+    if (DOM.sectionSourceArticle) DOM.sectionSourceArticle.style.display = 'none';
+    if (DOM.sourceArticleCard) {
+      DOM.sourceArticleCard.innerHTML = '';
+      DOM.sourceArticleCard.style.display = 'none';
     }
-
-    if (!sourceUrl) {
-      DOM.sourceArticleCard.innerHTML = `
-        <div class="source-card-empty">
-          <span class="source-empty-icon">ℹ️</span>
-          <p>This canonical record is indexed from verified master cinema catalogs without an external source article URL.</p>
-        </div>
-      `;
-      return;
-    }
-
-    let domain = 'Archival Source';
-    try {
-      const u = new URL(sourceUrl);
-      domain = u.hostname;
-    } catch (_) {}
-
-    DOM.sourceArticleCard.innerHTML = `
-      <div class="source-card-inner">
-        <div class="source-card-main">
-          <div class="source-domain-badge">
-            <span class="source-globe">🌐</span>
-            <span>${escapeHtml(domain)}</span>
-          </div>
-          <h3 class="source-headline">${escapeHtml(item.displayTitle)} — Verified Archival Source</h3>
-          <p class="source-notice">
-            This link connects to the external verified informational source record used to curate metadata, audio distributions, and quality specifications for this title. Opens in a secure external browser tab.
-          </p>
-          <div class="source-url-display">${escapeHtml(sourceUrl)}</div>
-        </div>
-        <div class="source-card-action">
-          <a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer" class="btn-source-out" title="Open external informational article in new tab">
-            <span>View Source Article</span>
-            <span class="arrow-out">↗</span>
-          </a>
-        </div>
-      </div>
-    `;
   }
 
   /**
@@ -1976,6 +1624,10 @@
   function populateLegacyModalStubs(item) {
     if (!DOM.modalPosterImg) return;
     DOM.modalPosterImg.src = item.poster || FALLBACK_POSTER;
+    DOM.modalPosterImg.onerror = function() {
+      this.onerror = null;
+      this.src = FALLBACK_POSTER;
+    };
     if (DOM.modalDisplayTitle) DOM.modalDisplayTitle.textContent = item.displayTitle;
     if (DOM.modalYearBadge) DOM.modalYearBadge.textContent = item.year || 'Year: N/A';
     if (DOM.modalTypeBadge) DOM.modalTypeBadge.textContent = item.type || 'Movie';
@@ -2157,20 +1809,11 @@
       DOM.btnActionSeasons.style.display = item.type === 'Web Series' ? 'inline-flex' : 'none';
     }
 
-    // 9. Essential Metadata Summary Grid
-    renderMetadataCards(item);
-
     // 10. Official Trailer Section
     renderTrailerSection(item);
 
-    // 11. Cast & Crew Credits
-    renderCastCredits(item);
-
     // 12. Seasons Section (Web Series Only)
     renderSeasonsSection(item);
-
-    // 13. Artwork Gallery
-    renderArtworkGallery(item);
 
     // 13b. Movie Screenshots / Stills Gallery
     renderScreenshotsSection(item);
@@ -2207,7 +1850,6 @@
    */
   function closeDetailView(updateHistory = true) {
     closeTrailerLightbox();
-    closeArtworkLightbox();
 
     state.inDetailsView = false;
     state.activeDetailItem = null;
@@ -2522,25 +2164,7 @@
       });
     }
 
-    // 8. Artwork Lightbox Events
-    if (DOM.artworkModalClose) {
-      DOM.artworkModalClose.addEventListener('click', closeArtworkLightbox);
-    }
-    if (DOM.artworkLightbox) {
-      DOM.artworkLightbox.addEventListener('click', (e) => {
-        if (e.target === DOM.artworkLightbox) closeArtworkLightbox();
-      });
-    }
-    if (DOM.btnArtPrev) {
-      DOM.btnArtPrev.addEventListener('click', () => {
-        openArtworkLightbox(state.currentArtworkIndex - 1);
-      });
-    }
-    if (DOM.btnArtNext) {
-      DOM.btnArtNext.addEventListener('click', () => {
-        openArtworkLightbox(state.currentArtworkIndex + 1);
-      });
-    }
+
 
     // 8b. Screenshots Lightbox Events
     if (DOM.btnScreenshotsModalClose) {
@@ -2585,8 +2209,6 @@
       if (e.key === 'Escape') {
         if (DOM.trailerLightbox && DOM.trailerLightbox.style.display !== 'none') {
           closeTrailerLightbox();
-        } else if (DOM.artworkLightbox && DOM.artworkLightbox.style.display !== 'none') {
-          closeArtworkLightbox();
         } else if (DOM.screenshotsLightbox && DOM.screenshotsLightbox.style.display !== 'none') {
           closeScreenshotLightbox();
         } else if (state.inDetailsView) {
@@ -2597,15 +2219,11 @@
           DOM.searchInput.blur();
         }
       } else if (e.key === 'ArrowLeft') {
-        if (DOM.artworkLightbox && DOM.artworkLightbox.style.display !== 'none') {
-          openArtworkLightbox(state.currentArtworkIndex - 1);
-        } else if (DOM.screenshotsLightbox && DOM.screenshotsLightbox.style.display !== 'none') {
+        if (DOM.screenshotsLightbox && DOM.screenshotsLightbox.style.display !== 'none') {
           openScreenshotLightbox(state.currentScreenshotIndex - 1);
         }
       } else if (e.key === 'ArrowRight') {
-        if (DOM.artworkLightbox && DOM.artworkLightbox.style.display !== 'none') {
-          openArtworkLightbox(state.currentArtworkIndex + 1);
-        } else if (DOM.screenshotsLightbox && DOM.screenshotsLightbox.style.display !== 'none') {
+        if (DOM.screenshotsLightbox && DOM.screenshotsLightbox.style.display !== 'none') {
           openScreenshotLightbox(state.currentScreenshotIndex + 1);
         }
       }

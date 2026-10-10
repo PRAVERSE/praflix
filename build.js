@@ -56,7 +56,7 @@ function main() {
   fs.mkdirSync(distDataDir, { recursive: true });
   console.log(`[2/6] Prepared target output structure at: ${DIST_DIR}`);
 
-  const runtimeFiles = ['index.html', 'styles.css', 'app.js'];
+  const runtimeFiles = ['index.html', 'styles.css', 'app.js', 'destination_resolver.js'];
   for (const rf of runtimeFiles) {
     const src = path.join(BASE_DIR, rf);
     const dst = path.join(DIST_DIR, rf);

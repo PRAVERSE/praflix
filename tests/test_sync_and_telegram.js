@@ -86,14 +86,15 @@ check(3, "Title with multiple qualities",
 
 // ----------------------------------------------------
 // 4. Title with no direct authorized download URL
+// Problem 5: Source references completely removed; renders clean unavailable state with 0 torrents/magnets
 // ----------------------------------------------------
-const rendersViewSource = appJs.includes('btn-version-view-source') &&
-                          appJs.includes('View Source') &&
-                          !appJs.includes('magnet:') &&
-                          !appJs.includes('.torrent');
-check(4, "Title with no direct authorized download URL",
-  rendersViewSource,
-  "(Presents clear 'View Source' action linking to verified source page; 0 torrents/magnets)"
+const cleanUnavailableState = appJs.includes('dl-state-none') &&
+                              !appJs.includes('btn-version-view-source') &&
+                              !appJs.includes('magnet:') &&
+                              !appJs.includes('.torrent');
+check(4, "Title with no direct authorized download URL renders clean unavailable state",
+  cleanUnavailableState,
+  "(Renders clean unavailable state with 0 source links and 0 torrents/magnets)"
 );
 
 // ----------------------------------------------------
@@ -311,11 +312,12 @@ check(5, "Title available from multiple providers",
   );
 
   // ----------------------------------------------------
-  // 15. GitHub Actions workflow configuration is valid
+  // 15. GitHub Actions workflow configuration is valid & persistence pathspecs verified
   // ----------------------------------------------------
   const workflowPath = path.join(BASE_DIR, '.github', 'workflows', 'daily-sync.yml');
   const workflowExists = fs.existsSync(workflowPath);
   let workflowValid = false;
+  let persistenceClean = false;
   if (workflowExists) {
     const wfContent = fs.readFileSync(workflowPath, 'utf8');
     workflowValid = wfContent.includes("cron: '0 0 * * *'") &&
@@ -326,10 +328,18 @@ check(5, "Title available from multiple providers",
                     wfContent.includes('npm run build') &&
                     wfContent.includes('npx wrangler deploy') &&
                     wfContent.includes('CLOUDFLARE_API_TOKEN');
+
+    // Verify step 7 has 0 nonexistent pathspecs and includes diagnostic missing file checks
+    persistenceClean = !wfContent.includes('catalog.csv') &&
+                       !wfContent.includes('catalog-normalized.json') &&
+                       !wfContent.includes('poster-index.json') &&
+                       wfContent.includes('REQUIRED_FILES=(') &&
+                       wfContent.includes('Required generated catalog file missing') &&
+                       wfContent.includes('git add data/catalog.json data/source-records.json');
   }
-  check(15, "GitHub Actions daily-sync workflow configuration is valid",
-    Boolean(workflowValid),
-    "(.github/workflows/daily-sync.yml: cron=0 0 * * *, concurrency, contents: write, sync->build->deploy)"
+  check(15, "GitHub Actions daily-sync workflow configuration is valid and persistence paths verified",
+    Boolean(workflowValid && persistenceClean),
+    "(.github/workflows/daily-sync.yml: cron=0 0 * * *, concurrency, contents: write, 0 nonexistent pathspecs, diagnostics enabled)"
   );
 
   // ----------------------------------------------------

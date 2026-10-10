@@ -94,7 +94,7 @@ console.log('Title text:', elements['details-display-title'].textContent);
 console.log('Screenshots section display:', elements['section-screenshots'].style.display);
 console.log('Screenshots grid contains screenshot card:', elements['screenshots-gallery-grid'].innerHTML.includes('screenshot-card'));
 console.log('Available versions contains 720p/1080p:', elements['download-section-inner'].innerHTML.includes('720p'));
-console.log('Available versions contains View Source:', elements['download-section-inner'].innerHTML.includes('View Source'));
+console.log('Available versions contains NO View Source (Problem 5):', !elements['download-section-inner'].innerHTML.includes('View Source'));
 
 // 3. Open Title 1 (13 Teen - no screenshots)
 window.location.hash = '#title=1';
@@ -104,7 +104,7 @@ console.log('\n--- Title 1 (13 Teen) ---');
 console.log('Title text:', elements['details-display-title'].textContent);
 console.log('Screenshots section display:', elements['section-screenshots'].style.display);
 console.log('Screenshots grid HTML empty:', elements['screenshots-gallery-grid'].innerHTML === '');
-console.log('Available versions contains View Source:', elements['download-section-inner'].innerHTML.includes('View Source'));
+console.log('Available versions contains NO View Source (Problem 5):', !elements['download-section-inner'].innerHTML.includes('View Source'));
 
 // 4. Back to Catalog
 window.location.hash = '';

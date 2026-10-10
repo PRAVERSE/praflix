@@ -1,0 +1,27 @@
+{
+  "generated": "2026-10-10T16:42:03.147Z",
+  "auditScope": "Full 13,678 download entries (75,768 links)",
+  "totalCatalogRecords": 13678,
+  "totalDownloadEntries": 13678,
+  "linkVerification": {
+    "totalLinksChecked": 75768,
+    "verified": 74915,
+    "broken": 117,
+    "temporarilyUnavailable": 732,
+    "unverified": 4
+  },
+  "titleAvailability": {
+    "titlesWithVerifiedWorkingDownloads": 7162,
+    "titlesUnavailableOrUnverified": 6516,
+    "totalTitles": 13678
+  },
+  "problem12Recoveries": {
+    "linksRecoveredFromExpiredDomains": 2222,
+    "titlesGainingVerifiedWorkingButtons": 46
+  },
+  "webSeriesPolicy": {
+    "ruleEnforced": "Complete-season or all-episodes package links only; individual episodes omitted; unavailable state displayed if no complete package"
+  },
+  "unresolvedCasesCount": 6516,
+  "unresolvedExplanation": "Titles without verified storage endpoints render clean unavailable state. Zero false-verified buttons."
+}

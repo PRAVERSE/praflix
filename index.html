@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PRAFLIX — A PRAVERSE Company | Movies &amp; Web Series Catalog</title>
   <meta name="description" content="PRAFLIX (A PRAVERSE Company) — Premium cinema discovery catalog indexing verified movies and web series organized chronologically with official poster artwork and metadata.">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=20261010_p12">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -190,12 +190,6 @@
         </div>
       </section>
 
-      <!-- Essential Metadata Summary Grid -->
-      <section class="details-section metadata-summary-section">
-        <h2 class="section-title"><span class="title-bar"></span>Essential Title Metadata</h2>
-        <div class="metadata-cards-grid" id="metadata-cards-grid"></div>
-      </section>
-
       <!-- Official Trailer & Videos Section -->
       <section class="details-section trailer-section" id="section-trailer">
         <h2 class="section-title"><span class="title-bar"></span>Official Trailers &amp; Previews</h2>
@@ -220,36 +214,12 @@
         </div>
       </section>
 
-      <!-- Cast & Crew / Key Information Section -->
-      <section class="details-section cast-section" id="section-cast">
-        <h2 class="section-title"><span class="title-bar"></span>Cast &amp; Creative Credits</h2>
-        <div class="cast-cards-row" id="cast-cards-row"></div>
-      </section>
-
       <!-- Seasons & Episodes Section (Web Series Only) -->
       <section class="details-section seasons-section" id="section-seasons" style="display:none;">
         <h2 class="section-title"><span class="title-bar"></span>Seasons &amp; Episode Guide</h2>
         <div class="seasons-container">
           <div class="seasons-tab-bar" id="seasons-tab-bar"></div>
           <div class="season-content-card" id="season-content-card"></div>
-        </div>
-      </section>
-
-      <!-- Artwork Gallery & Posters Section (Responsive Landscape Single-Image Viewer) -->
-      <section class="details-section artwork-section" id="section-artwork">
-        <div class="section-title-bar-row">
-          <h2 class="section-title"><span class="title-bar"></span>Artwork &amp; Posters Gallery</h2>
-          <div class="artwork-counter-wrap">
-            <span class="artwork-counter-badge" id="artwork-counter" aria-live="polite">1 of 1</span>
-          </div>
-        </div>
-        <div class="artwork-viewer-frame" id="artwork-viewer-frame">
-          <button class="artwork-viewer-nav-btn prev" id="btn-art-viewer-prev" aria-label="Previous artwork" title="Previous image (Left Arrow)">‹</button>
-          <div class="artwork-stage" id="artwork-stage" tabindex="0" role="region" aria-label="Artwork landscape viewer. Press Enter to view full size.">
-            <img id="artwork-stage-img" src="" alt="Artwork Preview" class="artwork-stage-img" />
-            <div class="artwork-stage-caption" id="artwork-stage-caption"></div>
-          </div>
-          <button class="artwork-viewer-nav-btn next" id="btn-art-viewer-next" aria-label="Next artwork" title="Next image (Right Arrow)">›</button>
         </div>
       </section>
 
@@ -282,19 +252,6 @@
       </div>
       <div class="trailer-iframe-wrap">
         <iframe id="trailer-iframe" src="" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-      </div>
-    </div>
-  </div>
-
-  <!-- Dedicated Artwork Lightbox Modal -->
-  <div class="artwork-lightbox" id="artwork-lightbox" role="dialog" aria-modal="true" aria-hidden="true" style="display:none;">
-    <div class="artwork-lightbox-dialog">
-      <button class="artwork-modal-close" id="artwork-modal-close" aria-label="Close artwork preview">×</button>
-      <img id="artwork-lightbox-img" src="" alt="Artwork Preview" class="artwork-lightbox-img" />
-      <div class="artwork-lightbox-caption" id="artwork-lightbox-caption"></div>
-      <div class="artwork-nav-btns" id="artwork-nav-btns">
-        <button class="artwork-nav-btn prev" id="btn-art-prev" aria-label="Previous artwork">‹</button>
-        <button class="artwork-nav-btn next" id="btn-art-next" aria-label="Next artwork">›</button>
       </div>
     </div>
   </div>
@@ -350,14 +307,14 @@
   </footer>
 
   <!-- Scripts: Compliant Catalog Data Chunks (<25 MiB Cloudflare Assets) + Search Controller -->
-  <script src="data/catalog_chunk_1.js"></script>
-  <script src="data/catalog_chunk_2.js"></script>
-  <script src="data/catalog_chunk_3.js"></script>
-  <script src="data/catalog_chunk_4.js"></script>
+  <script src="data/catalog_chunk_1.js?v=20261010_p12"></script>
+  <script src="data/catalog_chunk_2.js?v=20261010_p12"></script>
+  <script src="data/catalog_chunk_3.js?v=20261010_p12"></script>
+  <script src="data/catalog_chunk_4.js?v=20261010_p12"></script>
   <!-- Poster Validity Index: build-time computed set of canonicalIds with real poster files -->
-  <script src="data/poster-valid-ids.js?v=20261003_v2"></script>
+  <script src="data/poster-valid-ids.js?v=20261010_p12"></script>
   <!-- Central Destination Resolver (Rule A & Rule B fallback priority rules) -->
-  <script src="destination_resolver.js?v=20261009_v1"></script>
-  <script src="app.js?v=20261009_v1"></script>
+  <script src="destination_resolver.js?v=20261010_p12"></script>
+  <script src="app.js?v=20261010_p12"></script>
 </body>
 </html>

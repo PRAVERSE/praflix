@@ -12,6 +12,7 @@ secrets.*
 credentials.json
 data/cache/
 data/backup_*/
+data/*.backup.json
 
 # Dependencies
 node_modules/
@@ -26,6 +27,7 @@ __pycache__/
 .sync-report.json
 data/.sync-report.json
 new catalog of movie/
+DOWNLOAD LINK HERE/
 poster-yearwise-report/
 data/poster-yearwise-report/
 data/scripts/

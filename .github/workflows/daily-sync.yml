@@ -95,7 +95,39 @@ jobs:
         run: |
           git config user.name "PRAFLIX Automated Sync Bot"
           git config user.email "bot@praflix.us.ci"
-          git add data/catalog.json data/source-records.json data/catalog-manifest.json data/catalog-chunk-*.json data/catalog_chunk_*.js data/catalog.csv data/catalog-normalized.json data/poster-valid-ids.js data/poster-index.json
+
+          # Diagnostic pre-check: verify all expected generated catalog files exist before staging
+          REQUIRED_FILES=(
+            "data/catalog.json"
+            "data/source-records.json"
+            "data/catalog-manifest.json"
+            "data/downloads.json"
+            "data/poster-valid-ids.js"
+            "data/catalog-chunk-1.json"
+            "data/catalog-chunk-2.json"
+            "data/catalog-chunk-3.json"
+            "data/catalog-chunk-4.json"
+            "data/catalog_chunk_1.js"
+            "data/catalog_chunk_2.js"
+            "data/catalog_chunk_3.js"
+            "data/catalog_chunk_4.js"
+          )
+
+          MISSING_COUNT=0
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "::error::Required generated catalog file missing: '$file' (Expected: '$(pwd)/$file', Working Directory: '$(pwd)')"
+              MISSING_COUNT=$((MISSING_COUNT + 1))
+            fi
+          done
+
+          if [ $MISSING_COUNT -gt 0 ]; then
+            echo "::error::Persistence aborted: $MISSING_COUNT expected catalog file(s) missing from '$(pwd)'"
+            exit 1
+          fi
+
+          echo "✓ All required catalog assets verified in $(pwd). Staging files for persistence..."
+          git add data/catalog.json data/source-records.json data/catalog-manifest.json data/catalog-chunk-*.json data/catalog_chunk_*.js data/downloads.json data/poster-valid-ids.js
           if git diff --staged --quiet; then
             echo "No catalog modifications to commit today."
           else

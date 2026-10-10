@@ -56,50 +56,55 @@ check(3, "Cinematic Hero section contains poster, badges, specs, synopsis, and a
   "(Hero elements and primary action buttons intact, More Like This button removed)"
 );
 
-check(4, "Discovery sections exist in index.html with More Like This and Compliance Card removed",
-  html.includes('id="metadata-cards-grid"') &&
+check(4, "Unwanted details sections completely removed from index.html (Cast, Artwork, Metadata)",
+  !html.includes('id="metadata-cards-grid"') &&
+  !html.includes('id="section-cast"') &&
+  !html.includes('id="section-artwork"') &&
+  !html.includes('Essential Title Metadata') &&
+  !html.includes('Cast & Creative Credits') &&
+  !html.includes('Artwork & Posters Gallery') &&
   html.includes('id="section-trailer"') &&
-  html.includes('id="section-cast"') &&
   html.includes('id="section-seasons"') &&
-  html.includes('id="section-artwork"') &&
-  (html.includes('id="section-download"') || html.includes('id="section-technical"')) &&
-  !html.includes('id="section-related"') &&
-  !html.includes('class="compliance-card"'),
-  "(Metadata, Trailer, Cast, Seasons, Artwork, Available Versions intact; More Like This and Compliance Card removed)"
+  html.includes('id="section-screenshots"') &&
+  (html.includes('id="section-download"') || html.includes('id="section-technical"')),
+  "(Cast, Artwork, and Metadata sections completely removed; Trailer, Seasons, Screenshots, Downloads preserved)"
 );
 
-check(5, "Dedicated Lightboxes exist for Trailer and Artwork",
+check(5, "Trailer and Screenshots lightboxes preserved while Artwork lightbox is completely removed",
   html.includes('id="trailer-lightbox"') &&
   html.includes('id="trailer-iframe"') &&
-  html.includes('id="artwork-lightbox"') &&
-  html.includes('id="artwork-lightbox-img"') &&
-  html.includes('id="btn-art-prev"') &&
-  html.includes('id="btn-art-next"'),
-  "(Embedded trailer iframe lightbox and full artwork viewer present)"
+  html.includes('id="screenshots-lightbox"') &&
+  html.includes('id="screenshots-lightbox-img"') &&
+  !html.includes('id="artwork-lightbox"') &&
+  !html.includes('id="artwork-lightbox-img"'),
+  "(Trailer and screenshots lightboxes intact; artwork-lightbox completely removed)"
 );
 
 // 2. Inspect styles.css for responsive design and cinematic aesthetics
 const cssPath = path.join(__dirname, 'styles.css');
 const css = fs.readFileSync(cssPath, 'utf8');
 
-check(6, "Responsive CSS styles present for details view and breakpoints",
+check(6, "Responsive CSS styles present for details view while obsolete section styles are removed",
   css.includes('.title-details-view') &&
   css.includes('.details-hero-grid') &&
   css.includes('@media (max-width: 992px)') &&
   css.includes('@media (max-width: 768px)') &&
-  css.includes('.metadata-cards-grid') &&
   css.includes('.trailer-preview-card') &&
   css.includes('.seasons-tab-bar') &&
-  (css.includes('.artwork-stage') || css.includes('.artwork-grid')),
-  "(Complete responsive design rules for desktop, tablet, and mobile)"
+  css.includes('.screenshots-section') &&
+  !css.includes('.metadata-cards-grid') &&
+  !css.includes('.cast-cards-row') &&
+  !css.includes('.artwork-viewer-frame'),
+  "(Active details layout responsive; obsolete cast, metadata, and artwork CSS cleanly removed)"
 );
 
-check(7, "Lightbox styling supports backdrop blur and high z-index overlays",
+check(7, "Lightbox styling supports backdrop blur and high z-index overlays with artwork-lightbox removed",
   css.includes('.trailer-lightbox') &&
-  css.includes('.artwork-lightbox') &&
+  css.includes('.screenshots-lightbox') &&
+  !css.includes('.artwork-lightbox') &&
   (css.includes('z-index: 1100') || css.includes('z-index: 1000')) &&
   css.includes('backdrop-filter: blur'),
-  "(Cinematic lightboxes with dark blur backdrops)"
+  "(Trailer and screenshots lightboxes with dark blur backdrops; obsolete artwork lightbox removed)"
 );
 
 // 3. Inspect app.js logic and data simulation
@@ -361,6 +366,50 @@ check(27, "Unknown title ID renders not-found state in details view",
   elements['title-details-view'].style.display === 'block' &&
   elements['title-details-view'].innerHTML.includes('Title Not Found in Catalog'),
   "(Friendly 404 screen shown with Return to Master Catalog button)"
+);
+// Problem 6 Acceptance & Regression Tests
+// Test Movie details view rendering
+window.location.hash = '#title=2';
+if (window._listeners['hashchange']) window._listeners['hashchange'].forEach(fn => fn());
+
+check(28, "Problem 6: Movie details view does not contain Cast, Artwork, or Metadata sections",
+  !elements['metadata-cards-grid'] &&
+  !elements['section-cast'] &&
+  !elements['section-artwork'] &&
+  !elements['artwork-lightbox'] &&
+  elements['title-details-view'].style.display === 'block',
+  "(Movie #2 rendered without Cast, Artwork, or Metadata UI elements)"
+);
+
+// Test Web Series details view rendering
+window.location.hash = '#title=219';
+if (window._listeners['hashchange']) window._listeners['hashchange'].forEach(fn => fn());
+
+check(29, "Problem 6: Web Series details view does not contain Cast, Artwork, or Metadata sections",
+  !elements['metadata-cards-grid'] &&
+  !elements['section-cast'] &&
+  !elements['section-artwork'] &&
+  !elements['artwork-lightbox'] &&
+  elements['title-details-view'].style.display === 'block' &&
+  elements['section-seasons'].style.display === 'block',
+  "(Web Series #219 rendered without Cast, Artwork, or Metadata UI elements; Seasons preserved)"
+);
+
+check(30, "Problem 6: Main hero poster, synopsis, trailer, and download sections remain intact",
+  elements['details-poster-img'] !== undefined &&
+  elements['details-display-title'] !== undefined &&
+  elements['details-synopsis-text'] !== undefined &&
+  elements['section-trailer'] !== undefined &&
+  elements['section-download'] !== undefined,
+  "(Hero poster, title, synopsis, trailer, and downloads all preserved in details view)"
+);
+
+check(31, "Problem 6: Underlying catalog metadata and artwork files preserved without data loss",
+  catalog.length >= 13642 &&
+  catalog.some(r => r.poster && r.poster.length > 0) &&
+  catalog.some(r => r.variants && r.variants.length > 0) &&
+  fs.existsSync(path.join(__dirname, 'assets', 'posters')),
+  "(Underlying catalog.json maintains full baseline titles with poster & variants data, assets/posters intact)"
 );
 
 console.log('='.repeat(70));
