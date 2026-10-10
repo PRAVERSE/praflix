@@ -99,7 +99,7 @@ runTest('Git add command succeeds with exit code 0 when staging catalog files', 
     assert.ok(staged.includes('data/catalog-manifest.json'), 'Staged files must capture modified catalog-manifest.json');
   } finally {
     fs.writeFileSync(manifestPath, originalManifest, 'utf8');
-    execSync('git restore --staged .', { cwd: ROOT_DIR, stdio: 'pipe' });
+    execSync('git restore --staged data/catalog-manifest.json', { cwd: ROOT_DIR, stdio: 'pipe' });
   }
 });
 

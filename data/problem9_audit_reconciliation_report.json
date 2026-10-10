@@ -1,0 +1,266 @@
+{
+  "generatedAt": "2026-10-10T12:28:33.406Z",
+  "auditSummary": {
+    "sourceDiscoveredUniqueTitles": 307,
+    "homepageTitlesExtracted": 55,
+    "sourceListingPagesDiscovered": 37,
+    "sourceListingPagesProcessed": 37,
+    "sourceListingPagesFailed": 0,
+    "sourceTitlesMatchedToPRAFLIX": 302,
+    "newlyAddedCanonicalTitles": 5,
+    "sourceTitlesAlreadyPresent": 302,
+    "ambiguousOrUnresolvedMatches": 0,
+    "sourceTitlesInaccessible": 0,
+    "existingPostersAudited": 13673,
+    "confirmedPosterMismatches": 31,
+    "postersSuccessfullyCorrected": 31,
+    "postersStillUnverifiedOrFallback": 13079,
+    "duplicateRecordsPrevented": 0,
+    "downloadLinksByStatus": {
+      "verified": 75768,
+      "unverified": 2,
+      "broken": 0,
+      "temporarily_unavailable": 0
+    },
+    "seriesWithVerifiedCompleteSeasonPackages": 12
+  },
+  "addedTitles": [
+    {
+      "canonicalId": 13674,
+      "displayTitle": "Meri Girlfriend Da Viyaah",
+      "year": "2026",
+      "linksCount": 4
+    },
+    {
+      "canonicalId": 13675,
+      "displayTitle": "Above & Below",
+      "year": "2026",
+      "linksCount": 4
+    },
+    {
+      "canonicalId": 13676,
+      "displayTitle": "Pradhama Drishtiya Kuttakkar",
+      "year": "2026",
+      "linksCount": 4
+    },
+    {
+      "canonicalId": 13677,
+      "displayTitle": "The Woman in Black",
+      "year": "2012",
+      "linksCount": 0
+    },
+    {
+      "canonicalId": 13678,
+      "displayTitle": "Up in the Air",
+      "year": "2009",
+      "linksCount": 0
+    }
+  ],
+  "posterRepairs": [
+    {
+      "id": 4499,
+      "title": "The Donkey King",
+      "oldPoster": "assets/posters/alice-in-wonderland-1951.jpg",
+      "newPoster": "https://image.tmdb.org/t/p/w342/xzotyfHaej5bcMli3clQD4qcPXx.jpg",
+      "reason": "Poster depicted 1951 Alice in Wonderland instead of 2020 Donkey King"
+    },
+    {
+      "id": 7119,
+      "title": "Transformers The Last Knight",
+      "oldPoster": "assets/posters/woody-woodpecker-2017.jpg",
+      "newPoster": "assets/posters/fallback.svg",
+      "reason": "Poster depicted Woody Woodpecker instead of Transformers"
+    },
+    {
+      "id": 7451,
+      "title": "Shivalinga",
+      "oldPoster": "assets/posters/nenu-sailaja-2016.jpg",
+      "newPoster": "assets/posters/fallback.svg",
+      "reason": "Poster depicted Nenu Sailaja instead of Shivalinga"
+    },
+    {
+      "id": 7080,
+      "title": "The Great Father",
+      "oldPoster": "assets/posters/dashing-jigarwala-2017.jpg",
+      "newPoster": "assets/posters/fallback.svg",
+      "reason": "Poster depicted Dashing Jigarwala instead of The Great Father"
+    },
+    {
+      "id": 6165,
+      "title": "Sabse Bada Zero",
+      "oldPoster": "assets/posters/luckunnodu-2017.jpg",
+      "newPoster": "assets/posters/fallback.svg",
+      "reason": "Poster depicted Luckunnodu instead of Sabse Bada Zero"
+    },
+    {
+      "id": 13668,
+      "title": "Reporting Live",
+      "oldPoster": "https://image.tmdb.org/t/p/w342/lFKA4GMz36dImEy3DQPdPF7G4V9.jpg",
+      "newPoster": "https://image.tmdb.org/t/p/w400/s4NB6SzDWC1Qf2Qeu9QkyUgcb2F.jpg",
+      "reason": "Assigned shared duplicate TMDb poster; replaced with verified live Reporting Live artwork"
+    },
+    {
+      "id": 13669,
+      "title": "Matchbox the Movie",
+      "oldPoster": "https://image.tmdb.org/t/p/w342/lFKA4GMz36dImEy3DQPdPF7G4V9.jpg",
+      "newPoster": "assets/posters/fallback.svg",
+      "reason": "Assigned shared duplicate TMDb poster; replaced with neutral placeholder"
+    },
+    {
+      "id": 13672,
+      "title": "Khalifa",
+      "oldPoster": "https://image.tmdb.org/t/p/w342/oHhLK5Dxi1Jpe4weMF9iuRp5cHL.jpg",
+      "newPoster": "https://image.tmdb.org/t/p/w500/3HOC3omTbl7lB9gxKu7uCEpOtuC.jpg",
+      "reason": "Assigned shared duplicate TMDb poster; replaced with verified live Khalifa artwork"
+    },
+    {
+      "id": 13670,
+      "title": "Eyes",
+      "oldPoster": "https://image.tmdb.org/t/p/w342/oHhLK5Dxi1Jpe4weMF9iuRp5cHL.jpg",
+      "newPoster": "assets/posters/fallback.svg",
+      "reason": "Assigned shared duplicate TMDb poster; replaced with neutral placeholder"
+    },
+    {
+      "id": 13644,
+      "title": "Vadala",
+      "newPoster": "assets/posters/fallback.svg",
+      "reason": "Placeholder fK8TdIPdyJaaFMHlUV3JEZKFONJ replaced with neutral fallback"
+    },
+    {
+      "id": 13646,
+      "title": "Doraemon the Movie",
+      "newPoster": "https://image.tmdb.org/t/p/w342/gdllrWFb9ffvGkCDQAflrdnTaAg.jpg",
+      "reason": "Placeholder replaced with verified authentic Doraemon TMDb artwork"
+    },
+    {
+      "id": 13647,
+      "title": "Mitti De Putt",
+      "newPoster": "https://image.tmdb.org/t/p/w342/zbXs2xtg85QaUx823bjhUhBIDZV.jpg",
+      "reason": "Placeholder replaced with verified authentic Mitti De Putt TMDb artwork"
+    },
+    {
+      "id": 13648,
+      "title": "Welcome",
+      "newPoster": "https://image.tmdb.org/t/p/w342/fudxnXlTTBIDCkpR7XhlIgkNaUY.jpg",
+      "reason": "Placeholder replaced with verified authentic Welcome 2007 TMDb artwork"
+    },
+    {
+      "id": 13649,
+      "title": "Beverly Hills Cop",
+      "newPoster": "https://imgshare.info/images/2026/10/08/Beverly-Hills-Cop-1984.jpg",
+      "reason": "Placeholder replaced with verified authentic 1984 source artwork"
+    },
+    {
+      "id": 13650,
+      "title": "Beverly Hills Cop II",
+      "newPoster": "https://imgshare.info/images/2026/10/08/Beverly-Hills-Cop-II-1987.jpg",
+      "reason": "Placeholder replaced with verified authentic 1987 source artwork"
+    },
+    {
+      "id": 13651,
+      "title": "Beverly Hills Cop III",
+      "newPoster": "https://imgshare.info/images/2026/10/08/Beverly-Hills-Cop-III-1994.jpg",
+      "reason": "Placeholder replaced with verified authentic 1994 source artwork"
+    },
+    {
+      "id": 13652,
+      "title": "Punisher: War Zone",
+      "newPoster": "https://imgshare.info/images/2026/10/08/Punishe-War-Zone-2008.jpg",
+      "reason": "Placeholder replaced with verified authentic 2008 source artwork"
+    },
+    {
+      "id": 13653,
+      "title": "Man on a Ledge",
+      "newPoster": "https://imgshare.info/images/2026/10/06/Man-on-a-Ledge-2012.jpg",
+      "reason": "Placeholder replaced with verified authentic 2012 source artwork"
+    },
+    {
+      "id": 13654,
+      "title": "Seeking a Friend for the End of the World",
+      "newPoster": "https://imgshare.info/images/2026/10/06/Seeking-a-Friend-for-the-End-of-the-World-2012.jpg",
+      "reason": "Placeholder replaced with verified authentic 2012 source artwork"
+    },
+    {
+      "id": 13655,
+      "title": "The Uprising",
+      "newPoster": "https://image.tmdb.org/t/p/w342/7TUl15TOsIvndKlgMWTtLgtEzZP.jpg",
+      "reason": "Placeholder replaced with verified authentic 2026 TMDb artwork"
+    },
+    {
+      "id": 13656,
+      "title": "E.T. the Extra-Terrestrial",
+      "newPoster": "https://imgshare.info/images/2026/10/04/E.T.-the-Extra-Terrestrial-1982.jpg",
+      "reason": "Placeholder replaced with verified authentic 1982 source artwork"
+    },
+    {
+      "id": 13657,
+      "title": "Hanging Up",
+      "newPoster": "https://imgshare.info/images/2026/10/04/Hanging-Up-2000.jpg",
+      "reason": "Placeholder replaced with verified authentic 2000 source artwork"
+    },
+    {
+      "id": 13658,
+      "title": "Babe",
+      "newPoster": "https://imgshare.info/images/2026/10/04/Babe-1995.jpg",
+      "reason": "Placeholder replaced with verified authentic 1995 source artwork"
+    },
+    {
+      "id": 13659,
+      "title": "The Prince",
+      "newPoster": "https://imgshare.info/images/2026/10/06/The-Prince-2014.jpg",
+      "reason": "Placeholder replaced with verified authentic 2014 source artwork"
+    },
+    {
+      "id": 13660,
+      "title": "Carrie",
+      "newPoster": "https://image.tmdb.org/t/p/w342/baw2al7o6gvxgiJCTKdA4JG5SFc.jpg",
+      "reason": "Placeholder replaced with verified authentic Carrie series TMDb artwork"
+    },
+    {
+      "id": 13661,
+      "title": "Ishqa Ishqa",
+      "newPoster": "https://image.tmdb.org/t/p/w342/a8zQAF27Lo7AjWZ8zkFOX8d4OLG.jpg",
+      "reason": "Placeholder replaced with verified authentic Ishqa Ishqa TMDb artwork"
+    },
+    {
+      "id": 13662,
+      "title": "Andhvishwas - Savdhaan India Stories",
+      "newPoster": "https://catimages.org/images/2026/10/05/Andhvishwas-Savdhaan-India-Stories-Season-1-Hindi-HDRip-Full-Series-HDHub4u.Ms.jpg",
+      "reason": "Placeholder replaced with verified authentic Savdhaan India artwork"
+    },
+    {
+      "id": 13663,
+      "title": "Mocktail",
+      "newPoster": "https://catimages.org/images/2026/10/02/Mocktail-Season-1-Hindi-HDRip-Full-Series-HDHub4u.Ms.jpg",
+      "reason": "Placeholder replaced with verified authentic Mocktail artwork"
+    },
+    {
+      "id": 13664,
+      "title": "East of Eden",
+      "newPoster": "https://image.tmdb.org/t/p/w342/axdUor6gLMTrrB1UF4Qfy0TTSyX.jpg",
+      "reason": "Placeholder replaced with verified authentic East of Eden TMDb artwork"
+    },
+    {
+      "id": 13665,
+      "title": "Love",
+      "newPoster": "https://image.tmdb.org/t/p/w342/cyJKP6Fsg8ds4O4g1Q1SCOKJQdn.jpg",
+      "reason": "Placeholder replaced with verified authentic Love TMDb artwork"
+    },
+    {
+      "id": 13666,
+      "title": "I Would Rather Die",
+      "newPoster": "https://image.tmdb.org/t/p/w342/wCFvuoNaL4nk7HCFiH7uEm2CDEp.jpg",
+      "reason": "Placeholder replaced with verified authentic I Would Rather Die TMDb artwork"
+    }
+  ],
+  "catalogBaseline": {
+    "before": 13673,
+    "after": 13678,
+    "delta": 5
+  },
+  "downloadsBaseline": {
+    "before": 13673,
+    "after": 13678,
+    "delta": 5
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "timestamp": "2026-10-10T18:27:00.000Z",
+  "task": "Problem 10: Production Verification, Poster Accuracy & Download-Link Integrity",
+  "project": "C:\\Users\\hp\\OneDrive\\Desktop\\PRAFLIX",
+  "brand": "PRAFLIX — A PRAVERSE Company",
+  "liveWebsite": "https://praflix.us.ci",
+  "cloudflareWorker": "https://praflix.praverse-auth.workers.dev",
+  "backupLocations": {
+    "catalogPreProblem10": "data/catalog.pre-problem10.backup.json",
+    "downloadsPreProblem10": "data/downloads.pre-problem10.backup.json",
+    "posterValidIdsPreProblem10": "data/poster-valid-ids.pre-problem10.backup.js",
+    "catalogPreProblem9": "data/catalog.pre-problem9.backup.json",
+    "downloadsPreProblem9": "data/downloads.pre-problem9.backup.json"
+  },
+  "counts": {
+    "catalogRecords": 13678,
+    "downloadEntries": 13678,
+    "uniqueCanonicalIds": 13678,
+    "duplicateCanonicalIds": 0,
+    "catalogTitlesWithoutDownloadEntry": 0,
+    "catalogTitlesWithVerifiedLinks": 7182,
+    "catalogTitlesWithEmptyLinks": 6496
+  },
+  "posterAccuracy": {
+    "totalCatalogPosters": 13678,
+    "validPostersIndexed": 599,
+    "confirmedLocalPosterFiles": 549,
+    "verifiedRemoteArtworkUrls": 50,
+    "neutralFallbackPosters": 4854,
+    "missingLocalPosterFiles": 8225,
+    "inaccessibleRemoteArtwork": 0,
+    "repairedMismatchedPosters": 30,
+    "unresolvedSuspectedMismatches": 0
+  },
+  "downloadVerificationStatus": {
+    "verifiedLinks": 72693,
+    "unverifiedLinks": 4,
+    "brokenLinks": 2339,
+    "temporarilyUnavailableLinks": 732,
+    "totalLinks": 75768
+  },
+  "webSeriesCoverage": {
+    "totalWebSeries": 2373,
+    "seriesWithVerifiedCompletePackages": 1806,
+    "seriesWithOnlyIndividualEpisodes": 7,
+    "seriesWithEmptyLinkRecords": 560,
+    "seriesWithoutDownloadEntry": 0,
+    "individualEpisodeLinksExposedInUI": 0
+  },
+  "recoveredTitlesVerification": {
+    "13674": {
+      "title": "Meri Girlfriend Da Viyaah",
+      "year": "2026",
+      "type": "Movie",
+      "verificationStatus": "verified",
+      "linksCount": 4,
+      "poster": "https://image.tmdb.org/t/p/w500/bIeCwdwwig0CzohFMeKybfhnAKT.jpg"
+    },
+    "13675": {
+      "title": "Above & Below",
+      "year": "2026",
+      "type": "Movie",
+      "verificationStatus": "verified",
+      "linksCount": 4,
+      "poster": "https://image.tmdb.org/t/p/w400/7bOuu1SRALGwsG2fLCTvRkCmQBj.jpg"
+    },
+    "13676": {
+      "title": "Pradhama Drishtiya Kuttakkar",
+      "year": "2026",
+      "type": "Movie",
+      "verificationStatus": "verified",
+      "linksCount": 4,
+      "poster": "https://image.tmdb.org/t/p/w400/plDdL5IWMbNOf3ul4Yd34LzOqEs.jpg"
+    },
+    "13677": {
+      "title": "The Woman in Black",
+      "year": "2012",
+      "type": "Movie",
+      "verificationStatus": "unverified",
+      "linksCount": 0,
+      "poster": "assets/posters/fallback.svg"
+    },
+    "13678": {
+      "title": "Up in the Air",
+      "year": "2009",
+      "type": "Movie",
+      "verificationStatus": "unverified",
+      "linksCount": 0,
+      "poster": "assets/posters/fallback.svg"
+    }
+  },
+  "tests": {
+    "testSuitesRun": 9,
+    "testSuitesPassed": 9,
+    "totalAcceptanceChecks": 137,
+    "acceptanceChecksPassed": 137,
+    "passRate": "100%"
+  },
+  "buildAudit": {
+    "status": "READY_FOR_DEPLOYMENT",
+    "totalOutputFiles": 6641,
+    "maxFileLimit": 20000,
+    "largestAsset": "data/downloads.json (21.94 MiB)",
+    "catalogAsset": "data/catalog.json (20.27 MiB)",
+    "perAssetLimit": "25.00 MiB",
+    "allAssetsCompliant": true
+  },
+  "liveProductionComparison": {
+    "liveSiteOnline": true,
+    "liveDeployedRecords": 13673,
+    "localBuiltRecords": 13678,
+    "pendingDeploymentApproval": true
+  }
+}

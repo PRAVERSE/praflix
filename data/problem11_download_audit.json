@@ -1,0 +1,138 @@
+{
+  "generated": "2026-10-10T16:05:22.837Z",
+  "auditScope": "Full catalog & download database (100% coverage)",
+  "totalCatalogRecords": 13678,
+  "totalDownloadEntries": 13678,
+  "catalogToDownloadParityPercent": 100,
+  "linkVerification": {
+    "totalLinksChecked": 75768,
+    "verified": 72693,
+    "broken": 2339,
+    "temporarilyUnavailable": 732,
+    "unverified": 4
+  },
+  "titleAvailability": {
+    "titlesWithVerifiedWorkingDownloads": 7106,
+    "titlesUnavailableOrUnverified": 6572,
+    "totalTitles": 13678
+  },
+  "webSeriesPolicy": {
+    "totalWebSeries": 2373,
+    "completeSeasonPackagesVerified": 1777,
+    "individualEpisodeOnlyOmitted": 36,
+    "seriesWithEmptyLinks": 560,
+    "ruleEnforced": "Complete-season or all-episodes package links only; individual episodes omitted; unavailable state displayed if no complete package"
+  },
+  "brokenDestinationsSummary": {
+    "invalid_redirect_survey_parking": 2222,
+    "http_404_not_found": 117
+  },
+  "temporarilyUnavailableSummary": {
+    "cloudflare_challenge_inconclusive": 691,
+    "connection_timeout_inconclusive": 41
+  },
+  "topHostBreakdown": [
+    {
+      "hostStatus": "hubcdn.io [verified]",
+      "count": 20651
+    },
+    {
+      "hostStatus": "hubcdn.wiki [verified]",
+      "count": 19479
+    },
+    {
+      "hostStatus": "hubdrive.pics [verified]",
+      "count": 15677
+    },
+    {
+      "hostStatus": "hubcloud.ist [verified]",
+      "count": 13469
+    },
+    {
+      "hostStatus": "new1.filesdl.in [verified]",
+      "count": 2562
+    },
+    {
+      "hostStatus": "new6.filesdl.site [broken]",
+      "count": 1079
+    },
+    {
+      "hostStatus": "new1.filesdl.site [broken]",
+      "count": 701
+    },
+    {
+      "hostStatus": "hdhub4uhd.xyz [temporarily_unavailable]",
+      "count": 628
+    },
+    {
+      "hostStatus": "hubcdn.club [verified]",
+      "count": 475
+    },
+    {
+      "hostStatus": "new2.filesdl.site [broken]",
+      "count": 327
+    },
+    {
+      "hostStatus": "hubcloud.club [verified]",
+      "count": 258
+    },
+    {
+      "hostStatus": "botdrivea.filesdl.in [broken]",
+      "count": 117
+    },
+    {
+      "hostStatus": "new5.filesdl.site [broken]",
+      "count": 114
+    },
+    {
+      "hostStatus": "linkmake.in [temporarily_unavailable]",
+      "count": 63
+    },
+    {
+      "hostStatus": "hubcloud.foo [temporarily_unavailable]",
+      "count": 41
+    },
+    {
+      "hostStatus": "hubcloud.one [verified]",
+      "count": 26
+    },
+    {
+      "hostStatus": "hubcloud.tel [verified]",
+      "count": 15
+    },
+    {
+      "hostStatus": "ww5.filesdl.in [verified]",
+      "count": 14
+    },
+    {
+      "hostStatus": "new5.gdflix.dad [verified]",
+      "count": 13
+    },
+    {
+      "hostStatus": "hubcloud.dad [verified]",
+      "count": 13
+    },
+    {
+      "hostStatus": "hubcloud.bz [verified]",
+      "count": 11
+    },
+    {
+      "hostStatus": "filesdl.in [verified]",
+      "count": 8
+    },
+    {
+      "hostStatus": "new5.gdflix.net [verified]",
+      "count": 5
+    },
+    {
+      "hostStatus": "new6.filesdl.top [unverified]",
+      "count": 4
+    },
+    {
+      "hostStatus": "new16.gdflix.net [verified]",
+      "count": 3
+    }
+  ],
+  "unresolvedCasesCount": 6608,
+  "disclaimer": "Titles without confirmed verified storage destinations render clean unavailable state. Zero false-verified buttons."
+}

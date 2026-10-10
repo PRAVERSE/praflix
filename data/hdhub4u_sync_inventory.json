@@ -1,0 +1,27 @@
+{
+  "syncTimestamp": "2026-10-10T11:01:04.591Z",
+  "liveCrawl": {
+    "attempted": true,
+    "succeeded": false,
+    "error": "This operation was aborted"
+  },
+  "metrics": {
+    "totalDiscovered": 14451,
+    "uniqueMovies": 12688,
+    "uniqueWebSeries": 1763,
+    "alreadyPresentInCatalog": 12960,
+    "newlyAddedToCatalog": 0,
+    "existingUpdatedWithLinks": 12960,
+    "duplicatesPrevented": 1491,
+    "ambiguousTitlesCount": 0,
+    "downloadOptionsCollected": 41038,
+    "destinationsVerified": 41038,
+    "destinationsBroken": 0,
+    "destinationsTemporarilyUnavailable": 0,
+    "destinationsUnverified": 0,
+    "titlesWithDownloads": 4769,
+    "titlesWithoutDownloads": 8191
+  },
+  "newlyAddedTitles": [],
+  "ambiguousTitles": []
+}

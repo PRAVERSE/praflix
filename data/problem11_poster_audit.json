@@ -1,0 +1,19 @@
+{
+  "generated": "2026-10-10T14:36:09.832Z",
+  "totalRecords": 13678,
+  "validLocalPosters": 567,
+  "validRemotePosters": 3231,
+  "fallbackPosters": 9880,
+  "totalRepaired": 8269,
+  "statusBreakdown": {
+    "valid_local": 567,
+    "repaired_missing_local_to_tmdb": 3172,
+    "repaired_missing_local_to_fallback": 5068,
+    "promoted_fallback_to_tmdb": 27,
+    "valid_fallback": 4810,
+    "valid_remote": 32,
+    "repaired_mismatch_to_fallback": 2
+  },
+  "totalValidInIndex": 3798,
+  "knownMismatchesFixed": 2
+}
