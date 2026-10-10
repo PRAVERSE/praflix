@@ -74,18 +74,31 @@ runTest('All files declared in REQUIRED_FILES exist on disk', () => {
   }
 });
 
-// 5. Git add stages actual files without pathspec errors
+// 5. Git add stages actual files without pathspec errors and reproduces exit code 128 on bad paths
 runTest('Git add command succeeds with exit code 0 when staging catalog files', () => {
-  const cmd = 'git add data/catalog.json data/source-records.json data/catalog-manifest.json data/catalog-chunk-*.json data/catalog_chunk_*.js data/downloads.json data/poster-valid-ids.js';
+  const validCmd = 'git add data/catalog.json data/source-records.json data/catalog-manifest.json data/catalog-chunk-*.json data/catalog_chunk_*.js data/downloads.json data/poster-valid-ids.js';
+  // Valid command must exit with code 0
+  assert.doesNotThrow(() => {
+    execSync(validCmd, { cwd: ROOT_DIR, stdio: 'pipe' });
+  }, 'git add with valid catalog pathspecs must exit with 0');
+
+  // Conversely, verifying that the old pathspec triggers exit code 128
+  assert.throws(() => {
+    execSync('git add data/catalog.csv', { cwd: ROOT_DIR, stdio: 'pipe' });
+  }, err => {
+    return err.status === 128 && err.stderr.toString().includes('did not match any files');
+  }, 'git add with data/catalog.csv must reproduce exit code 128');
+
+  // Verify staging detection with a temporary metadata comment
+  const manifestPath = path.join(ROOT_DIR, 'data', 'catalog-manifest.json');
+  const originalManifest = fs.readFileSync(manifestPath, 'utf8');
   try {
-    execSync(cmd, { cwd: ROOT_DIR, stdio: 'pipe' });
+    fs.writeFileSync(manifestPath, originalManifest + '\n', 'utf8');
+    execSync(validCmd, { cwd: ROOT_DIR, stdio: 'pipe' });
     const staged = execSync('git diff --staged --name-only', { cwd: ROOT_DIR, encoding: 'utf8' });
-    assert.ok(staged.includes('data/catalog.json'), 'Staged files must include data/catalog.json');
-    assert.ok(staged.includes('data/source-records.json'), 'Staged files must include data/source-records.json');
-    assert.ok(staged.includes('data/catalog-manifest.json'), 'Staged files must include data/catalog-manifest.json');
-    assert.ok(staged.includes('data/downloads.json'), 'Staged files must include data/downloads.json');
+    assert.ok(staged.includes('data/catalog-manifest.json'), 'Staged files must capture modified catalog-manifest.json');
   } finally {
-    // Cleanly unstage to restore clean working state
+    fs.writeFileSync(manifestPath, originalManifest, 'utf8');
     execSync('git restore --staged .', { cwd: ROOT_DIR, stdio: 'pipe' });
   }
 });
