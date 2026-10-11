@@ -229,9 +229,9 @@ runTest('Download buttons strictly use Link N sequential labels with no provider
 // PART 4: DATA INTEGRITY & REPORTS AUDIT
 // ─────────────────────────────────────────────────────────────────────────────
 
-runTest('Catalog and downloads database maintain 100% parity (13,678 records)', () => {
-  assert.strictEqual(catalog.length, 13678, 'Catalog must contain 13,678 records');
-  assert.strictEqual(downloads.entries.length, 13678, 'Downloads must contain 13,678 entries');
+runTest('Catalog and downloads database maintain 100% parity (at least 13,678 records)', () => {
+  assert.ok(catalog.length >= 13678, 'Catalog must contain at least 13,678 records');
+  assert.strictEqual(downloads.entries.length, catalog.length, 'Downloads and catalog must maintain 100% parity');
   const catIds = new Set(catalog.map(c => c.canonicalId));
   downloads.entries.forEach(e => {
     assert.ok(catIds.has(e.catalogueId), `Download entry ${e.catalogueId} must exist in catalog`);

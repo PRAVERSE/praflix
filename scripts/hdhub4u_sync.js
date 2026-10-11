@@ -222,37 +222,14 @@ function parseListingPage(html, baseUrl = SOURCE_BASE_URL) {
   const categoryUrls = [];
   const seenUrls = new Set();
 
-  // 1. Classic article layout: <article ...> ... <a href="..."> ... <img src="..." alt="...">
-  const articleRegex = /<article[^>]*>[\s\S]*?<a\s+href="([^"]+)"[^>]*>[\s\S]*?<img[^>]*src="([^"]+)"[^>]*alt="([^"]+)"/gi;
-  let match;
-  while ((match = articleRegex.exec(html)) !== null) {
-    const sourceUrl = match[1];
-    const posterUrl = match[2];
-    const rawTitle = match[3];
-
-    if (!seenUrls.has(sourceUrl)) {
-      seenUrls.add(sourceUrl);
-      titles.push({
-        sourceUrl,
-        posterUrl,
-        rawTitle
-      });
-    }
-  }
-
-  // 2. Live thumb / figure layout: <a ... href="..."><img ... src="..." alt="...">
-  const cardRegex = /<a[^>]+href="([^"]+)"[^>]*>[\s\S]*?<img[^>]+src="([^"]+)"[^>]+alt="([^"]+)"/gi;
-  while ((match = cardRegex.exec(html)) !== null) {
-    let sourceUrl = match[1].trim();
-    const posterUrl = match[2].trim();
-    const rawTitle = match[3].replace(/&#038;/g, '&').replace(/&#8211;/g, '-').replace(/&amp;/g, '&').trim();
-
+  function addTitle(rawUrl, rawImg, rawTitle) {
+    if (!rawUrl || !rawTitle) return;
+    let sourceUrl = rawUrl.trim();
     if (sourceUrl.includes('disclaimer') || sourceUrl.includes('apk') || sourceUrl.includes('how-to') ||
         sourceUrl.includes('join') || sourceUrl.includes('contact') || sourceUrl.includes('/category/') ||
         sourceUrl.includes('/tag/') || sourceUrl === '/' || sourceUrl.startsWith('#')) {
-      continue;
+      return;
     }
-
     if (!sourceUrl.startsWith('http')) {
       try {
         sourceUrl = new URL(sourceUrl, baseUrl).href;
@@ -260,14 +237,40 @@ function parseListingPage(html, baseUrl = SOURCE_BASE_URL) {
         sourceUrl = `${baseUrl.replace(/\/+$/, '')}/${sourceUrl.replace(/^\/+/, '')}`;
       }
     }
-
-    if (!seenUrls.has(sourceUrl) && rawTitle && posterUrl && !posterUrl.includes('logo')) {
+    const cleanT = rawTitle.replace(/&#038;/g, '&').replace(/&#8211;/g, '-').replace(/&amp;/g, '&').trim();
+    const poster = (rawImg || '').trim();
+    if (!seenUrls.has(sourceUrl) && cleanT && poster && !poster.includes('logo')) {
       seenUrls.add(sourceUrl);
       titles.push({
         sourceUrl,
-        posterUrl,
-        rawTitle
+        posterUrl: poster,
+        rawTitle: cleanT
       });
+    }
+  }
+
+  // 1. Classic article layout: <article ...> ... </article>
+  const articleRegex = /<article[^>]*>([\s\S]*?)<\/article>/gi;
+  let match;
+  while ((match = articleRegex.exec(html)) !== null) {
+    const block = match[1];
+    const linkMatch = block.match(/<a\s+[^>]*href="([^"]+)"[^>]*>/i);
+    const imgMatch = block.match(/<img\s+[^>]*src="([^"]+)"[^>]*>/i);
+    const titleMatch = block.match(/alt="([^"]+)"/i) || block.match(/<h2[^>]*>[\s\S]*?<a[^>]*>([^<]+)<\/a>/i);
+    if (linkMatch && titleMatch) {
+      addTitle(linkMatch[1], imgMatch ? imgMatch[1] : '', titleMatch[1]);
+    }
+  }
+
+  // 2. Modern thumb/figure layout: <li class="...thumb..."> ... </li>
+  const liRegex = /<li[^>]*class="[^"]*thumb[^"]*"[^>]*>([\s\S]*?)<\/li>/gi;
+  while ((match = liRegex.exec(html)) !== null) {
+    const block = match[1];
+    const linkMatch = block.match(/<figure>[\s\S]*?<a\s+[^>]*href="([^"]+)"[^>]*>/i) || block.match(/<a\s+[^>]*href="([^"]+)"[^>]*>/i);
+    const imgMatch = block.match(/<img\s+[^>]*src="([^"]+)"[^>]*>/i);
+    const titleMatch = block.match(/<figcaption>[\s\S]*?<p>([^<]+)<\/p>/i) || block.match(/alt="([^"]+)"/i);
+    if (linkMatch && titleMatch) {
+      addTitle(linkMatch[1], imgMatch ? imgMatch[1] : '', titleMatch[1]);
     }
   }
 
@@ -510,6 +513,69 @@ async function runHDHub4uSync(options = {}) {
   (hdhubCompleteData.movies || []).forEach(m => registerDiscovered(m, false));
   (hdhubCompleteData.webSeries || []).forEach(s => registerDiscovered(s, true));
 
+  // Process and ingest live discovered items from live crawl / probe
+  let newlyDiscoveredLiveCount = 0;
+  if (liveDiscoveredItems.length > 0) {
+    console.log(`Evaluating ${liveDiscoveredItems.length} items from live HDHub4u listing...`);
+    for (const card of liveDiscoveredItems) {
+      const slug = urlSlug(card.sourceUrl);
+      const key = slug || (card.rawTitle.toLowerCase().trim());
+      if (!discoveredItemsMap.has(key)) {
+        newlyDiscoveredLiveCount++;
+        const isSeries = detectContentType(card.rawTitle, '', card.sourceUrl) === 'Web Series';
+        let detailData = null;
+        if (liveReachable && !options.skipNetwork) {
+          try {
+            console.log(`[LIVE DISCOVERY] Fetching detail for new release: ${card.rawTitle}`);
+            const detailResp = await fetchWithRetry(card.sourceUrl, { timeoutMs: 8000, retries: 1 });
+            if (detailResp.ok && detailResp.text) {
+              detailData = parseDetailPage(detailResp.text, card.sourceUrl);
+            }
+          } catch (dErr) {
+            console.warn(`[WARN] Failed to fetch live detail page for ${card.sourceUrl}: ${dErr.message}`);
+          }
+        }
+
+        const itemObj = detailData ? {
+          title: detailData.rawTitle || card.rawTitle,
+          sourceUrl: card.sourceUrl,
+          posterUrl: detailData.posterUrl || card.posterUrl,
+          qualities: detailData.downloadOptions || []
+        } : {
+          title: card.rawTitle,
+          sourceUrl: card.sourceUrl,
+          posterUrl: card.posterUrl,
+          qualities: []
+        };
+
+        registerDiscovered(itemObj, isSeries);
+
+        // Also record into durable snapshot so subsequent runs preserve it
+        if (isSeries) {
+          if (!hdhubCompleteData.webSeries) hdhubCompleteData.webSeries = [];
+          hdhubCompleteData.webSeries.push(itemObj);
+        } else {
+          if (!hdhubCompleteData.movies) hdhubCompleteData.movies = [];
+          hdhubCompleteData.movies.push(itemObj);
+        }
+      } else {
+        // Existing item in snapshot: ensure live poster is adopted if existing had none
+        const existing = discoveredItemsMap.get(key);
+        if ((!existing.posterUrl || existing.posterUrl.includes('fallback')) && card.posterUrl && !card.posterUrl.includes('logo')) {
+          existing.posterUrl = card.posterUrl;
+        }
+      }
+    }
+    if (newlyDiscoveredLiveCount > 0) {
+      console.log(`✓ Ingested ${newlyDiscoveredLiveCount} newly discovered titles from live source crawl.`);
+      try {
+        fs.writeFileSync(HDHUB4U_JSON_PATH, JSON.stringify(hdhubCompleteData, null, 2), 'utf8');
+      } catch (saveErr) {
+        console.warn(`[WARN] Failed to update durable JSON inventory: ${saveErr.message}`);
+      }
+    }
+  }
+
   console.log(`Total unique HDHub4u source items assembled: ${discoveredItemsMap.size.toLocaleString()}`);
 
   // 3. Match Discovered Items against PRAFLIX Catalog
@@ -553,6 +619,8 @@ async function runHDHub4uSync(options = {}) {
   let uniqueSeriesDiscovered = 0;
   let alreadyPresentCount = 0;
   let newlyAddedCount = 0;
+  let newlyAddedMovies = 0;
+  let newlyAddedSeries = 0;
   let existingUpdatedCount = 0;
   let duplicatesPrevented = 0;
   let ambiguousMatchesCount = 0;
@@ -653,6 +721,8 @@ async function runHDHub4uSync(options = {}) {
     } else {
       // Genuinely missing title! Add to catalog
       newlyAddedCount++;
+      if (isSeries) newlyAddedSeries++;
+      else newlyAddedMovies++;
       maxCanonicalId++;
       targetCanonicalId = maxCanonicalId;
 
@@ -897,6 +967,7 @@ async function runHDHub4uSync(options = {}) {
       succeeded: liveCrawlSucceeded,
       interrupted: liveCrawlInterrupted,
       liveDiscoveredCount: liveDiscoveredItems.length,
+      newlyDiscoveredCount: newlyDiscoveredLiveCount,
       error: liveNetworkError
     },
     durableSnapshot: {
@@ -913,6 +984,9 @@ async function runHDHub4uSync(options = {}) {
       uniqueWebSeries: uniqueSeriesDiscovered,
       alreadyPresentInCatalog: alreadyPresentCount,
       newlyAddedToCatalog: newlyAddedCount,
+      newlyAddedMovies: newlyAddedMovies,
+      newlyAddedSeries: newlyAddedSeries,
+      newlyDiscoveredLive: newlyDiscoveredLiveCount,
       existingUpdatedWithLinks: existingUpdatedCount,
       duplicatesPrevented: duplicatesPrevented,
       ambiguousTitlesCount: ambiguousMatchesCount,

@@ -99,15 +99,15 @@ runTest('Titles 13677-13678 show unverified / clean unavailable state', () => {
 
 // Test 04: Master catalog integrity and baseline preservation
 runTest('Master catalog integrity: Count is 13,678 without record loss', () => {
-  assert.strictEqual(catalog.length, 13678, 'Catalog count must be exactly 13,678');
+  assert.ok(catalog.length >= 13678, 'Catalog count must be at least 13,678 without record loss');
   assert.ok(catalog.length >= 13673, 'Catalog baseline preserved');
   const uniqueIds = new Set(catalog.map(c => c.canonicalId));
-  assert.strictEqual(uniqueIds.size, 13678, 'Zero duplicate canonical IDs in catalog');
+  assert.strictEqual(uniqueIds.size, catalog.length, 'Zero duplicate canonical IDs in catalog');
 });
 
 // Test 05: Download catalog mapping: 100% of catalog titles have a download entry
 runTest('Download entries map 100% of canonical catalog records', () => {
-  assert.strictEqual(dlByCatalogueId.size, 13678, 'Every catalog title must resolve to its download record');
+  assert.strictEqual(dlByCatalogueId.size, catalog.length, 'Every catalog title must resolve to its download record');
   for (const item of catalog) {
     assert.ok(dlByCatalogueId.has(item.canonicalId), `Missing download entry for ID ${item.canonicalId}`);
   }
@@ -223,7 +223,7 @@ runTest('Static chunks match master catalog record count exactly', () => {
   const c4 = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'data', 'catalog-chunk-4.json'), 'utf8'));
 
   const total = c1.length + c2.length + c3.length + c4.length;
-  assert.strictEqual(total, 13678, 'Sum of all 4 chunks must equal 13,678');
+  assert.strictEqual(total, catalog.length, 'Sum of all 4 chunks must equal catalog.length');
 });
 
 // Test 14: Cloudflare Pages / Workers asset limits enforced

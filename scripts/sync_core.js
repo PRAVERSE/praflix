@@ -264,8 +264,21 @@ async function syncProvider(providerName, catalog, sourceRecords, options = {}) 
       try {
         const hdhubSync = require('./hdhub4u_sync');
         const syncReport = await hdhubSync.runHDHub4uSync(options);
-        result.newMovies = syncReport.metrics.newlyAddedToCatalog;
-        result.newSeries = 0;
+        // Synchronize in-memory catalog and sourceRecords with newly persisted data from hdhub4u_sync
+        if (fs.existsSync(CATALOG_PATH)) {
+          const updatedCat = JSON.parse(fs.readFileSync(CATALOG_PATH, 'utf8'));
+          catalog.length = 0;
+          catalog.push(...updatedCat);
+        }
+        if (fs.existsSync(SOURCES_PATH)) {
+          const updatedSrc = JSON.parse(fs.readFileSync(SOURCES_PATH, 'utf8'));
+          sourceRecords.length = 0;
+          sourceRecords.push(...updatedSrc);
+        }
+        result.liveCrawl = syncReport.liveCrawl;
+        result.durableSnapshot = syncReport.durableSnapshot;
+        result.newMovies = syncReport.metrics.newlyAddedMovies !== undefined ? syncReport.metrics.newlyAddedMovies : syncReport.metrics.newlyAddedToCatalog;
+        result.newSeries = syncReport.metrics.newlyAddedSeries || 0;
         result.updatedExisting = syncReport.metrics.existingUpdatedWithLinks;
         result.itemsProcessed = syncReport.metrics.totalDiscovered;
         return result;
@@ -486,6 +499,15 @@ function formatTelegramReport(summary) {
       text += '🎬 New Movies: —\n';
       text += '📺 New Series: —\n\n';
     } else if (res) {
+      if (res.liveCrawl) {
+        const liveDesc = res.liveCrawl.liveReachable
+          ? `Reachable (${res.liveCrawl.liveDiscoveredCount || 0} live titles parsed)`
+          : 'Offline / Interrupted';
+        text += `🌐 Live Crawl: ${liveDesc}\n`;
+      }
+      if (res.durableSnapshot) {
+        text += `📦 Snapshot Reconciliation: ${(res.durableSnapshot.recordCount || 0).toLocaleString()} titles\n`;
+      }
       text += `🎬 New Movies: ${res.newMovies}\n`;
       text += `📺 New Series: ${res.newSeries}\n\n`;
     } else {
