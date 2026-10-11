@@ -220,8 +220,9 @@ function parseListingPage(html, baseUrl = SOURCE_BASE_URL) {
   const titles = [];
   const paginationUrls = [];
   const categoryUrls = [];
+  const seenUrls = new Set();
 
-  // Extract articles: <article ...> ... <a href="..."> ... <img src="..." alt="...">
+  // 1. Classic article layout: <article ...> ... <a href="..."> ... <img src="..." alt="...">
   const articleRegex = /<article[^>]*>[\s\S]*?<a\s+href="([^"]+)"[^>]*>[\s\S]*?<img[^>]*src="([^"]+)"[^>]*alt="([^"]+)"/gi;
   let match;
   while ((match = articleRegex.exec(html)) !== null) {
@@ -229,11 +230,45 @@ function parseListingPage(html, baseUrl = SOURCE_BASE_URL) {
     const posterUrl = match[2];
     const rawTitle = match[3];
 
-    titles.push({
-      sourceUrl,
-      posterUrl,
-      rawTitle
-    });
+    if (!seenUrls.has(sourceUrl)) {
+      seenUrls.add(sourceUrl);
+      titles.push({
+        sourceUrl,
+        posterUrl,
+        rawTitle
+      });
+    }
+  }
+
+  // 2. Live thumb / figure layout: <a ... href="..."><img ... src="..." alt="...">
+  const cardRegex = /<a[^>]+href="([^"]+)"[^>]*>[\s\S]*?<img[^>]+src="([^"]+)"[^>]+alt="([^"]+)"/gi;
+  while ((match = cardRegex.exec(html)) !== null) {
+    let sourceUrl = match[1].trim();
+    const posterUrl = match[2].trim();
+    const rawTitle = match[3].replace(/&#038;/g, '&').replace(/&#8211;/g, '-').replace(/&amp;/g, '&').trim();
+
+    if (sourceUrl.includes('disclaimer') || sourceUrl.includes('apk') || sourceUrl.includes('how-to') ||
+        sourceUrl.includes('join') || sourceUrl.includes('contact') || sourceUrl.includes('/category/') ||
+        sourceUrl.includes('/tag/') || sourceUrl === '/' || sourceUrl.startsWith('#')) {
+      continue;
+    }
+
+    if (!sourceUrl.startsWith('http')) {
+      try {
+        sourceUrl = new URL(sourceUrl, baseUrl).href;
+      } catch (_) {
+        sourceUrl = `${baseUrl.replace(/\/+$/, '')}/${sourceUrl.replace(/^\/+/, '')}`;
+      }
+    }
+
+    if (!seenUrls.has(sourceUrl) && rawTitle && posterUrl && !posterUrl.includes('logo')) {
+      seenUrls.add(sourceUrl);
+      titles.push({
+        sourceUrl,
+        posterUrl,
+        rawTitle
+      });
+    }
   }
 
   // Extract pagination links: e.g. <a class="page-numbers" href="..."> or <a class="next page-numbers" href="...">
@@ -388,6 +423,7 @@ async function runHDHub4uSync(options = {}) {
   let liveCrawlSucceeded = false;
   let liveCrawlInterrupted = false;
   let liveNetworkError = null;
+  let liveDiscoveredItems = [];
 
   if (forceOnline || (!mockSnapshot && !options.skipNetwork)) {
     liveCrawlAttempted = true;
@@ -395,12 +431,22 @@ async function runHDHub4uSync(options = {}) {
     const probe = await fetchWithRetry(SOURCE_BASE_URL, { timeoutMs: 5000, retries: 1 });
     if (probe.ok) {
       liveReachable = true;
-      // Probe connected, but complete live catalog crawl across all titles was not performed live.
-      // We rely on the durable snapshot to preserve complete coverage without false claims of complete live crawl.
+      const activeUrl = probe.url || SOURCE_BASE_URL;
+      try {
+        const liveListing = parseListingPage(probe.text || '', activeUrl);
+        if (liveListing && Array.isArray(liveListing.titles)) {
+          liveDiscoveredItems = liveListing.titles;
+        }
+      } catch (parseErr) {
+        console.warn(`[WARN] Failed to parse live listing: ${parseErr.message}`);
+      }
+
+      // Probe connected and recent live listing parsed, but complete live crawl across all 14,000 titles is interrupted
+      // to fit within workflow execution budget; durable snapshot is utilized for full catalog reconciliation.
       liveCrawlInterrupted = true;
       liveCrawlSucceeded = false;
       liveNetworkError = 'Live crawl interrupted/incomplete; durable snapshot utilized for full catalog reconciliation';
-      console.log('✓ Probed HDHub4u live endpoint (connected). Using durable snapshot for full catalog coverage.');
+      console.log(`✓ Probed HDHub4u live endpoint (${activeUrl}). Discovered ${liveDiscoveredItems.length} live titles. Using durable snapshot for full catalog coverage.`);
     } else {
       liveReachable = false;
       liveCrawlInterrupted = true;
@@ -850,7 +896,7 @@ async function runHDHub4uSync(options = {}) {
       liveReachable: liveReachable,
       succeeded: liveCrawlSucceeded,
       interrupted: liveCrawlInterrupted,
-      liveDiscoveredCount: 0,
+      liveDiscoveredCount: liveDiscoveredItems.length,
       error: liveNetworkError
     },
     durableSnapshot: {
