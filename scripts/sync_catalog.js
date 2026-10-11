@@ -21,6 +21,12 @@ const args = process.argv.slice(2);
 const isDryRun = args.includes('--dry-run');
 const skipTelegram = args.includes('--no-telegram');
 
+let targetProvider = null;
+const provIdx = args.indexOf('--provider');
+if (provIdx !== -1 && args[provIdx + 1]) {
+  targetProvider = args[provIdx + 1].trim();
+}
+
 async function main() {
   console.log('='.repeat(65));
   console.log('PRAFLIX — 24-HOUR AUTOMATED CATALOG SYNCHRONIZATION');
@@ -37,14 +43,21 @@ async function main() {
   const initialCount = catalog.length;
   console.log(`Current catalog size: ${initialCount.toLocaleString()} titles`);
 
-  console.log('\n[1/3] Synchronizing providers: HDHub4u, 10Moviez, HDWall...');
-  const { summary, reportText, totalAdded, totalUpdated } = await runFullSync(catalog, sourceRecords);
+  const providerLabel = targetProvider && targetProvider.toLowerCase() !== 'all'
+    ? `provider: ${targetProvider}`
+    : 'providers: HDHub4u, 10Moviez, HDWall';
+  console.log(`\n[1/3] Synchronizing ${providerLabel}...`);
+  const { summary, reportText, totalAdded, totalUpdated } = await runFullSync(catalog, sourceRecords, {
+    provider: targetProvider,
+    dryRun: isDryRun
+  });
 
   console.log('\n[2/3] Sync completed. Results summary:');
   console.log(`- New Movies Added: ${summary.totals.moviesAdded}`);
   console.log(`- New Series Added: ${summary.totals.seriesAdded}`);
   console.log(`- Total Titles Added: ${summary.totals.totalTitlesAdded}`);
   console.log(`- Existing Titles Updated: ${summary.totals.titlesUpdated}`);
+  console.log(`- Title List Entries Appended: ${summary.totals.titleListAppended || 0}`);
   console.log(`- Final catalog size: ${catalog.length.toLocaleString()}`);
 
   const providerEntries = Object.values(summary.providers);
@@ -52,19 +65,20 @@ async function main() {
   const allProvidersFailed = providerEntries.length > 0 && failedProviders.length === providerEntries.length;
 
   if (allProvidersFailed) {
-    console.error('\n[FATAL] Complete sync failure: all providers failed to synchronize.');
+    console.error(`\n[FATAL] Complete sync failure: all requested providers (${providerEntries.length}) failed to synchronize.`);
     if (!skipTelegram) {
       console.log('Dispatching complete failure alert to Telegram...');
       await sendTelegramReport(reportText);
     }
-    throw new Error(`CRITICAL: All ${providerEntries.length} providers failed during synchronization. Workflow halted to prevent deployment.`);
+    throw new Error(`CRITICAL: All ${providerEntries.length} requested providers failed during synchronization. Workflow halted to prevent deployment.`);
   }
 
   if (catalog.length < initialCount) {
     throw new Error(`CRITICAL INTEGRITY FAILURE: Catalog count decreased from ${initialCount} to ${catalog.length}. Aborting to protect catalog integrity.`);
   }
 
-  const hasModifications = (totalAdded > 0) || (totalUpdated > 0);
+  const totalTitleListAppended = summary.totals.titleListAppended || 0;
+  const hasModifications = (totalAdded > 0) || (totalUpdated > 0) || (totalTitleListAppended > 0);
 
   if (!isDryRun && hasModifications) {
     console.log('\nPersisting updated catalog and source records...');

@@ -287,6 +287,9 @@ async function syncProvider(providerName, catalog, sourceRecords, options = {}) 
         result.newSeries = syncReport.metrics.newlyAddedSeries || 0;
         result.updatedExisting = syncReport.metrics.existingUpdatedWithLinks;
         result.itemsProcessed = syncReport.metrics.totalDiscovered;
+        if (syncReport.titleListSync) {
+          result.titleListSync = syncReport.titleListSync;
+        }
         return result;
       } catch (hErr) {
         console.warn('[WARN] HDHub4u comprehensive sync notice, falling back to incremental parser:', hErr.message);
@@ -295,6 +298,10 @@ async function syncProvider(providerName, catalog, sourceRecords, options = {}) 
 
     const items = await fetchProviderLatest(providerName, options);
     result.itemsProcessed = items.length;
+    result.liveCrawl = {
+      liveReachable: true,
+      liveDiscoveredCount: items.length
+    };
 
     // Find current max canonical ID
     let maxCanonicalId = catalog.reduce((max, item) => Math.max(max, item.canonicalId || 0), 0);
@@ -396,6 +403,16 @@ async function syncProvider(providerName, catalog, sourceRecords, options = {}) 
         });
       }
     }
+
+    // Synchronize title list for this provider with processed titles
+    const processedCandidateTitles = items.map(i => i.displayTitle || i.originalSourceTitle).filter(Boolean);
+    const titleListSync = require('./title_list_sync');
+    const isDryRunForTitleList = Boolean(options.dryRun || options.mockItems || options.persist === false);
+    const tlResult = titleListSync.syncProviderTitleList(providerName, processedCandidateTitles, {
+      date: new Date(),
+      dryRun: isDryRunForTitleList
+    });
+    result.titleListSync = tlResult;
   } catch (err) {
     result.failed = true;
     result.error = err.message;
@@ -405,14 +422,18 @@ async function syncProvider(providerName, catalog, sourceRecords, options = {}) 
 }
 
 /**
- * Execute 24-hour sync across all 3 providers
+ * Execute sync across selected or all 3 providers
  */
 async function runFullSync(catalog, sourceRecords, options = {}) {
   const syncStartTime = new Date();
   const providerResults = {};
 
-  // Sequential sync: HDHub4u -> 10Moviez -> HDWall
-  for (const provider of PROVIDERS) {
+  const targetProviders = options.provider && options.provider !== 'all'
+    ? [PROVIDER_KEYS[options.provider.toLowerCase()] || options.provider]
+    : PROVIDERS;
+
+  // Sync selected providers
+  for (const provider of targetProviders) {
     try {
       const res = await syncProvider(provider, catalog, sourceRecords, options);
       providerResults[provider] = res;
@@ -424,7 +445,8 @@ async function runFullSync(catalog, sourceRecords, options = {}) {
         error: err.message,
         newMovies: 0,
         newSeries: 0,
-        updatedExisting: 0
+        updatedExisting: 0,
+        titleListSync: { appendedCount: 0, skippedCount: 0, appendedTitles: [] }
       };
     }
   }
@@ -433,13 +455,17 @@ async function runFullSync(catalog, sourceRecords, options = {}) {
   let totalMovies = 0;
   let totalSeries = 0;
   let totalUpdated = 0;
+  let totalTitleListAppended = 0;
 
-  for (const prov of PROVIDERS) {
+  for (const prov of targetProviders) {
     const r = providerResults[prov];
-    if (!r.failed) {
+    if (r && !r.failed) {
       totalMovies += (typeof r.newMovies === 'number' ? r.newMovies : 0);
       totalSeries += (typeof r.newSeries === 'number' ? r.newSeries : 0);
       totalUpdated += (typeof r.updatedExisting === 'number' ? r.updatedExisting : 0);
+      if (r.titleListSync && typeof r.titleListSync.appendedCount === 'number') {
+        totalTitleListAppended += r.titleListSync.appendedCount;
+      }
     }
   }
 
@@ -448,12 +474,14 @@ async function runFullSync(catalog, sourceRecords, options = {}) {
   const summary = {
     syncTime: syncStartTime.toISOString(),
     formattedTime: formatDateTime(syncStartTime),
+    targetProvider: options.provider && options.provider !== 'all' ? targetProviders[0] : null,
     providers: providerResults,
     totals: {
       moviesAdded: totalMovies,
       seriesAdded: totalSeries,
       totalTitlesAdded: totalAdded,
-      titlesUpdated: totalUpdated
+      titlesUpdated: totalUpdated,
+      titleListAppended: totalTitleListAppended
     }
   };
 
@@ -493,17 +521,19 @@ function formatTelegramReport(summary) {
   text += '📅 DAILY CATALOG UPDATE\n';
   text += `🕐 Sync completed: ${syncTime}\n\n`;
 
-  // Each provider
-  for (const prov of PROVIDERS) {
+  // Display targeted or all providers
+  const targetProvs = summary.targetProvider ? [summary.targetProvider] : PROVIDERS;
+  for (const prov of targetProvs) {
     const res = provs[prov];
     text += '━━━━━━━━━━━━━━━━━━━━━━\n';
     text += `${prov.toUpperCase()}\n`;
     text += '━━━━━━━━━━━━━━━━━━━━━━\n\n';
 
     if (res && res.failed) {
-      text += '⚠️ Sync failed\n';
+      text += `⚠️ Sync failed: ${res.error || 'Connection error'}\n`;
       text += '🎬 New Movies: —\n';
-      text += '📺 New Series: —\n\n';
+      text += '📺 New Series: —\n';
+      text += '📝 Title List: Unchanged (Ingestion incomplete)\n\n';
     } else if (res) {
       if (res.liveCrawl) {
         const liveDesc = res.liveCrawl.liveReachable
@@ -515,7 +545,11 @@ function formatTelegramReport(summary) {
         text += `📦 Snapshot Reconciliation: ${(res.durableSnapshot.recordCount || 0).toLocaleString()} titles\n`;
       }
       text += `🎬 New Movies: ${res.newMovies}\n`;
-      text += `📺 New Series: ${res.newSeries}\n\n`;
+      text += `📺 New Series: ${res.newSeries}\n`;
+      if (res.titleListSync) {
+        text += `📝 Title List: +${res.titleListSync.appendedCount} appended (${res.titleListSync.skippedCount} existing)\n`;
+      }
+      text += '\n';
     } else {
       text += '⚠️ Sync failed\n';
       text += '🎬 New Movies: —\n';
@@ -530,7 +564,11 @@ function formatTelegramReport(summary) {
   text += '━━━━━━━━━━━━━━━━━━━━━━\n\n';
   text += `🎬 Movies Added: ${total.moviesAdded}\n`;
   text += `📺 Series Added: ${total.seriesAdded}\n`;
-  text += `📦 Total Titles Added: ${total.totalTitlesAdded}\n\n`;
+  text += `📦 Total Titles Added: ${total.totalTitlesAdded}\n`;
+  if (typeof total.titleListAppended === 'number') {
+    text += `📝 Title List Entries Appended: ${total.titleListAppended}\n`;
+  }
+  text += '\n';
 
   if (total.totalTitlesAdded > 0) {
     text += '✅ PRAFLIX CATALOG UPDATED & VALIDATED\n';

@@ -20,7 +20,8 @@ const tests = [
   path.join('tests', 'test_problem10_production_verification.js'),
   path.join('tests', 'test_problem11_poster_and_download_verification.js'),
   path.join('tests', 'test_problem12_recovery.js'),
-  path.join('tests', 'test_workflow_persistence.js')
+  path.join('tests', 'test_workflow_persistence.js'),
+  path.join('tests', 'test_independent_crawlers_and_title_sync.js')
 ];
 
 let failed = false;

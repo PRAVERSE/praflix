@@ -937,37 +937,15 @@ async function runHDHub4uSync(options = {}) {
   };
   fs.writeFileSync(HDHUB4U_JSON_PATH, JSON.stringify(durableJson, null, 2), 'utf8');
 
-  // Update HDHUB4U TITLE.txt
-  const dateStr = nowIso.split('T')[0];
-  const txtContent = [
-    'HDHUB4U TITLE LIST',
-    `Source: ${SOURCE_BASE_URL}`,
-    `Last inventory date: ${dateStr}`,
-    '='.repeat(50),
-    'COMPLETE INVENTORY',
-    '='.repeat(50),
-    'MOVIES',
-    ...(hdhubCompleteData.movies || []).map(m => `- ${m.title}`),
-    '',
-    'WEB SERIES',
-    ...(hdhubCompleteData.webSeries || []).map(s => `- ${s.title}`),
-    '',
-    '='.repeat(50),
-    `RECONCILIATION SUMMARY [${dateStr}]`,
-    '='.repeat(50),
-    `- Total titles discovered: ${discoveredItemsMap.size} (${uniqueMoviesDiscovered} movies, ${uniqueSeriesDiscovered} web series)`,
-    `- Existing titles in PRAFLIX matched: ${alreadyPresentCount}`,
-    `- Newly added canonical titles: ${newlyAddedCount}`,
-    `- Duplicates prevented / editions merged: ${duplicatesPrevented}`,
-    `- Ambiguous titles flagged: ${ambiguousMatchesCount}`,
-    `- Titles with verified download links: ${titlesWithDownloads}`,
-    `- Titles without download links: ${titlesWithoutDownloads}`,
-    `- Verified download endpoints: ${verifiedDestinationsCount}`,
-    `- Broken endpoints excluded: ${brokenDestinationsCount}`,
-    `- Live endpoint status: ${liveReachable ? 'reachable (durable snapshot utilized)' : (liveNetworkError ? `offline (${liveNetworkError})` : 'offline')}`,
-    ''
-  ].join('\n');
-  fs.writeFileSync(HDHUB4U_TXT_PATH, txtContent, 'utf8');
+  // Synchronize newly discovered & successfully processed titles to title list/HDHUB4U TITLE.txt
+  // Append-only: Preserves all historical records, order, and prevents duplicates.
+  const titleListSync = require('./title_list_sync');
+  const allDiscoveredTitles = Array.from(discoveredItemsMap.values()).map(i => i.displayTitle || i.rawTitle);
+  const titleListResult = titleListSync.syncProviderTitleList('hdhub4u', allDiscoveredTitles, {
+    date: new Date(),
+    dryRun: Boolean(options.dryRun)
+  });
+  console.log(`✓ Synchronized HDHUB4U TITLE.txt: ${titleListResult.appendedCount} new entries appended (${titleListResult.skippedCount} existing/duplicates preserved).`);
 
   // Save audit inventory separating live-source crawl results from durable snapshot
   const auditReport = {
@@ -1015,6 +993,7 @@ async function runHDHub4uSync(options = {}) {
       year: c.year,
       type: c.type
     })),
+    titleListSync: titleListResult,
     ambiguousTitles: ambiguousReviewList
   };
   fs.writeFileSync(AUDIT_INVENTORY_PATH, JSON.stringify(auditReport, null, 2), 'utf8');

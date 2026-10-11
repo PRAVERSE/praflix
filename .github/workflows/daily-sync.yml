@@ -1,11 +1,24 @@
 name: PRAFLIX 24-Hour Catalog Synchronization & Deployment
 
+# Note: Scheduled crawl replaced by three independent daily provider jobs:
+# - HDHub4u: .github/workflows/hdhub4u-sync.yml (10:00 AM IST / 04:30 UTC)
+# - 10Moviez: .github/workflows/10moviez-sync.yml (11:00 AM IST / 05:30 UTC)
+# - HDWall: .github/workflows/hdwall-sync.yml (12:00 PM IST / 06:30 UTC)
+# Legacy combined schedule was: cron: '0 0 * * *'
+# Active schedule disabled here to prevent duplicate scheduled crawls.
 on:
-  schedule:
-    # Runs every 24 hours at 00:00 UTC (05:30 IST)
-    - cron: '0 0 * * *'
   workflow_dispatch:
-    # Allows manual trigger testing via GitHub Actions UI
+    inputs:
+      provider:
+        description: 'Provider to synchronize (or all)'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - hdhub4u
+          - 10moviez
+          - hdwall
 
 concurrency:
   group: praflix-catalog-sync
@@ -43,7 +56,7 @@ jobs:
           "
 
       - name: 1. Provider Sync (HDHub4u, 10Moviez, HDWall)
-        run: npm run sync -- --defer-telegram
+        run: npm run sync -- --provider ${{ inputs.provider || 'all' }} --defer-telegram
 
       - name: 2. Catalog Integrity Validation
         run: |
@@ -127,12 +140,13 @@ jobs:
           fi
 
           echo "✓ All required catalog assets verified in $(pwd). Staging files for persistence..."
-          git add data/catalog.json data/source-records.json data/catalog-manifest.json data/catalog-chunk-*.json data/catalog_chunk_*.js data/downloads.json data/poster-valid-ids.js
+          git add data/catalog.json data/source-records.json data/catalog-manifest.json data/catalog-chunk-*.json data/catalog_chunk_*.js data/downloads.json data/poster-valid-ids.js "title list/"
           if git diff --staged --quiet; then
             echo "No catalog modifications to commit today."
           else
             echo "Committing and pushing updated catalog files..."
             git commit -m "Auto-sync PRAFLIX catalog: $(date -u +'%Y-%m-%d %H:%M UTC') [skip ci]"
+            git pull --rebase origin ${{ github.ref_name }}
             git push origin ${{ github.ref_name }}
           fi
 
