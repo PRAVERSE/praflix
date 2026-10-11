@@ -17,6 +17,12 @@
 const fs = require('fs');
 const path = require('path');
 
+const BASE_DIR = path.dirname(__dirname);
+const DATA_DIR = path.join(BASE_DIR, 'data');
+const CATALOG_PATH = path.join(DATA_DIR, 'catalog.json');
+const SOURCES_PATH = path.join(DATA_DIR, 'source-records.json');
+const DOWNLOADS_PATH = path.join(DATA_DIR, 'downloads.json');
+
 // Provider Constants
 const PROVIDERS = ['HDHub4u', '10Moviez', 'HDWall'];
 
