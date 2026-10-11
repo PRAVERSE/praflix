@@ -1,12 +1,12 @@
 {
-  "syncTimestamp": "2026-10-11T14:24:33.015Z",
+  "syncTimestamp": "2026-10-11T15:46:03.306Z",
   "liveCrawl": {
     "attempted": true,
     "liveReachable": true,
     "succeeded": false,
     "interrupted": true,
     "liveDiscoveredCount": 65,
-    "newlyDiscoveredCount": 5,
+    "newlyDiscoveredCount": 0,
     "error": "Live crawl interrupted/incomplete; durable snapshot utilized for full catalog reconciliation"
   },
   "durableSnapshot": {
@@ -21,12 +21,12 @@
     "totalDiscovered": 14465,
     "uniqueMovies": 12701,
     "uniqueWebSeries": 1764,
-    "alreadyPresentInCatalog": 12969,
-    "newlyAddedToCatalog": 5,
-    "newlyAddedMovies": 4,
-    "newlyAddedSeries": 1,
-    "newlyDiscoveredLive": 5,
-    "existingUpdatedWithLinks": 12969,
+    "alreadyPresentInCatalog": 12974,
+    "newlyAddedToCatalog": 0,
+    "newlyAddedMovies": 0,
+    "newlyAddedSeries": 0,
+    "newlyDiscoveredLive": 0,
+    "existingUpdatedWithLinks": 12974,
     "duplicatesPrevented": 1491,
     "ambiguousTitlesCount": 0,
     "downloadOptionsCollected": 41305,
@@ -37,44 +37,14 @@
     "titlesWithDownloads": 4780,
     "titlesWithoutDownloads": 8194
   },
-  "newlyAddedTitles": [
-    {
-      "canonicalId": 13683,
-      "title": "xE02C WEAPONS",
-      "year": "2025",
-      "type": "Movie"
-    },
-    {
-      "canonicalId": 13684,
-      "title": "xE02C Maremma",
-      "year": "2026",
-      "type": "Movie"
-    },
-    {
-      "canonicalId": 13685,
-      "title": "xE02C WWE Money in the Bank",
-      "year": "2026",
-      "type": "Movie"
-    },
-    {
-      "canonicalId": 13686,
-      "title": "xE02C Gyaarah Gyaarah",
-      "year": "",
-      "type": "Web Series"
-    },
-    {
-      "canonicalId": 13687,
-      "title": "xE02C Lage Raho Munna Bhai",
-      "year": "2006",
-      "type": "Movie"
-    }
-  ],
+  "newlyAddedTitles": [],
+  "newlyAddedCanonicalItems": [],
   "titleListSync": {
     "success": true,
     "provider": "hdhub4u",
     "filePath": "/home/runner/work/praflix/praflix/title list/HDHUB4U TITLE.txt",
-    "appendedCount": 16,
-    "skippedCount": 14434,
+    "appendedCount": 13,
+    "skippedCount": 14437,
     "appendedTitles": [
       "11/10/26 The Deal Short Film HOT Hindi",
       "11/10/26 Ong-bak Trilogy",
@@ -88,10 +58,7 @@
       "11/10/26 Virgin Boys Part 1 Hindi",
       "11/10/26 Money Heist S04 La Casa De Papel Complete",
       "11/10/26 Into The Wild with Bear Grylls and Superstar Rajinikanth in Hindi",
-      "11/10/26 Ekkadiki Ee Parugu Hindi",
-      "11/10/26 Maremma",
-      "11/10/26 Gyaarah Gyaarah",
-      "11/10/26 Lage Raho Munna Bhai"
+      "11/10/26 Ekkadiki Ee Parugu Hindi"
     ]
   },
   "ambiguousTitles": []
