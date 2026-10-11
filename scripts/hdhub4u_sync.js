@@ -238,7 +238,10 @@ function parseListingPage(html, baseUrl = SOURCE_BASE_URL) {
       }
     }
     const cleanT = rawTitle.replace(/&#038;/g, '&').replace(/&#8211;/g, '-').replace(/&amp;/g, '&').trim();
-    const poster = (rawImg || '').trim();
+    let poster = (rawImg || '').trim();
+    if (poster.startsWith('http://')) {
+      poster = poster.replace(/^http:\/\//i, 'https://');
+    }
     if (!seenUrls.has(sourceUrl) && cleanT && poster && !poster.includes('logo')) {
       seenUrls.add(sourceUrl);
       titles.push({
@@ -311,7 +314,10 @@ function parseDetailPage(html, pageUrl) {
   const imgMatch = html.match(/<div class="entry-content"[^>]*>[\s\S]*?<img[^>]*src="([^"]+)"/i) ||
                    html.match(/<img[^>]*class="[^"]*attachment-post-thumbnail[^"]*"[^>]*src="([^"]+)"/i);
   if (imgMatch) {
-    posterUrl = imgMatch[1];
+    posterUrl = imgMatch[1].trim();
+    if (posterUrl.startsWith('http://')) {
+      posterUrl = posterUrl.replace(/^http:\/\//i, 'https://');
+    }
   }
 
   const rawTitle = title || pageUrl;
@@ -486,6 +492,11 @@ async function runHDHub4uSync(options = {}) {
     const key = slug || (raw.toLowerCase().trim());
     if (!key) return;
 
+    let pUrl = item.posterUrl || item.sourcePosterUrl || null;
+    if (pUrl && typeof pUrl === 'string' && pUrl.startsWith('http://')) {
+      pUrl = pUrl.replace(/^http:\/\//i, 'https://');
+    }
+
     if (!discoveredItemsMap.has(key)) {
       discoveredItemsMap.set(key, {
         rawTitle: raw,
@@ -495,7 +506,7 @@ async function runHDHub4uSync(options = {}) {
         type: isSeries ? 'Web Series' : 'Movie',
         season: isSeries ? (extractSeason(raw) || 'Season 1') : null,
         sourceUrl: srcUrl,
-        posterUrl: item.posterUrl || item.sourcePosterUrl || null,
+        posterUrl: pUrl,
         qualities: item.qualities || item.items || item.downloadOptions || [],
         isDuplicate: Boolean(item.isDuplicate) || raw.startsWith('[DUPLICATE]'),
         page: item.page || 1
@@ -743,8 +754,8 @@ async function runHDHub4uSync(options = {}) {
         platform: null,
         platforms: [],
         releaseType: 'WEB-DL',
-        poster: primaryItem.posterUrl || 'assets/posters/fallback.svg',
-        sourcePosterUrl: primaryItem.posterUrl || null,
+        poster: primaryItem.posterUrl ? primaryItem.posterUrl.replace(/^http:\/\//i, 'https://') : 'assets/posters/fallback.svg',
+        sourcePosterUrl: primaryItem.posterUrl ? primaryItem.posterUrl.replace(/^http:\/\//i, 'https://') : null,
         qualities: Array.from(new Set(combinedQualities.map(c => normalizeResolution(c.q.quality || c.q.rawText)))),
         variantCount: items.length,
         variants: items.map((it, idx) => ({
@@ -759,7 +770,7 @@ async function runHDHub4uSync(options = {}) {
           })),
           releaseType: 'WEB-DL',
           audio: 'DD 5.1',
-          poster: it.posterUrl || primaryItem.posterUrl
+          poster: (it.posterUrl || primaryItem.posterUrl) ? (it.posterUrl || primaryItem.posterUrl).replace(/^http:\/\//i, 'https://') : null
         })),
         status: 'active'
       };
