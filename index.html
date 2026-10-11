@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>PRAFLIX — A PRAVERSE Company | Movies &amp; Web Series Catalog</title>
   <meta name="description" content="PRAFLIX (A PRAVERSE Company) — Premium cinema discovery catalog indexing verified movies and web series organized chronologically with official poster artwork and metadata.">
   <link rel="stylesheet" href="styles.css?v=20261010_p12">
@@ -23,8 +23,8 @@
         </div>
       </a>
 
-      <!-- Desktop Navigation Menu -->
-      <nav class="nav-menu" id="nav-menu">
+      <!-- Desktop & Mobile Navigation Menu -->
+      <nav class="nav-menu" id="nav-menu" aria-label="Catalog Navigation">
         <button class="nav-link active" data-category="All" id="nav-all">All Titles</button>
         <button class="nav-link" data-type="Movie" data-category="Movie" id="nav-movies">Movies</button>
         <button class="nav-link" data-type="Web Series" data-category="Web Series" id="nav-series">Web Series</button>
@@ -36,7 +36,7 @@
       </nav>
 
       <div class="header-right">
-        <button class="mobile-menu-btn" id="mobile-toggle" aria-label="Toggle navigation">☰</button>
+        <button class="mobile-menu-btn" id="mobile-toggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="nav-menu">☰</button>
       </div>
     </div>
   </header>

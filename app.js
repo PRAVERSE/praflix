@@ -756,6 +756,7 @@
     DOM.searchInput = document.getElementById('search-input');
     DOM.searchClear = document.getElementById('search-clear');
     DOM.navMenu = document.getElementById('nav-menu');
+    DOM.mobileToggle = document.getElementById('mobile-toggle');
 
     DOM.catalogSectionHeading = document.getElementById('catalog-section-heading');
     DOM.catalogStatusText = document.getElementById('catalog-status-text');
@@ -2023,11 +2024,40 @@
       });
     }
 
-    // 2. Header Nav Menu
+    // 2. Header Nav Menu & Mobile Drawer Toggle
+    if (DOM.mobileToggle && DOM.navMenu) {
+      DOM.mobileToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = DOM.navMenu.classList.toggle('mobile-open');
+        DOM.mobileToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        DOM.mobileToggle.textContent = isOpen ? '✕' : '☰';
+      });
+
+      // Close mobile drawer when clicking outside
+      document.addEventListener('click', (e) => {
+        if (DOM.navMenu.classList.contains('mobile-open')) {
+          if (!DOM.navMenu.contains(e.target) && e.target !== DOM.mobileToggle) {
+            DOM.navMenu.classList.remove('mobile-open');
+            DOM.mobileToggle.setAttribute('aria-expanded', 'false');
+            DOM.mobileToggle.textContent = '☰';
+          }
+        }
+      });
+    }
+
     if (DOM.navMenu) {
       DOM.navMenu.addEventListener('click', (e) => {
         const link = e.target.closest('.nav-link');
         if (!link) return;
+
+        // Auto-close mobile drawer on link selection
+        if (DOM.navMenu.classList.contains('mobile-open')) {
+          DOM.navMenu.classList.remove('mobile-open');
+          if (DOM.mobileToggle) {
+            DOM.mobileToggle.setAttribute('aria-expanded', 'false');
+            DOM.mobileToggle.textContent = '☰';
+          }
+        }
 
         // If in details view, return to catalog first
         if (state.inDetailsView) {
@@ -2207,7 +2237,13 @@
     // 11. Keyboard Shortcuts
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        if (DOM.trailerLightbox && DOM.trailerLightbox.style.display !== 'none') {
+        if (DOM.navMenu && DOM.navMenu.classList.contains('mobile-open')) {
+          DOM.navMenu.classList.remove('mobile-open');
+          if (DOM.mobileToggle) {
+            DOM.mobileToggle.setAttribute('aria-expanded', 'false');
+            DOM.mobileToggle.textContent = '☰';
+          }
+        } else if (DOM.trailerLightbox && DOM.trailerLightbox.style.display !== 'none') {
           closeTrailerLightbox();
         } else if (DOM.screenshotsLightbox && DOM.screenshotsLightbox.style.display !== 'none') {
           closeScreenshotLightbox();
