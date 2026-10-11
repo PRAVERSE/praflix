@@ -128,12 +128,13 @@ jobs:
 
           echo "✓ All required catalog assets verified in $(pwd). Staging files for persistence..."
           git add data/catalog.json data/source-records.json data/catalog-manifest.json data/catalog-chunk-*.json data/catalog_chunk_*.js data/downloads.json data/poster-valid-ids.js "title list/"
+          git add -u
           if git diff --staged --quiet; then
             echo "No catalog modifications to commit today."
           else
             echo "Committing and pushing updated catalog files..."
             git commit -m "Auto-sync PRAFLIX 10Moviez catalog & title list: $(date -u +'%Y-%m-%d %H:%M UTC') [skip ci]"
-            git pull --rebase origin ${{ github.ref_name }}
+            git pull --rebase --autostash origin ${{ github.ref_name }}
             git push origin ${{ github.ref_name }}
           fi
 
