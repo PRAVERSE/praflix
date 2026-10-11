@@ -990,9 +990,12 @@ async function runHDHub4uSync(options = {}) {
     newlyAddedTitles: newlyAddedCanonicalItems.map(c => ({
       canonicalId: c.canonicalId,
       title: c.displayTitle,
+      displayTitle: c.displayTitle,
       year: c.year,
-      type: c.type
+      type: c.type,
+      provider: 'HDHub4u'
     })),
+    newlyAddedCanonicalItems: newlyAddedCanonicalItems,
     titleListSync: titleListResult,
     ambiguousTitles: ambiguousReviewList
   };

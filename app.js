@@ -275,7 +275,8 @@
       } catch (_) {}
     }
     try {
-      const resp = await fetch('data/downloads.json?v=20261010_p12');
+      const bVer = (typeof window !== 'undefined' && window.PRAFLIX_BUILD_VERSION) || '20261011_p13';
+      const resp = await fetch(`data/downloads.json?v=${bVer}`);
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       state.downloadsData = await resp.json();
       const entries = (state.downloadsData && Array.isArray(state.downloadsData.entries))

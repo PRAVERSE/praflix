@@ -32,3 +32,5 @@ poster-yearwise-report/
 data/poster-yearwise-report/
 data/scripts/
 data/tests/
+scratch/
+data/.telegram-sent-runs.json

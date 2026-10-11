@@ -97,12 +97,8 @@ jobs:
             console.log('✓ Final production build validated: ' + cat.length.toLocaleString() + ' titles ready for edge.');
           "
 
-      - name: 6. Dispatch Validated Telegram Report
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: node scripts/send_report.js
+      - name: 6. Validate Catalog Consistency & Parity
+        run: node scripts/validate_catalog_consistency.js --dist
 
       - name: 7. Persist Catalog & Source Records to Repository
         run: |
@@ -152,6 +148,16 @@ jobs:
           fi
 
       - name: 8. Deploy Production Build to Cloudflare Edge
+        id: deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: npx wrangler deploy
+
+      - name: 9. Dispatch Confirmed Telegram Notification
+        if: always() && steps.deploy.conclusion != 'skipped'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DEPLOYMENT_STATUS: ${{ steps.deploy.conclusion == 'success' && 'Confirmed successful' || 'Failed' }}
+        run: node scripts/send_report.js

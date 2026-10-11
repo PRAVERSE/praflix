@@ -175,15 +175,15 @@ runTest('Web series policy: complete season packages only, individual episodes o
   assert.strictEqual(resolved.seasonEpisodeGroups.length, 0);
 });
 
-runTest('HTML and scripts contain cache-busting query strings (?v=20261010_p12)', () => {
+runTest('HTML and scripts contain cache-busting query strings', () => {
   const html = fs.readFileSync(path.join(ROOT_DIR, 'index.html'), 'utf8');
-  assert.ok(html.includes('styles.css?v=20261010_p12'), 'styles.css must have cache-busting tag');
-  assert.ok(html.includes('data/catalog_chunk_1.js?v=20261010_p12'), 'chunk 1 must have cache-busting tag');
-  assert.ok(html.includes('data/poster-valid-ids.js?v=20261010_p12'), 'poster-valid-ids must have cache-busting tag');
-  assert.ok(html.includes('destination_resolver.js?v=20261010_p12'), 'resolver must have cache-busting tag');
-  assert.ok(html.includes('app.js?v=20261010_p12'), 'app.js must have cache-busting tag');
+  assert.ok(/styles\.css\?v=[a-zA-Z0-9_-]+/.test(html), 'styles.css must have cache-busting tag');
+  assert.ok(/data\/catalog_chunk_1\.js\?v=[a-zA-Z0-9_-]+/.test(html), 'chunk 1 must have cache-busting tag');
+  assert.ok(/data\/poster-valid-ids\.js\?v=[a-zA-Z0-9_-]+/.test(html), 'poster-valid-ids must have cache-busting tag');
+  assert.ok(/destination_resolver\.js\?v=[a-zA-Z0-9_-]+/.test(html), 'resolver must have cache-busting tag');
+  assert.ok(/app\.js\?v=[a-zA-Z0-9_-]+/.test(html), 'app.js must have cache-busting tag');
   const app = fs.readFileSync(path.join(ROOT_DIR, 'app.js'), 'utf8');
-  assert.ok(app.includes("fetch('data/downloads.json?v=20261010_p12')"), 'downloads.json fetch must be versioned');
+  assert.ok(app.includes('data/downloads.json?v='), 'downloads.json fetch must be versioned');
 });
 
 runTest('Problem 12 audit files reconcile with current catalog and download state', () => {
