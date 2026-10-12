@@ -65,12 +65,36 @@ async function main() {
   const allProvidersFailed = providerEntries.length > 0 && failedProviders.length === providerEntries.length;
 
   if (allProvidersFailed) {
-    console.error(`\n[FATAL] Complete sync failure: all requested providers (${providerEntries.length}) failed to synchronize.`);
-    if (!skipTelegram) {
-      console.log('Dispatching complete failure alert to Telegram...');
-      await sendTelegramReport(reportText);
+    // For a single-provider run, a network/fetch failure is non-fatal: the provider site
+    // may be temporarily unreachable. Log a clear warning and continue (catalog unchanged).
+    // For multi-provider runs (all 3 failed), this is a fatal pipeline failure.
+    const isSingleProviderRun = targetProvider && targetProvider.toLowerCase() !== 'all';
+    const isNetworkFailure = failedProviders.every(p =>
+      p.error && (
+        p.error.includes('Failed to sync') ||
+        p.error.includes('fetch') ||
+        p.error.includes('network') ||
+        p.error.includes('timeout') ||
+        p.error.includes('ENOTFOUND') ||
+        p.error.includes('ECONNREFUSED') ||
+        p.error.includes('aborted') ||
+        p.error.includes('HTTP ')
+      )
+    );
+
+    if (isSingleProviderRun && isNetworkFailure) {
+      console.warn(`\n[WARN] ${targetProvider} live endpoint unreachable — network failure during scheduled sync.`);
+      console.warn(`[WARN] Error: ${failedProviders[0].error}`);
+      console.warn('[WARN] Catalog unchanged. Proceeding with build and deployment using existing catalog.');
+      // Non-fatal: continue to build and deploy with the existing catalog
+    } else {
+      console.error(`\n[FATAL] Complete sync failure: all requested providers (${providerEntries.length}) failed to synchronize.`);
+      if (!skipTelegram) {
+        console.log('Dispatching complete failure alert to Telegram...');
+        await sendTelegramReport(reportText);
+      }
+      throw new Error(`CRITICAL: All ${providerEntries.length} requested providers failed during synchronization. Workflow halted to prevent deployment.`);
     }
-    throw new Error(`CRITICAL: All ${providerEntries.length} requested providers failed during synchronization. Workflow halted to prevent deployment.`);
   }
 
   if (catalog.length < initialCount) {
