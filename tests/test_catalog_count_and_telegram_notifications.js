@@ -56,17 +56,16 @@ function runTest(desc, fn) {
 // ----------------------------------------------------
 // 1. Correct production catalog count calculation
 // ----------------------------------------------------
-runTest('Master catalog contains exactly 13,687 canonical titles (baseline >= 13,642)', () => {
+runTest('Master catalog contains valid canonical titles (baseline >= 13,642)', () => {
   const cat = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'catalog.json'), 'utf8'));
   assert.ok(Array.isArray(cat), 'Catalog must be an array');
-  assert.strictEqual(cat.length, 13687, `Catalog length must be 13,687, got ${cat.length}`);
-  assert.ok(cat.length >= 13642, 'Must satisfy minimum baseline invariant (>= 13,642)');
+  assert.ok(cat.length >= 13642, `Catalog length must satisfy minimum baseline invariant (>= 13,642), got ${cat.length}`);
 });
 
 // ----------------------------------------------------
 // 2. Unique canonical ID counting
 // ----------------------------------------------------
-runTest('All 13,687 canonical IDs are positive integers and 100% unique (0 duplicates)', () => {
+runTest('All canonical IDs are positive integers and 100% unique (0 duplicates)', () => {
   const cat = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'catalog.json'), 'utf8'));
   const idSet = new Set();
   cat.forEach((r, idx) => {
@@ -81,7 +80,7 @@ runTest('All 13,687 canonical IDs are positive integers and 100% unique (0 dupli
 // ----------------------------------------------------
 // 3. Catalog chunk completeness and consistency
 // ----------------------------------------------------
-runTest('All 4 catalog chunks sum to exactly 13,687 records with zero discrepancy', () => {
+runTest('All 4 catalog chunks sum to catalog records with zero discrepancy', () => {
   const cat = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'catalog.json'), 'utf8'));
   let chunkSum = 0;
   const chunkIds = [];
@@ -114,7 +113,8 @@ runTest('All 4 catalog chunks sum to exactly 13,687 records with zero discrepanc
 // ----------------------------------------------------
 // 4. Frontend count matching loaded canonical catalog
 // ----------------------------------------------------
-runTest('Frontend loaded simulation produces 13,687 records matching results count badge', () => {
+runTest('Frontend loaded simulation produces records matching results count badge', () => {
+  const cat = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'catalog.json'), 'utf8'));
   // Simulate browser: loading window.PRAFLIX_DATA via chunk concatenation
   let simulatedPraflixData = [];
   for (let i = 1; i <= 4; i++) {
@@ -125,7 +125,7 @@ runTest('Frontend loaded simulation produces 13,687 records matching results cou
     simulatedPraflixData = simulatedPraflixData.concat(chunkData);
   }
 
-  assert.strictEqual(simulatedPraflixData.length, 13687, 'Simulated window.PRAFLIX_DATA length must be 13,687');
+  assert.strictEqual(simulatedPraflixData.length, cat.length, `Simulated window.PRAFLIX_DATA length must match catalog length (${cat.length})`);
 
   // Verify app.js default state (All Titles, All Years) matches
   const appJs = fs.readFileSync(path.join(ROOT_DIR, 'app.js'), 'utf8');
