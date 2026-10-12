@@ -1484,7 +1484,7 @@
     state.currentScreenshotList = screenshots;
 
     DOM.screenshotsGalleryGrid.innerHTML = screenshots.map((s, idx) => `
-      <div class="screenshot-card" data-index="${idx}" tabindex="0" title="Click to view full screenshot">
+      <div class="screenshot-card" data-index="${idx}">
         <img
           src="${escapeHtml(s.url)}"
           alt="${escapeHtml(item.displayTitle)} screenshot ${idx + 1}"
@@ -1492,26 +1492,8 @@
           loading="lazy"
           onerror="this.parentElement.style.display='none';"
         />
-        <div class="screenshot-provider-badge">${escapeHtml(s.provider)}</div>
-        <div class="screenshot-hover-overlay">
-          <span class="screenshot-zoom-icon">🔍</span>
-        </div>
       </div>
     `).join('');
-
-    // Wire clicks to lightbox
-    DOM.screenshotsGalleryGrid.querySelectorAll('.screenshot-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const idx = parseInt(card.dataset.index, 10);
-        openScreenshotLightbox(idx);
-      });
-      card.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          const idx = parseInt(card.dataset.index, 10);
-          openScreenshotLightbox(idx);
-        }
-      });
-    });
   }
 
   function openScreenshotLightbox(index) {

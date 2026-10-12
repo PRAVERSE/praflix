@@ -4,18 +4,41 @@
    ========================================================================== */
 
 :root {
-  --bg-main: #06080d;
+  /* ========================================================================
+     PRAFLIX Notebook Graph Paper Design Tokens
+     Warm ivory paper base with mathematical blue-grey grid & red margin guide
+     ======================================================================== */
+  --bg-paper-base: #fbfbf8;
+  --paper-line-minor: rgba(70, 115, 165, 0.08);
+  --paper-line-major: rgba(70, 115, 165, 0.16);
+  --paper-margin-red: rgba(229, 9, 20, 0.22);
+  --paper-grid-size: 24px;
+  --paper-major-size: 120px;
+
+  /* Layered CSS Linear Gradients for Mathematical Graph Paper */
+  --bg-graph-pattern:
+    linear-gradient(to right, var(--paper-line-major) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--paper-line-major) 1px, transparent 1px),
+    linear-gradient(to right, var(--paper-line-minor) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--paper-line-minor) 1px, transparent 1px);
+  --bg-graph-size:
+    var(--paper-major-size) var(--paper-major-size),
+    var(--paper-major-size) var(--paper-major-size),
+    var(--paper-grid-size) var(--paper-grid-size),
+    var(--paper-grid-size) var(--paper-grid-size);
+
+  --bg-main: #fbfbf8;
   --bg-surface: #0c1017;
   --bg-elevated: #131822;
   --bg-card: #111620;
   --bg-card-hover: #171f2d;
   
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-card: rgba(255, 255, 255, 0.06);
+  --border-subtle: rgba(70, 115, 165, 0.16);
+  --border-card: rgba(255, 255, 255, 0.08);
   --border-glow: #e50914;
 
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
+  --text-main: #0f172a;
+  --text-muted: #475569;
   --text-faint: #64748b;
 
   --praflix-red: #e50914;
@@ -31,8 +54,8 @@
   --radius-md: 10px;
   --radius-lg: 16px;
   
-  --shadow-card: 0 6px 20px -4px rgba(0, 0, 0, 0.6);
-  --shadow-hover: 0 18px 36px -6px rgba(0, 0, 0, 0.8), 0 0 24px -2px rgba(229, 9, 20, 0.25);
+  --shadow-card: 0 4px 14px -2px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
+  --shadow-hover: 0 16px 32px -4px rgba(15, 23, 42, 0.2), 0 0 20px -2px rgba(229, 9, 20, 0.25);
   --shadow-modal: 0 25px 60px -10px rgba(0, 0, 0, 0.9);
 
   --transition-fast: 0.15s ease;
@@ -47,7 +70,11 @@
 
 body {
   font-family: var(--font-sans);
-  background-color: var(--bg-main);
+  background-color: var(--bg-paper-base);
+  background-image: var(--bg-graph-pattern);
+  background-size: var(--bg-graph-size);
+  background-repeat: repeat;
+  background-attachment: scroll;
   color: var(--text-main);
   min-height: 100vh;
   line-height: 1.5;
@@ -55,20 +82,20 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar - Architectural Notebook Style */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-main);
+  background: var(--bg-paper-base);
 }
 ::-webkit-scrollbar-thumb {
-  background: #202938;
+  background: #cbd5e1;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #94a3b8;
 }
 
 /* ==========================================================================
@@ -351,6 +378,20 @@ body {
 .catalog-container {
   max-width: 1440px;
   margin: 0 auto;
+  position: relative;
+}
+
+/* Subtle red vertical notebook margin line near left edge */
+.catalog-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 1.5px;
+  background-color: var(--paper-margin-red);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .catalog-header-bar {
@@ -373,7 +414,7 @@ body {
 .catalog-section-heading {
   font-size: 24px;
   font-weight: 900;
-  color: #ffffff;
+  color: #0f172a;
   letter-spacing: -0.3px;
   text-transform: uppercase;
 }
@@ -384,13 +425,13 @@ body {
 }
 
 .active-count-badge {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--border-subtle);
+  background: rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(70, 115, 165, 0.25);
   border-radius: 14px;
   padding: 4px 12px;
   font-size: 12px;
   font-weight: 700;
-  color: #e2e8f0;
+  color: #0f172a;
 }
 
 /* 6-Column Responsive Movie Grid */
@@ -1801,9 +1842,7 @@ body {
   overflow: hidden;
   background: #070b14;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  cursor: pointer;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
-  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
   width: 100%;
 }
 
@@ -1815,14 +1854,6 @@ body {
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
 }
 
-.screenshot-card:hover,
-.screenshot-card:focus-visible {
-  transform: translateY(-4px);
-  border-color: rgba(229, 9, 20, 0.7);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8);
-  outline: none;
-}
-
 /* Maintain original aspect ratio: object-fit contain on deep dark backing prevents stretching or cropping */
 .screenshot-img {
   width: 100%;
@@ -1830,71 +1861,6 @@ body {
   object-fit: contain;
   background: #070b14;
   display: block;
-  transition: transform 0.3s ease;
-}
-
-.screenshot-card:hover .screenshot-img {
-  transform: scale(1.02);
-}
-
-.screenshot-provider-badge {
-  position: absolute;
-  bottom: 12px;
-  left: 12px;
-  background: rgba(10, 15, 30, 0.88);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: #f8fafc;
-  font-size: 11.5px;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  z-index: 2;
-  pointer-events: none;
-  letter-spacing: 0.3px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-}
-
-.screenshot-hover-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(7, 11, 20, 0.45);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  opacity: 0;
-  transition: opacity var(--transition-fast);
-  z-index: 1;
-}
-
-.screenshot-card:hover .screenshot-hover-overlay,
-.screenshot-card:focus-visible .screenshot-hover-overlay {
-  opacity: 1;
-}
-
-.screenshot-zoom-icon {
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  background: rgba(229, 9, 20, 0.9);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 19px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
-}
-
-.screenshot-zoom-label {
-  color: #ffffff;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
 }
 
 /* Screenshots Lightbox */
