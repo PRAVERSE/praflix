@@ -1,0 +1,32 @@
+{
+  "provider": "HDWall",
+  "failed": false,
+  "error": null,
+  "newMovies": 0,
+  "newSeries": 0,
+  "newlyIngestedCount": 0,
+  "updatedExisting": 0,
+  "itemsProcessed": 0,
+  "newCanonicalTitles": [],
+  "existingTitlesUpdated": [],
+  "newProviderLinks": [],
+  "titleListEntriesAppended": [],
+  "incompleteTitles": [],
+  "incompleteCount": 0,
+  "duplicateRecordsSkipped": 0,
+  "duplicateLinksSkipped": 0,
+  "duplicateLinksSkippedList": [],
+  "unmatchedOrAmbiguous": 0,
+  "variantsImported": 0,
+  "appendedToTitleListCount": 0,
+  "qualityCounts": {
+    "4K": 0,
+    "1080p": 0,
+    "720p": 0,
+    "480p": 0
+  },
+  "liveCrawl": {
+    "liveReachable": true,
+    "liveDiscoveredCount": 0
+  }
+}
