@@ -1,1 +1,10 @@
-{}
+{
+  "10Moviez_2026-10-13_run_38400731414_none": {
+    "sent": true,
+    "sentAt": "2026-10-13T12:54:52.129Z",
+    "provider": "10Moviez",
+    "newTitlesCount": 0,
+    "existingUpdatedCount": 0,
+    "deploymentStatus": "Confirmed successful"
+  }
+}
