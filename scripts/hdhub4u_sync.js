@@ -52,25 +52,17 @@ const {
   isCompleteSeason
 } = resolver;
 
+const titleDecoder = require('./title_decoder');
+
 const SOURCE_BASE_URL = 'https://new2.hdhub4u.free/';
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 (PRAFLIX-Bot/1.0)';
 
 /**
  * Clean & normalize titles for canonical matching
  */
-function normalizeTitle(title) {
+function normalizeTitle(title, year) {
   if (!title) return '';
-  return String(title)
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/^\[duplicate\]\s*/gi, '')
-    .replace(/\b(download|watch|online|full|movie|series|season\s*\d+|part\s*\d+|hindi|dubbed|dual\s*audio|esub|hevc|web-?dl|bluray|hdrip|hd|480p|720p|1080p|2160p|4k)\b/gi, ' ')
-    .replace(/\[[^\]]*\]/g, ' ')
-    .replace(/\([^)]*\)/g, ' ')
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return titleDecoder.normalizeForMatching(title, year);
 }
 
 /**
@@ -126,17 +118,7 @@ function extractSeason(title, raw) {
  */
 function cleanDisplayTitle(rawTitle) {
   if (!rawTitle) return '';
-  let s = String(rawTitle).trim();
-  s = s.replace(/^\[DUPLICATE\]\s*/i, '');
-  s = s.replace(/^Free\s+/i, '');
-  // Cut off quality specs, format tags, etc.
-  s = s.replace(/\s*\(\d{4}\).*/, '');
-  s = s.replace(/\s*Season\s*\d+.*/i, '');
-  s = s.replace(/\s*\[.*\]\s*/g, ' ');
-  s = s.replace(/\s*\|.*$/, '');
-  s = s.replace(/[^a-zA-Z0-9\s:.'’\-]/g, ' ');
-  s = s.replace(/\s+/g, ' ').trim();
-  return s;
+  return titleDecoder.extractTitleMetadata(rawTitle).displayTitle;
 }
 
 /**
@@ -644,6 +626,7 @@ async function runHDHub4uSync(options = {}) {
   let titlesWithoutDownloads = 0;
 
   const newlyAddedCanonicalItems = [];
+  const incompleteTitles = [];
   const ambiguousReviewList = [];
   const auditRecords = [];
   const nowIso = new Date().toISOString();
@@ -708,9 +691,64 @@ async function runHDHub4uSync(options = {}) {
     let targetCanonicalId = null;
     let targetCanonicalItem = null;
 
+    if (items.length > 1) {
+      duplicatesPrevented += (items.length - 1);
+    }
+
+    // Process and verify download options
+    const verifiedLinks = [];
+    const seenLinks = new Set();
+
+    combinedQualities.forEach(({ q, sourceUrl }) => {
+      const linkUrl = (q.link || '').trim();
+      if (!linkUrl) return;
+
+      downloadOptionsCollected++;
+      const classification = classifyLinkVerification(linkUrl, sourceUrl);
+
+      if (classification.status === 'verified') {
+        verifiedDestinationsCount++;
+      } else if (classification.status === 'broken') {
+        brokenDestinationsCount++;
+        return;
+      } else if (classification.status === 'temporarily_unavailable') {
+        temporarilyUnavailableCount++;
+        return;
+      } else {
+        unverifiedDestinationsCount++;
+        return;
+      }
+
+      // Check complete-season requirement for Web Series
+      if (isSeries) {
+        const isComplete = isCompleteSeason(q) || isCompleteSeason({ downloadUrl: linkUrl, episode: q.episode || q.rawText });
+        if (!isComplete) {
+          // Individual episode links strictly omitted
+          return;
+        }
+      }
+
+      const resKey = normalizeResolution(q.quality || q.rawText);
+      const epKey = isSeries ? 'FULL SERIES' : undefined;
+      const dedupKey = `${linkUrl}__${resKey}__${epKey || ''}`;
+
+      if (!seenLinks.has(dedupKey)) {
+        seenLinks.add(dedupKey);
+        verifiedLinks.push({
+          sourceName: 'Direct',
+          downloadUrl: linkUrl,
+          resolution: resKey,
+          rawQuality: q.quality || undefined,
+          episode: isSeries ? 'FULL SERIES' : undefined,
+          season: isSeries ? (primaryItem.season || 'Season 1') : undefined,
+          format: 'WEB-DL',
+          verificationStatus: 'verified'
+        });
+      }
+    });
+
     if (matchedItem) {
       alreadyPresentCount++;
-      existingUpdatedCount++;
       targetCanonicalItem = matchedItem;
       targetCanonicalId = Number(matchedItem.canonicalId);
 
@@ -729,8 +767,68 @@ async function runHDHub4uSync(options = {}) {
           });
         }
       });
+
+      // Update downloads if verified links found
+      let existingEntry = downloadsMap.get(targetCanonicalId);
+      if (verifiedLinks.length > 0) {
+        titlesWithDownloads++;
+        existingUpdatedCount++;
+        if (!existingEntry) {
+          existingEntry = {
+            catalogueId: targetCanonicalId,
+            title: targetCanonicalItem.displayTitle,
+            type: targetCanonicalItem.type,
+            year: targetCanonicalItem.year,
+            lastCheckedAt: nowIso,
+            discoveryStatus: 'links_found',
+            verificationStatus: 'verified',
+            verificationEvidence: 'Verified storage CDN / drive destination',
+            links: verifiedLinks
+          };
+          downloadsMap.set(targetCanonicalId, existingEntry);
+          downloadsData.entries.push(existingEntry);
+        } else {
+          const existingUrls = new Set((existingEntry.links || []).map(l => `${l.downloadUrl}__${l.resolution}`));
+          verifiedLinks.forEach(vl => {
+            const k = `${vl.downloadUrl}__${vl.resolution}`;
+            if (!existingUrls.has(k)) {
+              existingUrls.add(k);
+              if (!existingEntry.links) existingEntry.links = [];
+              existingEntry.links.push(vl);
+            }
+          });
+          existingEntry.lastCheckedAt = nowIso;
+          existingEntry.discoveryStatus = 'links_found';
+          existingEntry.verificationStatus = 'verified';
+        }
+      }
+
+      auditRecords.push({
+        canonicalId: targetCanonicalId,
+        title: targetCanonicalItem.displayTitle,
+        type: targetCanonicalItem.type,
+        year: targetCanonicalItem.year,
+        outcome: 'already_present_updated',
+        linksCount: verifiedLinks.length
+      });
     } else {
-      // Genuinely missing title! Add to catalog
+      // Genuinely missing title from catalog!
+      // INGESTION GATE: New title must NEVER be added to catalog without eligible verified download links!
+      if (verifiedLinks.length === 0) {
+        titlesWithoutDownloads++;
+        incompleteTitles.push({
+          displayTitle: primaryItem.displayTitle,
+          rawTitle: primaryItem.rawTitle,
+          year: primaryItem.year || '',
+          type: primaryItem.type,
+          sourceUrl: primaryItem.sourceUrl,
+          reason: 'no_eligible_links'
+        });
+        console.warn(`[INCOMPLETE IMPORT] "${primaryItem.displayTitle}" excluded from catalog: No eligible verified download links.`);
+        continue;
+      }
+
+      // Verified links exist: Proceed with safe canonical ingestion
       newlyAddedCount++;
       if (isSeries) newlyAddedSeries++;
       else newlyAddedMovies++;
@@ -803,124 +901,32 @@ async function runHDHub4uSync(options = {}) {
           sightings: [{ surface: 'hdhub4u_sync', discoveredAt: nowIso }]
         });
       });
-    }
 
-    if (items.length > 1) {
-      duplicatesPrevented += (items.length - 1);
-    }
-
-    // Process and verify download options
-    const verifiedLinks = [];
-    const seenLinks = new Set();
-
-    combinedQualities.forEach(({ q, sourceUrl }) => {
-      const linkUrl = (q.link || '').trim();
-      if (!linkUrl) return;
-
-      downloadOptionsCollected++;
-      const classification = classifyLinkVerification(linkUrl, sourceUrl);
-
-      if (classification.status === 'verified') {
-        verifiedDestinationsCount++;
-      } else if (classification.status === 'broken') {
-        brokenDestinationsCount++;
-        return;
-      } else if (classification.status === 'temporarily_unavailable') {
-        temporarilyUnavailableCount++;
-        return;
-      } else {
-        unverifiedDestinationsCount++;
-        return;
-      }
-
-      // Check complete-season requirement for Web Series
-      if (isSeries) {
-        const isComplete = isCompleteSeason(q) || isCompleteSeason({ downloadUrl: linkUrl, episode: q.episode || q.rawText });
-        if (!isComplete) {
-          // Individual episode links strictly omitted
-          return;
-        }
-      }
-
-      const resKey = normalizeResolution(q.quality || q.rawText);
-      const epKey = isSeries ? 'FULL SERIES' : undefined;
-      const dedupKey = `${linkUrl}__${resKey}__${epKey || ''}`;
-
-      if (!seenLinks.has(dedupKey)) {
-        seenLinks.add(dedupKey);
-        verifiedLinks.push({
-          sourceName: 'Direct',
-          downloadUrl: linkUrl,
-          resolution: resKey,
-          rawQuality: q.quality || undefined,
-          episode: isSeries ? 'FULL SERIES' : undefined,
-          season: isSeries ? (targetCanonicalItem.season || 'Season 1') : undefined,
-          format: 'WEB-DL',
-          verificationStatus: 'verified'
-        });
-      }
-    });
-
-    // Update or create downloads entry
-    let existingEntry = downloadsMap.get(targetCanonicalId);
-    if (verifiedLinks.length > 0) {
+      // Add to downloadsData with verified links
       titlesWithDownloads++;
-      if (!existingEntry) {
-        existingEntry = {
-          catalogueId: targetCanonicalId,
-          title: targetCanonicalItem.displayTitle,
-          type: targetCanonicalItem.type,
-          year: targetCanonicalItem.year,
-          lastCheckedAt: nowIso,
-          discoveryStatus: 'links_found',
-          verificationStatus: 'verified',
-          verificationEvidence: 'Verified storage CDN / drive destination',
-          links: verifiedLinks
-        };
-        downloadsMap.set(targetCanonicalId, existingEntry);
-        downloadsData.entries.push(existingEntry);
-      } else {
-        // Merge verified links without duplicating
-        const existingUrls = new Set((existingEntry.links || []).map(l => `${l.downloadUrl}__${l.resolution}`));
-        verifiedLinks.forEach(vl => {
-          const k = `${vl.downloadUrl}__${vl.resolution}`;
-          if (!existingUrls.has(k)) {
-            existingUrls.add(k);
-            if (!existingEntry.links) existingEntry.links = [];
-            existingEntry.links.push(vl);
-          }
-        });
-        existingEntry.lastCheckedAt = nowIso;
-        existingEntry.discoveryStatus = 'links_found';
-        existingEntry.verificationStatus = 'verified';
-      }
-    } else {
-      titlesWithoutDownloads++;
-      if (!existingEntry) {
-        existingEntry = {
-          catalogueId: targetCanonicalId,
-          title: targetCanonicalItem.displayTitle,
-          type: targetCanonicalItem.type,
-          year: targetCanonicalItem.year,
-          lastCheckedAt: nowIso,
-          discoveryStatus: 'no_links_found',
-          verificationStatus: 'unverified',
-          verificationEvidence: 'No verified download options found during sync',
-          links: []
-        };
-        downloadsMap.set(targetCanonicalId, existingEntry);
-        downloadsData.entries.push(existingEntry);
-      }
-    }
+      const downloadsEntry = {
+        catalogueId: targetCanonicalId,
+        title: targetCanonicalItem.displayTitle,
+        type: targetCanonicalItem.type,
+        year: targetCanonicalItem.year,
+        lastCheckedAt: nowIso,
+        discoveryStatus: 'links_found',
+        verificationStatus: 'verified',
+        verificationEvidence: 'Verified storage CDN / drive destination',
+        links: verifiedLinks
+      };
+      downloadsMap.set(targetCanonicalId, downloadsEntry);
+      downloadsData.entries.push(downloadsEntry);
 
-    auditRecords.push({
-      canonicalId: targetCanonicalId,
-      title: targetCanonicalItem.displayTitle,
-      type: targetCanonicalItem.type,
-      year: targetCanonicalItem.year,
-      outcome: matchedItem ? 'already_present_updated' : 'newly_added',
-      linksCount: verifiedLinks.length
-    });
+      auditRecords.push({
+        canonicalId: targetCanonicalId,
+        title: targetCanonicalItem.displayTitle,
+        type: targetCanonicalItem.type,
+        year: targetCanonicalItem.year,
+        outcome: 'newly_added',
+        linksCount: verifiedLinks.length
+      });
+    }
   }
 
   // 4. Update Durable Inventories
@@ -935,13 +941,15 @@ async function runHDHub4uSync(options = {}) {
     movies: hdhubCompleteData.movies || [],
     webSeries: hdhubCompleteData.webSeries || []
   };
-  fs.writeFileSync(HDHUB4U_JSON_PATH, JSON.stringify(durableJson, null, 2), 'utf8');
+  if (!options.dryRun) {
+    fs.writeFileSync(HDHUB4U_JSON_PATH, JSON.stringify(durableJson, null, 2), 'utf8');
+  }
 
   // Synchronize newly discovered & successfully processed titles to title list/HDHUB4U TITLE.txt
   // Append-only: Preserves all historical records, order, and prevents duplicates.
   const titleListSync = require('./title_list_sync');
-  const allDiscoveredTitles = Array.from(discoveredItemsMap.values()).map(i => i.displayTitle || i.rawTitle);
-  const titleListResult = titleListSync.syncProviderTitleList('hdhub4u', allDiscoveredTitles, {
+  const candidateTitlesForTitleList = newlyAddedCanonicalItems.map(i => i.displayTitle || i.title);
+  const titleListResult = titleListSync.syncProviderTitleList('hdhub4u', candidateTitlesForTitleList, {
     date: new Date(),
     dryRun: Boolean(options.dryRun)
   });
@@ -985,7 +993,8 @@ async function runHDHub4uSync(options = {}) {
       destinationsTemporarilyUnavailable: temporarilyUnavailableCount,
       destinationsUnverified: unverifiedDestinationsCount,
       titlesWithDownloads: titlesWithDownloads,
-      titlesWithoutDownloads: titlesWithoutDownloads
+      titlesWithoutDownloads: titlesWithoutDownloads,
+      incompleteTitlesCount: incompleteTitles.length
     },
     newlyAddedTitles: newlyAddedCanonicalItems.map(c => ({
       canonicalId: c.canonicalId,
@@ -996,10 +1005,13 @@ async function runHDHub4uSync(options = {}) {
       provider: 'HDHub4u'
     })),
     newlyAddedCanonicalItems: newlyAddedCanonicalItems,
+    incompleteTitles: incompleteTitles,
     titleListSync: titleListResult,
     ambiguousTitles: ambiguousReviewList
   };
-  fs.writeFileSync(AUDIT_INVENTORY_PATH, JSON.stringify(auditReport, null, 2), 'utf8');
+  if (!options.dryRun) {
+    fs.writeFileSync(AUDIT_INVENTORY_PATH, JSON.stringify(auditReport, null, 2), 'utf8');
+  }
 
   // 5. Invariant Checks & Atomic Commit
   console.log('\n[5/5] Enforcing catalog invariants and committing data files...');
@@ -1007,14 +1019,16 @@ async function runHDHub4uSync(options = {}) {
     throw new Error(`CRITICAL INVARIANT VIOLATION: Catalog shrunk from ${initialCatalogCount} to ${catalog.length}. Reverting.`);
   }
 
-  fs.writeFileSync(CATALOG_PATH, JSON.stringify(catalog, null, 2), 'utf8');
-  fs.writeFileSync(DOWNLOADS_PATH, JSON.stringify(downloadsData, null, 2), 'utf8');
-  fs.writeFileSync(SOURCES_PATH, JSON.stringify(sourceRecords, null, 2), 'utf8');
+  if (!options.dryRun) {
+    fs.writeFileSync(CATALOG_PATH, JSON.stringify(catalog, null, 2), 'utf8');
+    fs.writeFileSync(DOWNLOADS_PATH, JSON.stringify(downloadsData, null, 2), 'utf8');
+    fs.writeFileSync(SOURCES_PATH, JSON.stringify(sourceRecords, null, 2), 'utf8');
 
-  // Update crawl checkpoint
-  crawlState.lastCrawlTimestamp = nowIso;
-  crawlState.processedCount = discoveredItemsMap.size;
-  saveCheckpoint(crawlState);
+    // Update crawl checkpoint
+    crawlState.lastCrawlTimestamp = nowIso;
+    crawlState.processedCount = discoveredItemsMap.size;
+    saveCheckpoint(crawlState);
+  }
 
   console.log(`✓ Catalog successfully saved: ${catalog.length.toLocaleString()} titles (+${newlyAddedCount} newly added).`);
   console.log(`✓ Downloads database successfully saved: ${downloadsData.entries.length.toLocaleString()} entries.`);

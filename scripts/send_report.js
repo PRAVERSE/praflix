@@ -18,6 +18,7 @@ const path = require('path');
 const {
   sendTelegramReport,
   formatNewTitlesTelegramReport,
+  formatIncompleteImportsWarning,
   formatProviderFailureNotification,
   formatIstDateTime
 } = require('./sync_core');
@@ -115,8 +116,18 @@ async function main() {
       provider: targetProvider,
       runTime: summary.runTimeIst || formatIstDateTime(new Date()),
       newTitles: newTitles,
+      incompleteTitles: summary.incompleteTitles || [],
       validationStatus: 'Passed',
       deploymentStatus: deploymentStatus
+    });
+  } else if (summary.incompleteTitles && summary.incompleteTitles.length > 0) {
+    // Incomplete imports warning: zero new titles added because downloads missing
+    finalMessage = formatIncompleteImportsWarning({
+      provider: targetProvider,
+      runTime: summary.runTimeIst || formatIstDateTime(new Date()),
+      incompleteTitles: summary.incompleteTitles,
+      validationStatus: 'Passed (Catalog Protected)',
+      deploymentStatus: deploymentStatus === 'Confirmed successful' ? 'Catalog Verified' : deploymentStatus
     });
   } else {
     // Standard daily report format (with confirmed deployment status)
