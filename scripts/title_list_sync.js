@@ -9,16 +9,17 @@
  * - HDWall -> title list/HDWALL TITLE.txt
  *
  * Requirements:
- * - Format: DD/MM/YY Title Name (e.g. 11/10/26 Only Me)
+ * - Format: DD/MM/YY Title Name (e.g. 13/10/26 Only Me) in Asia/Kolkata time zone
  * - Append-only: Preserves all existing lines and order.
- * - Duplicate prevention: Normalizes whitespace, punctuation, casing, tags.
+ * - Duplicate prevention: Normalizes whitespace, punctuation, casing, tags, entity artifacts.
  * - Idempotent: Repeated syncs do not append duplicates.
  * - Provider separation: Never writes titles to the wrong provider file.
- * - Ingestion gate: Only appends after successful catalog/source-record ingestion.
+ * - Ingestion gate: Only appends after successful catalog/source-record ingestion with eligible links.
  */
 
 const fs = require('fs');
 const path = require('path');
+const titleDecoder = require('./title_decoder');
 
 const BASE_DIR = path.dirname(__dirname);
 
@@ -39,18 +40,45 @@ const PROVIDER_FILES = {
 };
 
 /**
+ * Format date strictly as DD/MM/YY in Asia/Kolkata time zone
+ * Avoids runner UTC date drift around midnight
+ * @param {Date} [d]
+ * @returns {string} e.g. "13/10/26"
+ */
+function formatTitleListDate(d = new Date()) {
+  const dateObj = (d instanceof Date && !isNaN(d)) ? d : new Date();
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Kolkata',
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit'
+  }).format(dateObj);
+}
+
+/**
+ * Clean display title for human-readable entry in title list
+ * Decodes HTML entities and strips residual artifacts
+ * @param {string} rawTitle
+ * @returns {string}
+ */
+function cleanTitleForEntry(rawTitle) {
+  if (!rawTitle) return '';
+  return titleDecoder.cleanTitle(rawTitle);
+}
+
+/**
  * Extract normalized comparison keys from a title string (both with year and without year)
+ * @param {string} str
+ * @returns {string[]}
  */
 function extractTitleKeys(str) {
   if (!str) return [];
+  // Strip date prefix if present e.g. "13/10/26 Only Me"
   let s = String(str)
     .replace(/^[-*•]\s*/, '')
-    .replace(/^\s*\d{1,2}\/\d{1,2}\/\d{2,4}\s+/, '')
-    .replace(/^\[duplicate\]\s*/i, '')
-    .replace(/^free\s+/i, '')
-    .replace(/^xe02c\s+/i, '')
-    .replace(/\s*8211\s*/g, ' - ')
-    .replace(/\[https?:\/\/[^\]]+\]/gi, ' ');
+    .replace(/^\s*\d{1,2}\/\d{1,2}\/\d{2,4}\s+/, '');
+
+  s = titleDecoder.cleanTitle(s);
 
   // Extract up through 4-digit year if present: e.g. 'Adbhut (2024)'
   const m = s.match(/^(.*?)(?:\s*\(?(19\d{2}|20\d{2})\)?(?:\s|$)|$)/);
@@ -79,41 +107,6 @@ function extractTitleKeys(str) {
 function normalizeTitleForComparison(title) {
   const keys = extractTitleKeys(title);
   return keys.length > 0 ? keys[keys.length - 1] : '';
-}
-
-/**
- * Format current or provided date as DD/MM/YY
- */
-function formatTitleListDate(d = new Date()) {
-  const dateObj = (d instanceof Date && !isNaN(d)) ? d : new Date();
-  const day = String(dateObj.getDate()).padStart(2, '0');
-  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-  const year = String(dateObj.getFullYear()).slice(-2);
-  return `${day}/${month}/${year}`;
-}
-
-/**
- * Clean display title for human-readable entry in title list
- */
-function cleanTitleForEntry(rawTitle) {
-  if (!rawTitle) return '';
-  let clean = String(rawTitle)
-    .replace(/^xE02C\s*/i, '')
-    .replace(/^\[duplicate\]\s*/i, '')
-    .replace(/^free\s+/i, '')
-    .replace(/\s*8211\s*/g, ' - ') // HTML entity 8211 -> hyphen
-    .replace(/\|.*$/g, '')
-    .replace(/\[(all\s*episodes|nf\s*series|full\s*movie|exclusively\s*on\s*[^\]]+)\]/gi, '')
-    .replace(/\b(1080p|720p|480p|4k|2160p|web-?dl|webrip|bluray|hdr|hevc|x264|x265|dd5\.1|dd2\.0|clean|clean-audio|line|esubs?|hc-esubs?|dual\s*audio)\b.*/gi, '')
-    .replace(/\[.*?\]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  // If clean title is too short or empty, fallback to rawTitle without media tags
-  if (!clean || clean.length < 2) {
-    clean = String(rawTitle).replace(/\[.*?\]/g, '').replace(/\s+/g, ' ').trim();
-  }
-  return clean;
 }
 
 /**

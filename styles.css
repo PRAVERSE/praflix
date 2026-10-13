@@ -1,53 +1,69 @@
 /* ==========================================================================
    PRAFLIX — A PRAVERSE Company
    Cinema Catalog Discovery Design System
-   Notebook Graph Paper Aesthetic
    ========================================================================== */
 
 :root {
-  /* ── Paper palette ─────────────────────────────────── */
-  --bg-main:        #f7f5f0;   /* warm ivory page */
-  --bg-surface:     #f2efe9;   /* slightly deeper ivory for surfaces */
-  --bg-elevated:    #fffefb;   /* near-white elevation */
-  --bg-card:        #faf8f4;   /* card face */
-  --bg-card-hover:  #fffdf8;   /* card hover lift */
+  /* ========================================================================
+     PRAFLIX Notebook Graph Paper Design Tokens
+     Clean light background with subtle blue-grey square grid & red margin guide
+     ======================================================================== */
+  --bg-paper-base: #FAFAFA;
+  --paper-line-minor: rgba(70, 115, 165, 0.06);
+  --paper-line-major: rgba(70, 115, 165, 0.12);
+  --paper-margin-red: rgba(220, 38, 38, 0.22);
+  --paper-grid-size: 24px;
+  --paper-major-size: 120px;
 
-  /* ── Grid paper lines ─────────────────────────────── */
-  --grid-color:     rgba(160, 185, 215, 0.35);   /* pale blue-grey grid */
-  --grid-size:      28px;                         /* square cell size */
-  --margin-color:   rgba(229, 9, 20, 0.18);       /* red notebook margin */
-  --margin-x:       88px;                         /* margin line x position */
-  --rule-color:     rgba(160, 185, 215, 0.18);    /* faint horizontal rules */
+  /* Layered CSS Linear Gradients for Mathematical Graph Paper */
+  --bg-graph-pattern:
+    linear-gradient(to right, var(--paper-line-major) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--paper-line-major) 1px, transparent 1px),
+    linear-gradient(to right, var(--paper-line-minor) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--paper-line-minor) 1px, transparent 1px);
+  --bg-graph-size:
+    var(--paper-major-size) var(--paper-major-size),
+    var(--paper-major-size) var(--paper-major-size),
+    var(--paper-grid-size) var(--paper-grid-size),
+    var(--paper-grid-size) var(--paper-grid-size);
 
-  /* ── Borders ──────────────────────────────────────── */
-  --border-subtle:  rgba(100, 140, 180, 0.18);
-  --border-card:    rgba(100, 140, 180, 0.14);
-  --border-glow:    #e50914;
+  /* Clean Utility Palette Required Design Tokens */
+  --bg-main: #FAFAFA;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #FFFFFF;
+  
+  --border-subtle: #E5E7EB;
+  --border-card: #E5E7EB;
+  --border-glow: #2563EB;
 
-  /* ── Typography ───────────────────────────────────── */
-  --text-main:      #1e2733;   /* deep navy-ink */
-  --text-muted:     #4a5568;   /* muted ink */
-  --text-faint:     #8896a8;   /* faint pencil grey */
+  --text-main: #111827;
+  --text-muted: #6B7280;
+  --text-faint: #9CA3AF;
 
-  /* ── Brand accents (preserved) ───────────────────── */
-  --praflix-red:    #e50914;
-  --praflix-red-glow: rgba(229, 9, 20, 0.22);
-  --praflix-gold:   #c07a12;
-  --praflix-gold-glow: rgba(192, 122, 18, 0.2);
-  --praflix-blue:   #2563eb;
-  --praflix-emerald:#059669;
-  --praflix-purple: #7c3aed;
+  --primary-accent: #2563EB;
+  --primary-accent-hover: #1D4ED8;
+  --color-success: #16A34A;
+  --color-error: #DC2626;
 
-  /* ── Typography & radii ───────────────────────────── */
+  /* Preserved PRAFLIX Branding & Accents */
+  --praflix-red: #E50914;
+  --praflix-red-glow: rgba(229, 9, 20, 0.25);
+  --praflix-gold: #F59E0B;
+  --praflix-gold-glow: rgba(245, 158, 11, 0.2);
+  --praflix-blue: #2563EB;
+  --praflix-emerald: #16A34A;
+  --praflix-purple: #7C3AED;
+
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
-
-  /* ── Shadows — softer for paper feel ─────────────── */
-  --shadow-card:  0 2px 12px -2px rgba(30, 39, 51, 0.12);
-  --shadow-hover: 0 8px 28px -4px rgba(30, 39, 51, 0.18), 0 0 16px -2px rgba(229, 9, 20, 0.12);
-  --shadow-modal: 0 20px 50px -8px rgba(30, 39, 51, 0.22);
+  
+  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
+  --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
 
   --transition-fast: 0.15s ease;
   --transition-smooth: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -61,33 +77,11 @@
 
 body {
   font-family: var(--font-sans);
-  background-color: var(--bg-main);
-  /* ── Notebook graph paper grid (CSS-only, no image files) ── */
-  background-image:
-    /* Red margin line */
-    linear-gradient(
-      to right,
-      transparent var(--margin-x),
-      var(--margin-color) var(--margin-x),
-      var(--margin-color) calc(var(--margin-x) + 1px),
-      transparent calc(var(--margin-x) + 1px)
-    ),
-    /* Vertical grid lines */
-    repeating-linear-gradient(
-      to right,
-      var(--grid-color) 0,
-      var(--grid-color) 1px,
-      transparent 1px,
-      transparent var(--grid-size)
-    ),
-    /* Horizontal grid lines */
-    repeating-linear-gradient(
-      to bottom,
-      var(--grid-color) 0,
-      var(--grid-color) 1px,
-      transparent 1px,
-      transparent var(--grid-size)
-    );
+  background-color: var(--bg-paper-base);
+  background-image: var(--bg-graph-pattern);
+  background-size: var(--bg-graph-size);
+  background-repeat: repeat;
+  background-attachment: scroll;
   color: var(--text-main);
   min-height: 100vh;
   line-height: 1.5;
@@ -95,20 +89,20 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar - Architectural Notebook Style */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-surface);
+  background: var(--bg-paper-base);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(100, 140, 180, 0.35);
+  background: #cbd5e1;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 140, 180, 0.55);
+  background: #94a3b8;
 }
 
 /* ==========================================================================
@@ -119,12 +113,10 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
-  /* Frosted paper header */
-  background: rgba(247, 245, 240, 0.92);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border-bottom: 2px solid var(--border-subtle);
-  box-shadow: 0 1px 8px rgba(30, 39, 51, 0.07);
+  border-bottom: 1px solid var(--border-subtle);
   transition: background var(--transition-fast);
 }
 
@@ -211,13 +203,13 @@ body {
 
 .nav-link:hover {
   color: var(--text-main);
-  background: rgba(100, 140, 180, 0.12);
+  background: #F3F4F6;
 }
 
 .nav-link.active {
-  color: var(--praflix-red);
-  background: rgba(229, 9, 20, 0.08);
-  border: 1px solid rgba(229, 9, 20, 0.2);
+  color: #fff;
+  background: var(--primary-accent);
+  border: 1px solid var(--primary-accent);
 }
 
 .header-right {
@@ -248,13 +240,13 @@ body {
 }
 
 .mobile-menu-btn:hover {
-  background: rgba(100, 140, 180, 0.15);
+  background: #F3F4F6;
   color: var(--text-main);
-  border-color: rgba(100, 140, 180, 0.35);
+  border-color: #D1D5DB;
 }
 
 .mobile-menu-btn:focus-visible {
-  outline: 2px solid var(--praflix-red);
+  outline: 2px solid var(--primary-accent);
   outline-offset: 2px;
 }
 
@@ -263,9 +255,8 @@ body {
    ========================================================================== */
 
 .cinema-hero-section {
-  /* Paper surface with faint warm red warmth at top */
-  background: radial-gradient(ellipse at 50% 0%, rgba(229, 9, 20, 0.04) 0%, var(--bg-surface) 60%);
-  border-bottom: 2px solid var(--border-subtle);
+  background: transparent;
+  border-bottom: 1px solid var(--border-subtle);
   padding: 40px 24px 32px 24px;
   position: relative;
   overflow: hidden;
@@ -298,7 +289,6 @@ body {
 
 .hero-brand-heading span {
   color: var(--praflix-red);
-  text-shadow: 0 0 16px rgba(229, 9, 20, 0.25);
 }
 
 .hero-brand-subheading {
@@ -323,24 +313,24 @@ body {
   position: relative;
   display: flex;
   align-items: center;
-  background: rgba(255, 253, 248, 0.85);
-  border: 2px solid var(--border-card);
+  background: #FFFFFF;
+  border: 1.5px solid var(--border-subtle);
   border-radius: 40px;
   padding: 6px 14px 6px 20px;
-  box-shadow: 0 4px 16px -3px rgba(30, 39, 51, 0.1), inset 0 1px 0 rgba(255,255,255,0.8);
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.05);
   transition: all var(--transition-fast);
 }
 
 .hero-search-box:focus-within {
-  border-color: var(--praflix-red);
-  box-shadow: 0 6px 22px -3px rgba(30, 39, 51, 0.14), 0 0 0 3px rgba(229, 9, 20, 0.08);
-  background: #fffefb;
+  border-color: var(--primary-accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  background: #FFFFFF;
 }
 
 .hero-search-icon {
   font-size: 20px;
   margin-right: 12px;
-  color: var(--text-faint);
+  color: var(--text-muted);
 }
 
 .hero-search-input {
@@ -356,12 +346,12 @@ body {
 }
 
 .hero-search-input::placeholder {
-  color: var(--text-faint);
+  color: var(--text-muted);
   font-weight: 400;
 }
 
 .hero-search-clear {
-  background: rgba(100, 140, 180, 0.1);
+  background: #F3F4F6;
   border: none;
   color: var(--text-muted);
   font-size: 18px;
@@ -376,7 +366,7 @@ body {
 }
 
 .hero-search-clear:hover {
-  background: rgba(229, 9, 20, 0.85);
+  background: var(--primary-accent);
   color: #fff;
 }
 
@@ -394,6 +384,20 @@ body {
 .catalog-container {
   max-width: 1440px;
   margin: 0 auto;
+  position: relative;
+}
+
+/* Subtle red vertical notebook margin line near left edge */
+.catalog-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 1.5px;
+  background-color: var(--paper-margin-red);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .catalog-header-bar {
@@ -416,7 +420,7 @@ body {
 .catalog-section-heading {
   font-size: 24px;
   font-weight: 900;
-  color: var(--text-main);
+  color: #0f172a;
   letter-spacing: -0.3px;
   text-transform: uppercase;
 }
@@ -427,13 +431,13 @@ body {
 }
 
 .active-count-badge {
-  background: rgba(100, 140, 180, 0.1);
-  border: 1px solid var(--border-subtle);
+  background: rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(70, 115, 165, 0.25);
   border-radius: 14px;
   padding: 4px 12px;
   font-size: 12px;
   font-weight: 700;
-  color: var(--text-muted);
+  color: #0f172a;
 }
 
 /* 6-Column Responsive Movie Grid */
@@ -474,9 +478,9 @@ body {
 }
 
 .movie-card:hover {
-  transform: translateY(-6px);
-  background: var(--bg-card-hover);
-  border-color: rgba(229, 9, 20, 0.4);
+  transform: translateY(-4px);
+  background: var(--bg-card);
+  border-color: #CBD5E1;
   box-shadow: var(--shadow-hover);
 }
 
@@ -484,7 +488,7 @@ body {
   position: relative;
   width: 100%;
   aspect-ratio: 2 / 3;
-  background: var(--bg-surface);
+  background: #F3F4F6;
   overflow: hidden;
 }
 
@@ -552,6 +556,7 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   min-height: 36px;
+  word-break: break-word;
 }
 
 .card-meta-row {
@@ -566,7 +571,7 @@ body {
 
 .card-year {
   font-weight: 700;
-  color: var(--praflix-gold);
+  color: var(--primary-accent);
 }
 
 .card-type {
@@ -575,9 +580,9 @@ body {
 }
 
 .card-season-badge {
-  background: rgba(229, 9, 20, 0.1);
-  border: 1px solid rgba(229, 9, 20, 0.25);
-  color: var(--praflix-red);
+  background: rgba(229, 9, 20, 0.18);
+  border: 1px solid rgba(229, 9, 20, 0.35);
+  color: #ff8080;
   font-size: 10px;
   font-weight: 700;
   padding: 1px 5px;
@@ -603,7 +608,7 @@ body {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  color: var(--text-muted);
+  color: #cbd5e1;
   font-family: inherit;
   font-size: 13px;
   font-weight: 600;
@@ -613,9 +618,9 @@ body {
 }
 
 .btn-page:hover:not(:disabled) {
-  background: var(--bg-elevated);
+  background: #F3F4F6;
   color: var(--text-main);
-  border-color: rgba(100, 140, 180, 0.35);
+  border-color: #D1D5DB;
 }
 
 .btn-page:disabled {
@@ -638,7 +643,7 @@ body {
   border-radius: var(--radius-sm);
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  color: var(--text-muted);
+  color: #cbd5e1;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
@@ -646,16 +651,14 @@ body {
 }
 
 .page-pill:hover {
-  background: var(--bg-elevated);
+  background: #F3F4F6;
   color: var(--text-main);
-  border-color: rgba(100, 140, 180, 0.3);
 }
 
 .page-pill.active {
-  background: var(--praflix-red);
+  background: var(--primary-accent);
   color: #fff;
-  border-color: var(--praflix-red);
-  box-shadow: 0 0 10px rgba(229, 9, 20, 0.4);
+  border-color: var(--primary-accent);
 }
 
 .page-ellipsis {
@@ -676,7 +679,7 @@ body {
 .jump-input {
   width: 60px;
   padding: 6px 8px;
-  background: var(--bg-elevated);
+  background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   color: var(--text-main);
@@ -697,7 +700,6 @@ body {
 .title-details-view {
   min-height: 100vh;
   background-color: var(--bg-main);
-  background-image: radial-gradient(ellipse at 50% 0%, rgba(229, 9, 20, 0.04) 0%, transparent 55%);
   color: var(--text-main);
   animation: details-fade-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   padding-bottom: 80px;
@@ -713,11 +715,10 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(247, 245, 240, 0.93);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--border-subtle);
-  box-shadow: 0 1px 8px rgba(30, 39, 51, 0.07);
   padding: 12px 24px;
 }
 
@@ -734,7 +735,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: rgba(100, 140, 180, 0.1);
+  background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   color: var(--text-main);
   font-family: inherit;
@@ -747,10 +748,9 @@ body {
 }
 
 .btn-back-catalog:hover {
-  background: var(--praflix-red);
-  border-color: var(--praflix-red);
-  color: #fff;
-  box-shadow: 0 0 12px rgba(229, 9, 20, 0.25);
+  background: #F3F4F6;
+  border-color: var(--primary-accent);
+  color: var(--primary-accent);
   transform: translateX(-2px);
 }
 
@@ -778,12 +778,12 @@ body {
 }
 
 .breadcrumb-item:hover {
-  color: #fff;
+  color: var(--primary-accent);
   text-decoration: underline;
 }
 
 .breadcrumb-item.active {
-  color: #f1f5f9;
+  color: var(--text-main);
   font-weight: 700;
   cursor: default;
   text-decoration: none;
@@ -804,7 +804,7 @@ body {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  color: #cbd5e1;
+  color: var(--text-main);
   font-family: inherit;
   font-size: 13px;
   font-weight: 600;
@@ -814,9 +814,9 @@ body {
 }
 
 .btn-details-search:hover {
-  background: var(--bg-elevated);
-  border-color: rgba(255, 255, 255, 0.2);
-  color: #fff;
+  background: #F3F4F6;
+  border-color: #D1D5DB;
+  color: var(--primary-accent);
 }
 
 /* Details Content Container */
@@ -832,7 +832,7 @@ body {
 /* Cinematic Hero Section */
 .details-hero-section {
   position: relative;
-  background: linear-gradient(135deg, rgba(247, 245, 240, 0.95) 0%, rgba(242, 239, 233, 0.98) 100%);
+  background: #FFFFFF;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: 40px;
@@ -841,15 +841,7 @@ body {
 }
 
 .hero-backdrop-glow {
-  position: absolute;
-  top: -100px;
-  right: -100px;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(229, 9, 20, 0.15) 0%, transparent 70%);
-  pointer-events: none;
-  border-radius: 50%;
-  filter: blur(40px);
+  display: none;
 }
 
 .details-hero-grid {
@@ -894,9 +886,10 @@ body {
   position: relative;
   border-radius: var(--radius-md);
   overflow: hidden;
-  box-shadow: var(--shadow-hover);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border-subtle);
   aspect-ratio: 2 / 3;
-  background: var(--bg-surface);
+  background: #F3F4F6;
 }
 
 .details-poster-img {
@@ -998,7 +991,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(100, 140, 180, 0.08);
+  background: #F3F4F6;
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
   padding: 6px 12px;
@@ -1020,7 +1013,7 @@ body {
 }
 
 .genre-tag {
-  background: rgba(100, 140, 180, 0.1);
+  background: #F3F4F6;
   border: 1px solid var(--border-subtle);
   color: var(--text-muted);
   font-size: 12px;
@@ -1031,8 +1024,8 @@ body {
 
 /* Synopsis Box */
 .details-synopsis-box {
-  background: var(--bg-card);
-  border: 1px solid var(--border-card);
+  background: #F9FAFB;
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   padding: 18px 20px;
 }
@@ -1040,14 +1033,14 @@ body {
 .synopsis-text {
   font-size: 14.5px;
   line-height: 1.65;
-  color: var(--text-muted);
+  color: var(--text-main);
   margin: 0;
 }
 
 .btn-toggle-synopsis {
   background: transparent;
   border: none;
-  color: var(--praflix-gold);
+  color: var(--primary-accent);
   font-family: inherit;
   font-size: 12.5px;
   font-weight: 700;
@@ -1085,27 +1078,27 @@ body {
 }
 
 .btn-action-primary {
-  background: var(--praflix-red);
-  border: 1px solid var(--praflix-red);
+  background: var(--primary-accent);
+  border: 1px solid var(--primary-accent);
   color: #fff;
-  box-shadow: 0 4px 16px rgba(229, 9, 20, 0.35);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
 }
 
 .btn-action-primary:hover {
-  background: #f40612;
-  box-shadow: 0 6px 22px rgba(229, 9, 20, 0.55);
+  background: var(--primary-accent-hover);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
   transform: translateY(-2px);
 }
 
 .btn-action-secondary {
-  background: var(--bg-elevated);
+  background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   color: var(--text-main);
 }
 
 .btn-action-secondary:hover {
-  background: var(--bg-surface);
-  border-color: rgba(100, 140, 180, 0.35);
+  background: #F3F4F6;
+  border-color: #D1D5DB;
   color: var(--text-main);
   transform: translateY(-2px);
 }
@@ -1117,8 +1110,8 @@ body {
 }
 
 .btn-action-ghost:hover {
-  background: rgba(100, 140, 180, 0.1);
-  border-color: rgba(100, 140, 180, 0.3);
+  background: #F3F4F6;
+  border-color: #D1D5DB;
   color: var(--text-main);
 }
 
@@ -1144,7 +1137,7 @@ body {
   display: inline-block;
   width: 4px;
   height: 18px;
-  background: var(--praflix-red);
+  background: var(--primary-accent);
   border-radius: 2px;
 }
 
@@ -1161,12 +1154,11 @@ body {
   display: grid;
   grid-template-columns: 460px 1fr;
   gap: 28px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-card);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   padding: 24px;
   align-items: center;
-  box-shadow: var(--shadow-card);
 }
 
 @media (max-width: 900px) {
@@ -1286,9 +1278,9 @@ body {
 }
 
 .btn-trailer-yt {
-  background: rgba(100, 140, 180, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--border-subtle);
-  color: var(--text-muted);
+  color: #cbd5e1;
   padding: 9px 18px;
   border-radius: var(--radius-sm);
   font-weight: 700;
@@ -1299,8 +1291,8 @@ body {
 }
 
 .btn-trailer-yt:hover {
-  background: rgba(100, 140, 180, 0.18);
-  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
 }
 
 
@@ -1336,25 +1328,23 @@ body {
 
 .season-tab-btn:hover {
   color: var(--text-main);
-  border-color: rgba(100, 140, 180, 0.35);
+  border-color: #CBD5E1;
 }
 
 .season-tab-btn.active {
-  background: var(--praflix-red);
-  border-color: var(--praflix-red);
+  background: var(--primary-accent);
+  border-color: var(--primary-accent);
   color: #fff;
-  box-shadow: 0 0 10px rgba(229, 9, 20, 0.4);
 }
 
 .season-content-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-card);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: var(--shadow-card);
 }
 
 .season-header-row {
@@ -1380,8 +1370,8 @@ body {
 }
 
 .episode-card {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-card);
+  background: #F9FAFB;
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   padding: 12px 14px;
   display: flex;
@@ -1424,7 +1414,7 @@ body {
 }
 
 .release-row-card:hover {
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: #CBD5E1;
 }
 
 .release-title-row {
@@ -1438,7 +1428,7 @@ body {
 .release-title-text {
   font-size: 13.5px;
   font-weight: 700;
-  color: #f1f5f9;
+  color: var(--text-main);
 }
 
 .release-meta-pills {
@@ -1453,8 +1443,9 @@ body {
   font-weight: 700;
   padding: 2px 7px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.06);
-  color: #cbd5e1;
+  background: #F3F4F6;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
 }
 
 .release-pill.pill-audio {
@@ -1599,8 +1590,8 @@ body {
    ========================================================================== */
 
 .site-footer {
-  background: var(--bg-surface);
-  border-top: 2px solid var(--border-subtle);
+  background: #FAFAFA;
+  border-top: 1px solid var(--border-subtle);
   padding: 36px 24px;
   margin-top: 40px;
 }
@@ -1637,7 +1628,7 @@ body {
 }
 
 .footer-links a:hover {
-  color: var(--praflix-red);
+  color: var(--primary-accent);
 }
 
 /* ==========================================================================
@@ -2024,8 +2015,8 @@ body {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 14px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-card);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   padding: 14px 20px;
   box-shadow: var(--shadow-card);
@@ -2033,7 +2024,7 @@ body {
 }
 
 .version-row-card:hover {
-  border-color: rgba(100, 140, 180, 0.35);
+  border-color: #CBD5E1;
   box-shadow: var(--shadow-hover);
 }
 
@@ -2124,7 +2115,8 @@ body {
 .version-tag {
   font-size: 11.5px;
   color: var(--text-muted);
-  background: rgba(255, 255, 255, 0.05);
+  background: #F3F4F6;
+  border: 1px solid var(--border-subtle);
   padding: 3px 8px;
   border-radius: 4px;
 }
@@ -2156,8 +2148,8 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: linear-gradient(135deg, #16a34a, #15803d);
-  border: 1px solid #22c55e;
+  background: var(--primary-accent);
+  border: 1px solid var(--primary-accent);
   color: #fff;
   font-size: 13px;
   font-weight: 700;
@@ -2169,9 +2161,9 @@ body {
 }
 
 .btn-version-download:hover {
-  background: #15803d;
+  background: var(--primary-accent-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.4);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
 }
 
 .btn-version-download:focus-visible {
@@ -2181,7 +2173,7 @@ body {
 
 /* Web Series Grouping & Complete Season Cards */
 .complete-season-card {
-  border-left: 3px solid var(--praflix-red);
+  border-left: 3px solid var(--primary-accent);
 }
 
 .series-section-divider {
@@ -2231,16 +2223,15 @@ body {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-card);
+  background: #111827;
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   padding: 10px 16px;
-  box-shadow: var(--shadow-card);
   transition: border-color var(--transition-fast);
 }
 
 .episode-row-card:hover {
-  border-color: rgba(100, 140, 180, 0.35);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .episode-row-meta {
@@ -2253,7 +2244,7 @@ body {
 .episode-badge {
   font-size: 13px;
   font-weight: 700;
-  color: var(--text-main);
+  color: #fff;
 }
 
 .episode-qualities-group {
@@ -2267,10 +2258,10 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--bg-elevated);
+  background: rgba(255, 255, 255, 0.03);
   padding: 4px 8px;
   border-radius: 4px;
-  border: 1px solid var(--border-card);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .episode-quality-pill {
@@ -2421,7 +2412,7 @@ img, video, iframe {
     top: 100%;
     left: 0;
     right: 0;
-    background: rgba(8, 12, 19, 0.98);
+    background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border-subtle);

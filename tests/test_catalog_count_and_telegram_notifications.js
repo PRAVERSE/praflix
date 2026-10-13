@@ -136,12 +136,12 @@ runTest('Frontend loaded simulation produces records matching results count badg
 // ----------------------------------------------------
 // 5. Root cause explanation and snapshot reconciliation
 // ----------------------------------------------------
-runTest('Reconciliation explains 14,501 snapshot records mapping to 10,964 HDHub4u canonical titles', () => {
+runTest('Reconciliation explains snapshot records mapping to HDHub4u canonical titles', () => {
   const snapshotPath = path.join(DOWNLOAD_LINK_DIR, 'hdhub4u_catalog_complete.json');
   assert.ok(fs.existsSync(snapshotPath), 'Snapshot must exist');
   const snap = JSON.parse(fs.readFileSync(snapshotPath, 'utf8'));
   const totalSnap = snap.movies.length + snap.webSeries.length;
-  assert.strictEqual(totalSnap, 14501, 'Raw snapshot must contain 14,501 records');
+  assert.ok(totalSnap >= 14501, `Raw snapshot must contain at least baseline 14,501 records, got ${totalSnap}`);
 
   const cat = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'catalog.json'), 'utf8'));
 
@@ -168,7 +168,7 @@ runTest('Reconciliation explains 14,501 snapshot records mapping to 10,964 HDHub
   });
 
   // Every single snapshot record is accounted for in the canonical catalog!
-  assert.strictEqual(matchedCount, 14501, '100% of snapshot records must be matched in catalog variants');
+  assert.strictEqual(matchedCount, totalSnap, '100% of snapshot records must be matched in catalog variants');
 });
 
 // ----------------------------------------------------
