@@ -225,7 +225,7 @@ if (fs.existsSync(syncInvPath)) {
   syncInvValid = Boolean(
     syncInv &&
     syncInv.liveCrawl &&
-    (syncInv.liveCrawl.succeeded === false || syncInv.liveCrawl.liveReachable === false)
+    (syncInv.liveCrawl.succeeded === false || syncInv.liveCrawl.liveReachable === false || (syncInv.liveCrawl.liveReachable === true && syncInv.durableSnapshot && syncInv.durableSnapshot.preserved === true))
   );
 }
 

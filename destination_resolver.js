@@ -359,6 +359,7 @@
                                s.includes('COMPLETE SEASON') ||
                                s.includes('FULL BATCH') ||
                                s.includes('SEASON PACK') ||
+                               s.includes('PACK') ||
                                s.includes('ZIP') ||
                                s.includes('BATCH');
 

@@ -54,7 +54,14 @@ const {
 
 const titleDecoder = require('./title_decoder');
 
-const SOURCE_BASE_URL = 'https://new2.hdhub4u.free/';
+const CANDIDATE_BASE_URLS = [
+  'https://new7.hdhub4u.cl/',
+  'https://new2.hdhub4u.free/',
+  'https://new1.hdhub4u.free/',
+  'https://new3.hdhub4u.free/',
+  'https://hdhub4u.tv/'
+];
+let SOURCE_BASE_URL = 'https://new7.hdhub4u.cl/';
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 (PRAFLIX-Bot/1.0)';
 
 /**
@@ -293,18 +300,40 @@ function parseDetailPage(html, pageUrl) {
 
   // Poster image
   let posterUrl = '';
-  const imgMatch = html.match(/<div class="entry-content"[^>]*>[\s\S]*?<img[^>]*src="([^"]+)"/i) ||
-                   html.match(/<img[^>]*class="[^"]*attachment-post-thumbnail[^"]*"[^>]*src="([^"]+)"/i);
-  if (imgMatch) {
-    posterUrl = imgMatch[1].trim();
-    if (posterUrl.startsWith('http://')) {
-      posterUrl = posterUrl.replace(/^http:\/\//i, 'https://');
+  const h1Idx = html.indexOf('<h1');
+  const postSlice = h1Idx !== -1 ? html.slice(h1Idx) : html;
+
+  // Primary: image in post content body before downloads or screenshots
+  const candidatePosters = [...postSlice.matchAll(/<img[^>]*src="([^"]+)"/gi)]
+    .map(m => m[1].trim())
+    .filter(u => u && !u.includes('logo') && !u.includes('icon') && !u.includes('join') && !u.includes('vlcsnap') && !u.includes('.th.') && !u.includes('wp-content/plugins') && !u.includes('svg'));
+
+  if (candidatePosters.length > 0) {
+    posterUrl = candidatePosters[0];
+  } else {
+    // Fallback: search whole html but exclude sidebar/widget nx-poster unless no other choice
+    const imgMatch = html.match(/<img[^>]*class="[^"]*attachment-post-thumbnail[^"]*"[^>]*src="([^"]+)"/i) ||
+                     html.match(/<img[^>]*src="([^"]+(?:catimages\.org|image\.tmdb\.org)[^"]*)"/i);
+    if (imgMatch) {
+      posterUrl = imgMatch[1].trim();
     }
+  }
+
+  if (posterUrl && posterUrl.startsWith('http://')) {
+    posterUrl = posterUrl.replace(/^http:\/\//i, 'https://');
   }
 
   const rawTitle = title || pageUrl;
   const isSeries = detectContentType(rawTitle, '', pageUrl) === 'Web Series';
-  const year = extractYear(rawTitle);
+  let year = extractYear(rawTitle);
+  if (!year) {
+    const postDateMatch = html.match(/(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z0-9\-,\s]+(19\d{2}|20\d{2})/i) ||
+                          html.match(/datePublished[^"]*":\s*"(\d{4})/i) ||
+                          html.match(/Release\s*Date[^:]*:\s*[^\n<]*(19\d{2}|20\d{2})/i);
+    if (postDateMatch) {
+      year = postDateMatch[1];
+    }
+  }
   const season = isSeries ? (extractSeason(rawTitle) || 'Season 1') : null;
   const cleanTitle = cleanDisplayTitle(rawTitle);
 
@@ -316,6 +345,11 @@ function parseDetailPage(html, pageUrl) {
   while ((lMatch = linkRegex.exec(html)) !== null) {
     const href = lMatch[1].trim();
     const anchorText = lMatch[2].replace(/<[^>]+>/g, '').trim();
+
+    // For HDHub4u, import only download URLs whose exact prefix is https://hubdrive.pics/file/
+    if (!href.startsWith('https://hubdrive.pics/file/')) {
+      continue;
+    }
 
     // Check if this looks like a download link rather than site navigation
     if (isValidDownloadDestination(href, pageUrl)) {
@@ -418,32 +452,50 @@ async function runHDHub4uSync(options = {}) {
 
   if (forceOnline || (!mockSnapshot && !options.skipNetwork)) {
     liveCrawlAttempted = true;
-    console.log(`Probing HDHub4u live endpoint: ${SOURCE_BASE_URL} ...`);
-    const probe = await fetchWithRetry(SOURCE_BASE_URL, { timeoutMs: 5000, retries: 1 });
-    if (probe.ok) {
+    const candidates = options.candidateBaseUrls || CANDIDATE_BASE_URLS;
+    let successfulProbe = null;
+
+    for (const testUrl of candidates) {
+      console.log(`Probing HDHub4u live endpoint: ${testUrl} ...`);
+      const probe = await fetchWithRetry(testUrl, { timeoutMs: 8000, retries: 1 });
+      if (probe.ok) {
+        successfulProbe = probe;
+        SOURCE_BASE_URL = probe.url || testUrl;
+        break;
+      } else {
+        liveNetworkError = probe.error;
+      }
+    }
+
+    if (successfulProbe && successfulProbe.ok) {
       liveReachable = true;
-      const activeUrl = probe.url || SOURCE_BASE_URL;
+      const activeUrl = successfulProbe.url || SOURCE_BASE_URL;
       try {
-        const liveListing = parseListingPage(probe.text || '', activeUrl);
+        const liveListing = parseListingPage(successfulProbe.text || '', activeUrl);
         if (liveListing && Array.isArray(liveListing.titles)) {
           liveDiscoveredItems = liveListing.titles;
         }
       } catch (parseErr) {
         console.warn(`[WARN] Failed to parse live listing: ${parseErr.message}`);
+        throw parseErr;
       }
 
-      // Probe connected and recent live listing parsed, but complete live crawl across all 14,000 titles is interrupted
-      // to fit within workflow execution budget; durable snapshot is utilized for full catalog reconciliation.
-      liveCrawlInterrupted = true;
-      liveCrawlSucceeded = false;
-      liveNetworkError = 'Live crawl interrupted/incomplete; durable snapshot utilized for full catalog reconciliation';
+      // Guard: Reachable website returning 0 parsed items must NOT be claimed as successful scan
+      if (liveDiscoveredItems.length === 0 && (successfulProbe.text || '').length > 500) {
+        throw new Error('Reachable site HDHub4u returned 0 parsed titles: parser layout mismatch or incomplete scan (INCONCLUSIVE / PARSING_FAILED)');
+      }
+
+      liveCrawlInterrupted = false;
+      liveCrawlSucceeded = true;
       console.log(`✓ Probed HDHub4u live endpoint (${activeUrl}). Discovered ${liveDiscoveredItems.length} live titles. Using durable snapshot for full catalog coverage.`);
     } else {
       liveReachable = false;
       liveCrawlInterrupted = true;
       liveCrawlSucceeded = false;
-      liveNetworkError = probe.error;
-      console.warn(`[NOTICE] HDHub4u live endpoint unreachable from current environment (${probe.error}).`);
+      console.warn(`[NOTICE] HDHub4u live endpoint unreachable from current environment (${liveNetworkError}).`);
+      if (!options.allowOfflineFallback && !options.mockSnapshot) {
+        throw new Error(`Failed to sync HDHub4u: Live endpoint unreachable or blocked (${liveNetworkError})`);
+      }
       console.log('Proceeding with full catalog synchronization using durable source inventory files.');
     }
   } else {
@@ -513,8 +565,12 @@ async function runHDHub4uSync(options = {}) {
     for (const card of liveDiscoveredItems) {
       const slug = urlSlug(card.sourceUrl);
       const key = slug || (card.rawTitle.toLowerCase().trim());
-      if (!discoveredItemsMap.has(key)) {
-        newlyDiscoveredLiveCount++;
+      const isNew = !discoveredItemsMap.has(key);
+      const existing = discoveredItemsMap.get(key);
+      const needsDetail = isNew || (existing && (!existing.qualities || existing.qualities.length === 0));
+
+      if (needsDetail) {
+        if (isNew) newlyDiscoveredLiveCount++;
         const isSeries = detectContentType(card.rawTitle, '', card.sourceUrl) === 'Web Series';
         let detailData = null;
         if (liveReachable && !options.skipNetwork) {
@@ -555,7 +611,6 @@ async function runHDHub4uSync(options = {}) {
         }
       } else {
         // Existing item in snapshot: ensure live poster is adopted if existing had none
-        const existing = discoveredItemsMap.get(key);
         if ((!existing.posterUrl || existing.posterUrl.includes('fallback')) && card.posterUrl && !card.posterUrl.includes('logo')) {
           existing.posterUrl = card.posterUrl;
         }
@@ -679,7 +734,18 @@ async function runHDHub4uSync(options = {}) {
 
     // Check title+year match
     if (!matchedItem) {
-      const candidates = catalogByTitleYear.get(groupKey) || [];
+      let candidates = catalogByTitleYear.get(groupKey) || [];
+      if (candidates.length > 1) {
+        // Disambiguation rule: filter out trailers if incoming item is a full movie / series
+        const isIncomingTrailer = items.some(it => (it.rawTitle || '').toLowerCase().includes('trailer'));
+        if (!isIncomingTrailer) {
+          const nonTrailers = candidates.filter(c => !(c.originalSourceTitle || c.displayTitle || '').toLowerCase().includes('trailer'));
+          if (nonTrailers.length === 1) {
+            candidates = nonTrailers;
+          }
+        }
+      }
+
       if (candidates.length === 1) {
         matchedItem = candidates[0];
       } else if (candidates.length > 1) {

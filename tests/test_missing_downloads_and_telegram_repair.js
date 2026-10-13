@@ -121,7 +121,7 @@ runTest('A new title with one valid link is imported and its link is resolvable 
     sourcePosterUrl: 'https://example.com/poster.jpg',
     links: [
       {
-        downloadUrl: 'https://hubcdn.io/file/998877665544',
+        downloadUrl: 'https://hubdrive.pics/file/998877665544',
         resolution: '1080p',
         rawQuality: '1080p'
       }
@@ -156,7 +156,7 @@ runTest('A new title with one valid link is imported and its link is resolvable 
   assert.strictEqual(resolved.hasLinks, true, 'Available Versions must resolve links as available');
   assert.strictEqual(resolved.movieQualityGroups.length, 1, 'Must have 1 quality group');
   assert.strictEqual(resolved.movieQualityGroups[0].qualityKey, '1080p');
-  assert.strictEqual(resolved.movieQualityGroups[0].links[0].downloadUrl, 'https://hubcdn.io/file/998877665544');
+  assert.strictEqual(resolved.movieQualityGroups[0].links[0].downloadUrl, 'https://hubdrive.pics/file/998877665544');
 });
 
 // -----------------------------------------------------------------------------

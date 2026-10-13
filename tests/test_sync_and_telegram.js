@@ -129,7 +129,7 @@ check(5, "Title available from multiple providers",
     sourcePosterUrl: 'https://example.com/poster.jpg',
     screenshots: ['https://example.com/ss1.jpg'],
     qualities: [{ resolution: '1080p', label: '1080p' }],
-    links: [{ downloadUrl: 'https://hubcdn.io/file/galaxy-explorer-1080p', resolution: '1080p' }]
+    links: [{ downloadUrl: 'https://hubdrive.pics/file/galaxy-explorer-1080p', resolution: '1080p' }]
   };
 
   const resNew = await syncProvider('HDHub4u', testCatalog, testSources, {
@@ -185,7 +185,7 @@ check(5, "Title available from multiple providers",
     sourcePosterUrl: 'https://example.com/p1.jpg',
     screenshots: [],
     qualities: [{ resolution: '1080p', label: '1080p' }],
-    links: [{ downloadUrl: 'https://hubcdn.io/file/solar-odyssey-1080p', resolution: '1080p' }]
+    links: [{ downloadUrl: 'https://hubdrive.pics/file/solar-odyssey-1080p', resolution: '1080p' }]
   };
   const sharedTitleItem10M = {
     provider: '10Moviez',

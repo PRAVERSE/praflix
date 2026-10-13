@@ -182,7 +182,7 @@ function extractAndVerifyCandidateLinks(item, providerName) {
 
     // Provider specific prefix rules (e.g. HDHub4u HubDrive prefix restriction)
     if (providerName && providerName.toLowerCase() === 'hdhub4u') {
-      if (rawUrl.includes('hubdrive.') && !rawUrl.startsWith('https://hubdrive.pics/file/')) {
+      if (!rawUrl.startsWith('https://hubdrive.pics/file/')) {
         continue;
       }
     }
@@ -252,26 +252,40 @@ async function fetchProviderLatest(providerName, options = {}) {
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    let url = '';
+    let urls = [];
     if (providerLower === 'hdwall') {
-      url = 'https://hdwall.xyz/page/1/';
+      urls = ['https://hdwall.xyz/page/1/'];
     } else if (providerLower === '10moviez') {
-      url = 'https://10moviez.biz/category/web-series/page/1/';
+      urls = ['https://10moviez.biz/category/web-series/page/1/'];
     } else if (providerLower === 'hdhub4u') {
-      url = 'https://new1.hdhub4u.free/';
+      urls = ['https://new7.hdhub4u.cl/', 'https://new2.hdhub4u.free/', 'https://new1.hdhub4u.free/'];
     }
 
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    let response = null;
+    let lastFetchErr = null;
+    for (const testUrl of urls) {
+      try {
+        const res = await fetch(testUrl, {
+          signal: controller.signal,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+          }
+        });
+        if (res.ok) {
+          response = res;
+          break;
+        } else {
+          lastFetchErr = new Error(`HTTP ${res.status} from ${providerName}`);
+        }
+      } catch (fErr) {
+        lastFetchErr = fErr;
       }
-    });
+    }
 
     clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status} from ${providerName}`);
+    if (!response || !response.ok) {
+      throw lastFetchErr || new Error(`Network failure from ${providerName}`);
     }
 
     const html = await response.text();
@@ -409,30 +423,80 @@ function parseProviderHtml(providerName, html) {
       });
     }
   } else if (providerLower === 'hdhub4u') {
-    const postRegex = /<article[^>]*>[\s\S]*?<a href="([^"]+)"[^>]*>[\s\S]*?<img [^>]*src="([^"]+)"[^>]*alt="([^"]+)"/g;
-    let match;
-    while ((match = postRegex.exec(html)) !== null) {
-      const sourceUrl = match[1];
-      const sourcePosterUrl = match[2];
-      const rawTitle = match[3];
+    const baseUrl = 'https://new7.hdhub4u.cl/';
+    const seenUrls = new Set();
 
-      const yearMatch = rawTitle.match(/\b(19\d{2}|20\d{2})\b/);
-      const meta = titleDecoder.extractTitleMetadata(rawTitle);
-      const year = meta.year || (yearMatch ? yearMatch[1] : '');
-      const type = detectContentType(rawTitle, '');
+    const addItem = (sourceUrlRaw, posterRaw, rawTitle) => {
+      if (!sourceUrlRaw || !rawTitle) return;
+      let sourceUrl = sourceUrlRaw.trim();
+      if (sourceUrl.includes('disclaimer') || sourceUrl.includes('apk') || sourceUrl.includes('how-to') ||
+          sourceUrl.includes('join') || sourceUrl.includes('contact') || sourceUrl.includes('/category/') ||
+          sourceUrl.includes('/tag/') || sourceUrl === '/' || sourceUrl.startsWith('#')) {
+        return;
+      }
 
-      items.push({
-        provider: 'HDHub4u',
-        source: 'hdhub4u',
-        originalSourceTitle: titleDecoder.cleanTitle(rawTitle),
-        displayTitle: meta.displayTitle,
-        year: year,
-        type: type,
-        sourceUrl: sourceUrl,
-        sourcePosterUrl: sourcePosterUrl,
-        screenshots: [],
-        qualities: [{ resolution: '720p', label: '720p' }, { resolution: '1080p', label: '1080p' }]
-      });
+      if (!sourceUrl.startsWith('http')) {
+        try {
+          sourceUrl = new URL(sourceUrl, baseUrl).href;
+        } catch (_) {
+          sourceUrl = `${baseUrl.replace(/\/+$/, '')}/${sourceUrl.replace(/^\/+/, '')}`;
+        }
+      }
+
+      let sourcePosterUrl = (posterRaw || '').trim();
+      if (sourcePosterUrl.startsWith('http://')) {
+        sourcePosterUrl = sourcePosterUrl.replace(/^http:\/\//i, 'https://');
+      }
+
+      const cleanT = rawTitle.replace(/&#038;/g, '&').replace(/&#8217;/g, "'").replace(/&#8211;/g, '-').replace(/&amp;/g, '&').trim();
+      if (!cleanT || (sourcePosterUrl && sourcePosterUrl.includes('logo'))) return;
+
+      if (!seenUrls.has(sourceUrl)) {
+        seenUrls.add(sourceUrl);
+
+        const yearMatch = cleanT.match(/\b(19\d{2}|20\d{2})\b/);
+        const meta = titleDecoder.extractTitleMetadata(cleanT);
+        const year = meta.year || (yearMatch ? yearMatch[1] : '');
+        const type = detectContentType(cleanT, '', sourceUrl);
+
+        items.push({
+          provider: 'HDHub4u',
+          source: 'hdhub4u',
+          originalSourceTitle: titleDecoder.cleanTitle(cleanT),
+          displayTitle: meta.displayTitle || cleanT,
+          year: year,
+          type: type,
+          sourceUrl: sourceUrl,
+          sourcePosterUrl: sourcePosterUrl,
+          screenshots: [],
+          qualities: [{ resolution: '720p', label: '720p' }, { resolution: '1080p', label: '1080p' }]
+        });
+      }
+    };
+
+    // Strategy 1: Modern thumb / figure card layout
+    const liRegex = /<li[^>]*class="[^"]*thumb[^"]*"[^>]*>([\s\S]*?)<\/li>/gi;
+    let liMatch;
+    while ((liMatch = liRegex.exec(html)) !== null) {
+      const block = liMatch[1];
+      const linkMatch = block.match(/<figure>[\s\S]*?<a\s+[^>]*href="([^"]+)"[^>]*>/i) || block.match(/<a\s+[^>]*href="([^"]+)"[^>]*>/i);
+      const imgMatch = block.match(/<img\s+[^>]*src="([^"]+)"[^>]*>/i);
+      const titleMatch = block.match(/<figcaption>[\s\S]*?<p>([\s\S]*?)<\/p>/i) ||
+                         block.match(/alt="([^"]+)"/i) ||
+                         block.match(/title="([^"]+)"/i);
+      if (linkMatch && titleMatch) {
+        const rawTitle = titleMatch[1].replace(/<[^>]+>/g, '').trim();
+        addItem(linkMatch[1], imgMatch ? imgMatch[1] : '', rawTitle);
+      }
+    }
+
+    // Strategy 2: Legacy article tag layout
+    if (items.length === 0) {
+      const postRegex = /<article[^>]*>[\s\S]*?<a href="([^"]+)"[^>]*>[\s\S]*?<img [^>]*src="([^"]+)"[^>]*alt="([^"]+)"/g;
+      let match;
+      while ((match = postRegex.exec(html)) !== null) {
+        addItem(match[1], match[2], match[3]);
+      }
     }
   }
 

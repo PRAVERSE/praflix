@@ -1,1 +1,193 @@
-[]
+[
+  {
+    "id": 1368800,
+    "source": "hdhub4u",
+    "sourceId": "src-hdhub4u-13688-0",
+    "displayTitle": "Runner",
+    "originalSourceTitle": "&#xE02C; Runner (2026) WEB-DL [English DD5.1] 4K 1080p 720p &#038; 480p [x264/10Bit-HEVC] | Full Movie",
+    "normalizedTitle": "runner",
+    "year": "2026",
+    "type": "Movie",
+    "season": null,
+    "sourceUrl": "https://new7.hdhub4u.cl/runner-2026-english-webrip-full-movie/",
+    "sourcePosterUrl": "https://catimages.org/images/2026/10/13/Weapons-2025-HQ-Hindi-Dubbed-Full-Movie-HDHub4u.Ms.jpg",
+    "qualities": [
+      {
+        "link": "https://hubdrive.pics/file/2262346948",
+        "quality": "720p",
+        "rawText": "720p 10Bit HEVC [680MB]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/3376888360",
+        "quality": "1080p",
+        "rawText": "1080p 10Bit HEVC [1.5GB]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/3922083821",
+        "quality": "1080p",
+        "rawText": "1080p WEB-DL [6.1GB]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/11585097319",
+        "quality": "4K",
+        "rawText": "4K [2160p SDR WEB-DL – 10.5GB]",
+        "isComplete": false
+      }
+    ],
+    "sightings": [
+      {
+        "surface": "hdhub4u_sync",
+        "discoveredAt": "2026-10-13T16:06:01.235Z"
+      }
+    ]
+  },
+  {
+    "id": 1368900,
+    "source": "hdhub4u",
+    "sourceId": "src-hdhub4u-13689-0",
+    "displayTitle": "Bhairadevi",
+    "originalSourceTitle": "&#xE02C; Bhairadevi (2024) WEB-DL [Hindi DD5.1] 1080p 720p &#038; 480p [x264/ESubs] | Full Movie",
+    "normalizedTitle": "bhairadevi",
+    "year": "2024",
+    "type": "Movie",
+    "season": null,
+    "sourceUrl": "https://new7.hdhub4u.cl/bhairadevi-2024-webrip-hindi-full-movie/",
+    "sourcePosterUrl": "https://catimages.org/images/2026/10/13/Weapons-2025-HQ-Hindi-Dubbed-Full-Movie-HDHub4u.Ms.jpg",
+    "qualities": [
+      {
+        "link": "https://hubdrive.pics/file/3219279654",
+        "quality": "1080p",
+        "rawText": "1080p WEB-DL [3.6GB]",
+        "isComplete": false
+      }
+    ],
+    "sightings": [
+      {
+        "surface": "hdhub4u_sync",
+        "discoveredAt": "2026-10-13T16:06:01.235Z"
+      }
+    ]
+  },
+  {
+    "id": 1369000,
+    "source": "hdhub4u",
+    "sourceId": "src-hdhub4u-13690-0",
+    "displayTitle": "The Trap (Season 1)",
+    "originalSourceTitle": "&#xE02C; The Trap (Season 1) WEB-DL [Hindi (DD5.1) &#038; English] 4K 1080p 720p &#038; 480p Dual Audio [x264/ESubs] | NF Series",
+    "normalizedTitle": "the trap",
+    "year": "",
+    "type": "Web Series",
+    "season": "Season 1",
+    "sourceUrl": "https://new7.hdhub4u.cl/the-trap-season-1-webrip-hindi-full-series/",
+    "sourcePosterUrl": "https://catimages.org/images/2026/10/13/Weapons-2025-HQ-Hindi-Dubbed-Full-Movie-HDHub4u.Ms.jpg",
+    "qualities": [
+      {
+        "link": "https://hubdrive.pics/file/11275154393",
+        "quality": "1080p",
+        "rawText": "1080p WEB-DL PACK [16.8GB]",
+        "isComplete": false,
+        "episode": "1080p WEB-DL PACK [16.8GB]"
+      },
+      {
+        "link": "https://hubdrive.pics/file/45154063936",
+        "quality": "4K",
+        "rawText": "4K [2160p SDR WEB-DL PACK – 49.6GB]",
+        "isComplete": false,
+        "episode": "4K [2160p SDR WEB-DL PACK – 49.6GB]"
+      },
+      {
+        "link": "https://hubdrive.pics/file/2186348600",
+        "quality": "720p",
+        "rawText": "Drive",
+        "isComplete": false,
+        "episode": "Drive"
+      },
+      {
+        "link": "https://hubdrive.pics/file/2449917252",
+        "quality": "720p",
+        "rawText": "Drive",
+        "isComplete": false,
+        "episode": "Drive"
+      },
+      {
+        "link": "https://hubdrive.pics/file/1857813868",
+        "quality": "720p",
+        "rawText": "Drive",
+        "isComplete": false,
+        "episode": "Drive"
+      },
+      {
+        "link": "https://hubdrive.pics/file/2631052373",
+        "quality": "720p",
+        "rawText": "Drive",
+        "isComplete": false,
+        "episode": "Drive"
+      },
+      {
+        "link": "https://hubdrive.pics/file/2080987454",
+        "quality": "720p",
+        "rawText": "Drive",
+        "isComplete": false,
+        "episode": "Drive"
+      },
+      {
+        "link": "https://hubdrive.pics/file/2021942932",
+        "quality": "720p",
+        "rawText": "Drive",
+        "isComplete": false,
+        "episode": "Drive"
+      },
+      {
+        "link": "https://hubdrive.pics/file/1937094634",
+        "quality": "720p",
+        "rawText": "Drive",
+        "isComplete": false,
+        "episode": "Drive"
+      },
+      {
+        "link": "https://hubdrive.pics/file/1953816668",
+        "quality": "720p",
+        "rawText": "Drive",
+        "isComplete": false,
+        "episode": "Drive"
+      },
+      {
+        "link": "https://hubdrive.pics/file/2238206714",
+        "quality": "720p",
+        "rawText": "Drive",
+        "isComplete": false,
+        "episode": "Drive"
+      },
+      {
+        "link": "https://hubdrive.pics/file/2682744186",
+        "quality": "720p",
+        "rawText": "Drive",
+        "isComplete": false,
+        "episode": "Drive"
+      },
+      {
+        "link": "https://hubdrive.pics/file/2176867861",
+        "quality": "720p",
+        "rawText": "Drive",
+        "isComplete": false,
+        "episode": "Drive"
+      },
+      {
+        "link": "https://hubdrive.pics/file/2102220758",
+        "quality": "720p",
+        "rawText": "Drive",
+        "isComplete": false,
+        "episode": "Drive"
+      }
+    ],
+    "sightings": [
+      {
+        "surface": "hdhub4u_sync",
+        "discoveredAt": "2026-10-13T16:06:01.235Z"
+      }
+    ]
+  }
+]

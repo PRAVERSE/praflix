@@ -28,8 +28,17 @@ const DEFAULT_PROVIDERS = [
   {
     id: 'hdhub4u',
     displayName: 'HDHub4u',
-    baseUrl: 'https://new2.hdhub4u.free/',
+    baseUrl: 'https://new7.hdhub4u.cl/',
+    candidateBaseUrls: [
+      'https://new7.hdhub4u.cl/',
+      'https://new2.hdhub4u.free/',
+      'https://new1.hdhub4u.free/',
+      'https://new3.hdhub4u.free/',
+      'https://hdhub4u.tv/'
+    ],
     allowedDomains: [
+      'new7.hdhub4u.cl',
+      'hdhub4u.cl',
       'new1.hdhub4u.free',
       'new2.hdhub4u.free',
       'new3.hdhub4u.free',
@@ -47,21 +56,14 @@ const DEFAULT_PROVIDERS = [
       { name: 'Hollywood Movies', path: '/category/hollywood-movies/' },
       { name: 'Web Series', path: '/category/web-series/' }
     ],
+    requireExactHubDrivePrefix: true,
     eligibilityRules: {
       requireStorageDestination: true,
       allowedDestinationDomains: [
-        'hubdrive.pics',
-        'hubcdn.club',
-        'hubcdn.wiki',
-        'hubcloud.ist',
-        'hubcloud.club',
-        'filesdl.in',
-        'gdflix.cfd',
-        'linkmake.in',
-        'storage.googleapis.com',
-        'drive.google.com'
+        'hubdrive.pics'
       ],
       seriesPolicy: 'complete_season_only', // individual episodes excluded
+      requireExactHubDrivePrefix: true,
       requiredHubDrivePrefix: 'https://hubdrive.pics/file/'
     },
     rateLimit: {
@@ -339,6 +341,7 @@ function saveLastRun(providerId, runResult) {
 module.exports = {
   registerProvider,
   getProvider,
+  getProviderConfig: getProvider,
   getAllProviders,
   hasProvider,
   loadSourceCatalog,

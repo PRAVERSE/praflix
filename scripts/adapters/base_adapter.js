@@ -11,10 +11,10 @@ const titleDecoder = require('../title_decoder');
 const resolver = require(path.join(BASE_DIR, 'destination_resolver.js'));
 
 class BaseAdapter {
-  constructor(providerConfig) {
+  constructor(providerConfig = {}) {
     this.config = providerConfig;
-    this.id = providerConfig.id;
-    this.displayName = providerConfig.displayName;
+    this.id = providerConfig.id || 'HDHub4u';
+    this.displayName = providerConfig.displayName || this.id;
   }
 
   /**
@@ -87,7 +87,12 @@ class BaseAdapter {
     const trimmedUrl = rawUrl.trim();
 
     // Provider specific prefix rules (e.g., HDHub4u hubdrive restriction)
-    if (this.config.eligibilityRules && this.config.eligibilityRules.requiredHubDrivePrefix) {
+    if (this.config.eligibilityRules && this.config.eligibilityRules.requireExactHubDrivePrefix) {
+      const requiredPrefix = this.config.eligibilityRules.requiredHubDrivePrefix || 'https://hubdrive.pics/file/';
+      if (!trimmedUrl.startsWith(requiredPrefix)) {
+        return { isValid: false, reason: 'rejected_hubdrive_prefix_violation' };
+      }
+    } else if (this.config.eligibilityRules && this.config.eligibilityRules.requiredHubDrivePrefix) {
       if (trimmedUrl.includes('hubdrive.') && !trimmedUrl.startsWith(this.config.eligibilityRules.requiredHubDrivePrefix)) {
         return { isValid: false, reason: 'rejected_hubdrive_prefix_violation' };
       }
@@ -105,6 +110,14 @@ class BaseAdapter {
       rawQuality: candidate.rawQuality || candidate.quality || candidate.resolution || '720p',
       evidence: classification.evidence || 'verified_storage_destination'
     };
+  }
+
+  /**
+   * Check if a candidate download URL is valid and eligible for this provider
+   */
+  isValidProviderUrl(url) {
+    if (!url || typeof url !== 'string') return false;
+    return this.validateLink({ downloadUrl: url }).isValid;
   }
 
   /**
