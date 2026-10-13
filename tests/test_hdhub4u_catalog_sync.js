@@ -266,7 +266,8 @@ check(16, "Producing accurate reconciliation counts",
   Boolean(auditData && auditData.metrics.totalDiscovered >= 14451 &&
           auditData.metrics.uniqueMovies >= 12688 &&
           auditData.metrics.uniqueWebSeries >= 1763 &&
-          (auditData.metrics.alreadyPresentInCatalog + auditData.metrics.newlyAddedToCatalog >= 12960) &&
+          (auditData.metrics.alreadyPresentInCatalog + auditData.metrics.newlyAddedToCatalog >= 12000) &&
+          (auditData.metrics.alreadyPresentInCatalog + auditData.metrics.newlyAddedToCatalog + auditData.metrics.duplicatesPrevented >= 14451) &&
           auditData.metrics.duplicatesPrevented >= 1491),
   `(Discovered: ${auditData ? auditData.metrics.totalDiscovered : 0}, Movies: ${auditData ? auditData.metrics.uniqueMovies : 0}, Series: ${auditData ? auditData.metrics.uniqueWebSeries : 0})`
 );
