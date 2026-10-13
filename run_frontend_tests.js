@@ -25,7 +25,8 @@ const tests = [
   path.join('tests', 'test_mobile_responsiveness.js'),
   path.join('tests', 'test_catalog_count_and_telegram_notifications.js'),
   path.join('tests', 'test_production_repair.js'),
-  path.join('tests', 'test_missing_downloads_and_telegram_repair.js')
+  path.join('tests', 'test_missing_downloads_and_telegram_repair.js'),
+  path.join('tests', 'test_ultra_discovery_and_reconciliation.js')
 ];
 
 let failed = false;

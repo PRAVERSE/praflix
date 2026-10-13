@@ -1,0 +1,139 @@
+/**
+ * PRAFLIX — Base Provider Adapter
+ * A PRAVERSE Company
+ *
+ * Defines the unified contract and common utilities for all provider crawlers & parsers.
+ */
+
+const path = require('path');
+const BASE_DIR = path.dirname(path.dirname(__dirname));
+const titleDecoder = require('../title_decoder');
+const resolver = require(path.join(BASE_DIR, 'destination_resolver.js'));
+
+class BaseAdapter {
+  constructor(providerConfig) {
+    this.config = providerConfig;
+    this.id = providerConfig.id;
+    this.displayName = providerConfig.displayName;
+  }
+
+  /**
+   * Clean raw title string (HTML entities, glyphs, whitespace)
+   */
+  cleanTitle(rawTitle) {
+    return titleDecoder.cleanTitle(rawTitle);
+  }
+
+  /**
+   * Extract title metadata (clean title, year, tags)
+   */
+  extractTitleMetadata(rawTitle) {
+    return titleDecoder.extractTitleMetadata(rawTitle);
+  }
+
+  /**
+   * Determine content type (Movie vs Web Series)
+   */
+  detectContentType(title, category = '', url = '') {
+    const t = (title || '').toLowerCase();
+    const c = (category || '').toLowerCase();
+    const u = (url || '').toLowerCase();
+
+    if (
+      t.includes('season') ||
+      t.includes('series') ||
+      t.includes('episode') ||
+      t.includes('s01') ||
+      t.includes('s02') ||
+      t.includes('s03') ||
+      c.includes('web series') ||
+      c.includes('tv series') ||
+      c.includes('series') ||
+      u.includes('season-') ||
+      u.includes('all-episodes') ||
+      u.includes('full-series') ||
+      u.includes('web-series')
+    ) {
+      return 'Web Series';
+    }
+    return 'Movie';
+  }
+
+  /**
+   * Normalize resolution labels to canonical standards
+   */
+  normalizeQuality(raw) {
+    if (!raw) return '720p';
+    const s = String(raw).toLowerCase().trim();
+    if (s.includes('2160') || s.includes('4k') || s.includes('uhd')) return '4K';
+    if (s.includes('1080') || s.includes('fhd') || s.includes('full hd')) return '1080p';
+    if (s.includes('720') || s.includes('hd')) return '720p';
+    if (s.includes('480') || s.includes('sd')) return '480p';
+    return '720p';
+  }
+
+  /**
+   * Validate link against destination resolver and provider rules
+   */
+  validateLink(candidate, sourceUrl) {
+    const rawUrl = typeof candidate === 'string'
+      ? candidate
+      : (candidate.downloadUrl || candidate.url || candidate.link || '');
+
+    if (!rawUrl || typeof rawUrl !== 'string') {
+      return { isValid: false, reason: 'empty_url' };
+    }
+
+    const trimmedUrl = rawUrl.trim();
+
+    // Provider specific prefix rules (e.g., HDHub4u hubdrive restriction)
+    if (this.config.eligibilityRules && this.config.eligibilityRules.requiredHubDrivePrefix) {
+      if (trimmedUrl.includes('hubdrive.') && !trimmedUrl.startsWith(this.config.eligibilityRules.requiredHubDrivePrefix)) {
+        return { isValid: false, reason: 'rejected_hubdrive_prefix_violation' };
+      }
+    }
+
+    const classification = resolver.classifyLinkVerification(candidate || trimmedUrl, sourceUrl);
+    if (classification.status !== 'verified') {
+      return { isValid: false, reason: classification.reason || 'unverified_destination' };
+    }
+
+    return {
+      isValid: true,
+      downloadUrl: trimmedUrl,
+      resolution: this.normalizeQuality(candidate.resolution || candidate.quality || candidate.rawQuality),
+      rawQuality: candidate.rawQuality || candidate.quality || candidate.resolution || '720p',
+      evidence: classification.evidence || 'verified_storage_destination'
+    };
+  }
+
+  /**
+   * Extract season/episode identifiers
+   */
+  extractSeason(title, raw = '') {
+    const combined = `${title || ''} ${raw || ''}`;
+    const m = combined.match(/\bseason\s*0*(\d+)\b/i) || combined.match(/\bs0*(\d+)\b/i);
+    return m ? `Season ${parseInt(m[1], 10)}` : null;
+  }
+
+  /**
+   * Filter web-series links to complete-season packs only
+   */
+  filterCompleteSeasonOnly(links) {
+    if (!Array.isArray(links)) return [];
+    return links.filter(l => resolver.isCompleteSeason(l));
+  }
+
+  /**
+   * Abstract methods to be implemented by provider adapters
+   */
+  async discover(options = {}) {
+    throw new Error(`Adapter for ${this.displayName} must implement discover(options)`);
+  }
+
+  parseTitlePage(html, url) {
+    throw new Error(`Adapter for ${this.displayName} must implement parseTitlePage(html, url)`);
+  }
+}
+
+module.exports = BaseAdapter;

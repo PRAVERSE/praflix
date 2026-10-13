@@ -319,8 +319,8 @@
     let isCompleteFlag = false;
 
     if (typeof linkOrEpisode === 'object') {
-      epStr = String(linkOrEpisode.episode || '').trim();
-      url = String(linkOrEpisode.downloadUrl || '').trim();
+      epStr = String(linkOrEpisode.episode || linkOrEpisode.rawLabel || linkOrEpisode.label || '').trim();
+      url = String(linkOrEpisode.downloadUrl || linkOrEpisode.url || '').trim();
       if (linkOrEpisode.isCompleteSeason === true || linkOrEpisode.packageType === 'complete_season' || linkOrEpisode.packageType === 'all_episodes') {
         isCompleteFlag = true;
       }

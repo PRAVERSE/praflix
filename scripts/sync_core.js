@@ -25,6 +25,8 @@ const DOWNLOADS_PATH = path.join(DATA_DIR, 'downloads.json');
 
 const titleDecoder = require('./title_decoder');
 const resolver = require(path.join(BASE_DIR, 'destination_resolver'));
+const providerRegistry = require('./provider_registry');
+const adapters = require('./adapters');
 
 // Provider Constants
 const PROVIDERS = ['HDHub4u', '10Moviez', 'HDWall'];
@@ -41,6 +43,19 @@ const PROVIDER_KEYS = {
 function normalizeTitle(title, year) {
   if (!title) return '';
   return titleDecoder.normalizeForMatching(title, year);
+}
+
+/**
+ * Normalize resolution labels to canonical standards (4K, 1080p, 720p, 480p)
+ */
+function normalizeQuality(raw) {
+  if (!raw) return '720p';
+  const s = String(raw).toLowerCase().trim();
+  if (s.includes('2160') || s.includes('4k') || s.includes('uhd')) return '4K';
+  if (s.includes('1080') || s.includes('fhd') || s.includes('full hd')) return '1080p';
+  if (s.includes('720') || s.includes('hd')) return '720p';
+  if (s.includes('480') || s.includes('sd')) return '480p';
+  return '720p';
 }
 
 /**
@@ -74,8 +89,14 @@ function matchExistingTitle(candidate, catalog) {
   const candYear = candidate.year ? String(candidate.year).trim() : candMeta.year;
   const candNorm = titleDecoder.normalizeForMatching(candMeta.displayTitle, candYear);
   const candSourceUrl = (candidate.sourceUrl || '').toLowerCase();
+  const candType = candidate.type || (candidate.isSeries ? 'Web Series' : null);
 
   for (const item of catalog) {
+    // Disallow collision between different content types (Movie vs Web Series)
+    if (candType && item.type && candType !== item.type) {
+      continue;
+    }
+
     // 1. Direct source URL match in variants
     if (candSourceUrl && (item.variants || []).some(v => v.sourceUrl && v.sourceUrl.toLowerCase() === candSourceUrl)) {
       return item;
@@ -159,13 +180,28 @@ function extractAndVerifyCandidateLinks(item, providerName) {
     const rawUrl = (c.downloadUrl || c.url || '').trim();
     if (!rawUrl) continue;
 
+    // Provider specific prefix rules (e.g. HDHub4u HubDrive prefix restriction)
+    if (providerName && providerName.toLowerCase() === 'hdhub4u') {
+      if (rawUrl.includes('hubdrive.') && !rawUrl.startsWith('https://hubdrive.pics/file/')) {
+        continue;
+      }
+    }
+
+    // Series complete-season policy: filter out loose individual episodes
+    if (item.type === 'Web Series' || item.isSeries) {
+      const epDesc = c.episode || c.rawLabel || c.label || '';
+      if (epDesc && !resolver.isCompleteSeason(c)) {
+        continue;
+      }
+    }
+
     // Strict validation via destination_resolver
     const classification = resolver.classifyLinkVerification(c || rawUrl, item.sourceUrl);
     if (classification.status !== 'verified') {
       continue;
     }
 
-    const res = c.resolution || '720p';
+    const res = normalizeQuality(c.resolution || c.quality || c.rawQuality || '720p');
     const key = `${rawUrl}__${res}`;
     if (seenUrls.has(key)) {
       skippedDuplicates.push({
@@ -181,7 +217,7 @@ function extractAndVerifyCandidateLinks(item, providerName) {
       sourceName: providerName,
       downloadUrl: rawUrl,
       resolution: res,
-      rawQuality: c.rawQuality || res,
+      rawQuality: c.rawQuality || c.resolution || res,
       episode: c.episode || null,
       verificationStatus: 'verified',
       verificationEvidence: classification.evidence || 'verified_destination_evidence'
@@ -366,7 +402,8 @@ async function syncProvider(providerName, catalog, sourceRecords, options = {}) 
     duplicateLinksSkippedList: [],
     unmatchedOrAmbiguous: 0,
     variantsImported: 0,
-    appendedToTitleListCount: 0
+    appendedToTitleListCount: 0,
+    qualityCounts: { '4K': 0, '1080p': 0, '720p': 0, '480p': 0 }
   };
 
   try {
@@ -441,6 +478,13 @@ async function syncProvider(providerName, catalog, sourceRecords, options = {}) 
       liveDiscoveredCount: items.length
     };
 
+    // Retrieve provider configuration and independent source catalog
+    const providerConfig = providerRegistry.getProvider(providerName) || { id: providerName.toLowerCase(), displayName: providerName };
+    let sourceCatalog = [];
+    try {
+      sourceCatalog = providerRegistry.loadSourceCatalog(providerConfig.id);
+    } catch (_) {}
+
     // Find current max canonical ID
     let maxCanonicalId = catalog.reduce((max, item) => Math.max(max, item.canonicalId || 0), 0);
 
@@ -489,63 +533,107 @@ async function syncProvider(providerName, catalog, sourceRecords, options = {}) 
         }
 
         // Update downloads if verified links found
-        if (verifiedLinks.length > 0 && fs.existsSync(DOWNLOADS_PATH) && options.persist !== false && !options.dryRun && !options.mockItems) {
-          try {
-            const dlData = JSON.parse(fs.readFileSync(DOWNLOADS_PATH, 'utf8'));
-            let dlEntry = dlData.entries.find(e => e.catalogueId === existing.canonicalId);
-            let newLinksCountForThisTitle = 0;
-            if (!dlEntry) {
-              dlEntry = {
-                catalogueId: existing.canonicalId,
-                title: existing.displayTitle,
-                type: existing.type || 'Movie',
-                year: existing.year || '',
-                lastCheckedAt: new Date().toISOString(),
-                discoveryStatus: 'links_found',
-                verificationStatus: 'verified',
-                verificationEvidence: 'Verified storage CDN / drive destination',
-                links: []
-              };
+        if (verifiedLinks.length > 0) {
+          let newLinksCountForThisTitle = 0;
+          let dlData = null;
+          let dlEntry = null;
+
+          if (fs.existsSync(DOWNLOADS_PATH)) {
+            try {
+              dlData = JSON.parse(fs.readFileSync(DOWNLOADS_PATH, 'utf8'));
+              dlEntry = dlData.entries.find(e => e.catalogueId === existing.canonicalId);
+            } catch (_) {}
+          }
+
+          if (!dlEntry) {
+            dlEntry = {
+              catalogueId: existing.canonicalId,
+              title: existing.displayTitle,
+              type: existing.type || 'Movie',
+              year: existing.year || '',
+              lastCheckedAt: new Date().toISOString(),
+              discoveryStatus: 'links_found',
+              verificationStatus: 'verified',
+              verificationEvidence: 'Verified storage CDN / drive destination',
+              links: []
+            };
+            if (dlData && Array.isArray(dlData.entries)) {
               dlData.entries.push(dlEntry);
             }
-            if (!dlEntry.links) dlEntry.links = [];
-            const existingUrls = new Set(dlEntry.links.map(l => `${l.downloadUrl}__${l.resolution}`));
-            verifiedLinks.forEach(vl => {
-              const k = `${vl.downloadUrl}__${vl.resolution}`;
-              if (!existingUrls.has(k)) {
-                existingUrls.add(k);
-                dlEntry.links.push(vl);
-                newLinksCountForThisTitle++;
-                result.newProviderLinks.push({
-                  canonicalId: existing.canonicalId,
-                  provider: providerName,
-                  downloadUrl: vl.downloadUrl,
-                  resolution: vl.resolution
-                });
-              } else {
-                result.duplicateLinksSkipped++;
-                result.duplicateLinksSkippedList.push({
-                  canonicalId: existing.canonicalId,
-                  provider: providerName,
-                  downloadUrl: vl.downloadUrl,
-                  reason: 'already_persisted_for_canonical_title'
-                });
-              }
-            });
+          }
+          if (!dlEntry.links) dlEntry.links = [];
+          const existingUrls = new Set(dlEntry.links.map(l => `${l.downloadUrl}__${l.resolution}`));
 
-            if (newLinksCountForThisTitle > 0) {
-              result.updatedExisting++;
-              result.existingTitlesUpdated.push({
+          verifiedLinks.forEach(vl => {
+            const resNorm = vl.resolution || '720p';
+            result.qualityCounts[resNorm] = (result.qualityCounts[resNorm] || 0) + 1;
+            const k = `${vl.downloadUrl}__${vl.resolution}`;
+            if (!existingUrls.has(k)) {
+              existingUrls.add(k);
+              dlEntry.links.push(vl);
+              newLinksCountForThisTitle++;
+              result.newProviderLinks.push({
                 canonicalId: existing.canonicalId,
-                displayTitle: existing.displayTitle,
-                year: existing.year || '',
-                type: existing.type || 'Movie',
                 provider: providerName,
-                newLinksCount: newLinksCountForThisTitle
+                downloadUrl: vl.downloadUrl,
+                resolution: vl.resolution
               });
-              fs.writeFileSync(DOWNLOADS_PATH, JSON.stringify(dlData, null, 2), 'utf8');
+            } else {
+              result.duplicateLinksSkipped++;
+              result.duplicateLinksSkippedList.push({
+                canonicalId: existing.canonicalId,
+                provider: providerName,
+                downloadUrl: vl.downloadUrl,
+                reason: 'already_persisted_for_canonical_title'
+              });
             }
-          } catch (_) {}
+          });
+
+          if (newLinksCountForThisTitle > 0) {
+            result.updatedExisting++;
+            result.existingTitlesUpdated.push({
+              canonicalId: existing.canonicalId,
+              displayTitle: existing.displayTitle,
+              year: existing.year || '',
+              type: existing.type || 'Movie',
+              provider: providerName,
+              newLinksCount: newLinksCountForThisTitle
+            });
+            if (dlData && fs.existsSync(DOWNLOADS_PATH) && options.persist !== false && !options.dryRun && !options.mockItems) {
+              try {
+                fs.writeFileSync(DOWNLOADS_PATH, JSON.stringify(dlData, null, 2), 'utf8');
+              } catch (_) {}
+            }
+          }
+        }
+
+        // Record in provider's independent source catalog
+        const existingSourceIdx = sourceCatalog.findIndex(sc => sc.sourceUrl === item.sourceUrl || sc.canonicalId === existing.canonicalId);
+        const sourceEntry = {
+          providerId: providerConfig.id,
+          provider: providerConfig.displayName || providerName,
+          sourceTitle: item.originalSourceTitle,
+          cleanTitle: existing.displayTitle,
+          normalizedTitle: existing.normalizedTitle,
+          sourceUrl: item.sourceUrl,
+          sourcePosterUrl: item.sourcePosterUrl || existing.poster,
+          year: existing.year || item.year || '',
+          type: existing.type || item.type || 'Movie',
+          season: existing.season || item.season || null,
+          discoveryDate: new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: '2-digit' }).format(new Date()),
+          firstSeenAt: existingSourceIdx !== -1 ? sourceCatalog[existingSourceIdx].firstSeenAt : new Date().toISOString(),
+          lastSeenAt: new Date().toISOString(),
+          lastSuccessfulScanAt: new Date().toISOString(),
+          qualities: item.qualities || [],
+          links: verifiedLinks,
+          importStatus: 'updated',
+          canonicalId: existing.canonicalId,
+          validationErrors: []
+        };
+        if (existingSourceIdx !== -1) {
+          sourceCatalog[existingSourceIdx] = sourceEntry;
+        } else {
+          sourceCatalog.push(sourceEntry);
         }
       } else {
         // Genuinely new candidate title!
@@ -563,6 +651,35 @@ async function syncProvider(providerName, catalog, sourceRecords, options = {}) 
             reason: 'no_eligible_links'
           });
           console.warn(`[INCOMPLETE IMPORT] "${item.displayTitle}" skipped from catalog: No eligible verified download links.`);
+
+          // Record quarantined entry in independent source catalog
+          const existingSourceIdx = sourceCatalog.findIndex(sc => sc.sourceUrl === item.sourceUrl);
+          const quarantinedEntry = {
+            providerId: providerConfig.id,
+            provider: providerConfig.displayName || providerName,
+            sourceTitle: item.originalSourceTitle,
+            cleanTitle: titleDecoder.cleanTitle(item.displayTitle),
+            normalizedTitle: normalizeTitle(item.displayTitle),
+            sourceUrl: item.sourceUrl,
+            sourcePosterUrl: item.sourcePosterUrl,
+            year: item.year || '',
+            type: item.type || 'Movie',
+            season: item.season || null,
+            discoveryDate: new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: '2-digit' }).format(new Date()),
+            firstSeenAt: existingSourceIdx !== -1 ? sourceCatalog[existingSourceIdx].firstSeenAt : new Date().toISOString(),
+            lastSeenAt: new Date().toISOString(),
+            lastSuccessfulScanAt: new Date().toISOString(),
+            qualities: item.qualities || [],
+            links: [],
+            importStatus: 'quarantined',
+            canonicalId: null,
+            validationErrors: ['no_eligible_links']
+          };
+          if (existingSourceIdx !== -1) {
+            sourceCatalog[existingSourceIdx] = quarantinedEntry;
+          } else {
+            sourceCatalog.push(quarantinedEntry);
+          }
           continue;
         }
 
@@ -655,6 +772,8 @@ async function syncProvider(providerName, catalog, sourceRecords, options = {}) 
         }
 
         verifiedLinks.forEach(vl => {
+          const resNorm = vl.resolution || '720p';
+          result.qualityCounts[resNorm] = (result.qualityCounts[resNorm] || 0) + 1;
           result.newProviderLinks.push({
             canonicalId: maxCanonicalId,
             provider: providerName,
@@ -662,7 +781,51 @@ async function syncProvider(providerName, catalog, sourceRecords, options = {}) 
             resolution: vl.resolution
           });
         });
+
+        // Record newly imported entry in independent source catalog
+        const existingSourceIdx = sourceCatalog.findIndex(sc => sc.sourceUrl === item.sourceUrl);
+        const importedEntry = {
+          providerId: providerConfig.id,
+          provider: providerConfig.displayName || providerName,
+          sourceTitle: item.originalSourceTitle,
+          cleanTitle: cleanTitle,
+          normalizedTitle: normalizeTitle(cleanTitle),
+          sourceUrl: item.sourceUrl,
+          sourcePosterUrl: item.sourcePosterUrl,
+          year: item.year || '',
+          type: item.type || (isSeries ? 'Web Series' : 'Movie'),
+          season: isSeries ? (item.season || 'Season 1') : null,
+          discoveryDate: new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: '2-digit' }).format(new Date()),
+          firstSeenAt: existingSourceIdx !== -1 ? sourceCatalog[existingSourceIdx].firstSeenAt : new Date().toISOString(),
+          lastSeenAt: new Date().toISOString(),
+          lastSuccessfulScanAt: new Date().toISOString(),
+          qualities: item.qualities || [],
+          links: verifiedLinks,
+          importStatus: 'imported',
+          canonicalId: maxCanonicalId,
+          validationErrors: []
+        };
+        if (existingSourceIdx !== -1) {
+          sourceCatalog[existingSourceIdx] = importedEntry;
+        } else {
+          sourceCatalog.push(importedEntry);
+        }
       }
+    }
+
+    // Persist provider's independent source catalog, state, and last run
+    if (options.persist !== false && !options.dryRun && !options.mockItems) {
+      try {
+        providerRegistry.saveSourceCatalog(providerConfig.id, sourceCatalog);
+        providerRegistry.saveState(providerConfig.id, {
+          lastScanTimestamp: new Date().toISOString(),
+          lastSuccessfulScanTimestamp: new Date().toISOString(),
+          scanStatus: 'success',
+          completeness: 'COMPLETE',
+          recordCount: sourceCatalog.length
+        });
+        providerRegistry.saveLastRun(providerConfig.id, result);
+      } catch (_) {}
     }
 
     // Synchronize title list ONLY with successfully ingested new canonical titles
@@ -801,7 +964,9 @@ async function runFullSync(catalog, sourceRecords, options = {}) {
   const hasFailedProviders = Object.values(providerResults).some(p => p.failed);
 
   let reportText = '';
-  if (summary.hasNewTitles) {
+  if (hasFailedProviders) {
+    reportText = formatTelegramReport(summary);
+  } else if (summary.hasNewTitles) {
     summary.newTitlesReportText = formatNewTitlesTelegramReport({
       provider: targetProviderName || 'Multiple Providers',
       runTime: runTimeIst,
@@ -827,8 +992,6 @@ async function runFullSync(catalog, sourceRecords, options = {}) {
       deploymentStatus: options.deploymentStatus || 'Confirmed successful'
     });
     reportText = summary.existingUpdatedReportText;
-  } else if (hasFailedProviders) {
-    reportText = formatTelegramReport(summary);
   } else if (summary.hasIncompleteTitles && allNewCanonicalTitles.length === 0) {
     summary.incompleteReportText = formatIncompleteImportsWarning({
       provider: targetProviderName || 'Multiple Providers',
@@ -899,18 +1062,29 @@ function formatDateTime(d = new Date()) {
  * Deployment: Confirmed successful
  */
 function formatNewTitlesTelegramReport(params = {}) {
+  let opts = params;
+  if (typeof params === 'string') {
+    opts = {
+      provider: params,
+      runId: arguments[1],
+      newTitles: arguments[2] || [],
+      existingUpdated: arguments[3] || [],
+      ...(typeof arguments[4] === 'object' ? arguments[4] : {})
+    };
+  }
+
   const {
     provider = 'HDHub4u',
     runTime = formatIstDateTime(new Date()),
     newTitles = [],
     existingUpdated = [],
-    newProviderLinksCount = 0,
-    titleListAppendedCount = 0,
+    newProviderLinksCount = (newTitles ? newTitles.length : 0),
+    titleListAppendedCount = (newTitles ? newTitles.length : 0),
     incompleteTitles = [],
     duplicateLinksSkippedCount = 0,
     validationStatus = 'Passed',
     deploymentStatus = 'Confirmed successful'
-  } = params;
+  } = opts || {};
 
   const movies = newTitles.filter(t => (t.type || 'Movie').toLowerCase() === 'movie');
   const series = newTitles.filter(t => (t.type || '').toLowerCase().includes('series'));
@@ -1076,7 +1250,9 @@ function formatProviderFailureNotification(params = {}) {
  */
 function formatTelegramReport(summary) {
   const syncTime = summary.runTimeIst || summary.formattedTime || formatDateTime(new Date());
-  const provs = summary.providers;
+  const provs = summary.providers || {};
+  const target = summary.targetProvider || summary.provider;
+  const targetProvs = target ? [target] : PROVIDERS;
 
   let text = '━━━━━━━━━━━━━━━━━━━━━━\n';
   text += '       PRAFLIX REPORT\n';
@@ -1085,9 +1261,12 @@ function formatTelegramReport(summary) {
   text += `🕐 Run time: ${syncTime}\n\n`;
 
   // Display targeted or all providers
-  const targetProvs = summary.targetProvider ? [summary.targetProvider] : PROVIDERS;
   for (const prov of targetProvs) {
-    const res = provs[prov];
+    let res = provs[prov];
+    if (!res && target && target.toLowerCase() === prov.toLowerCase()) {
+      res = summary;
+    }
+
     text += '━━━━━━━━━━━━━━━━━━━━━━\n';
     text += `${prov.toUpperCase()}\n`;
     text += '━━━━━━━━━━━━━━━━━━━━━━\n\n';
@@ -1107,10 +1286,16 @@ function formatTelegramReport(summary) {
       if (res.durableSnapshot) {
         text += `📦 Snapshot Inspected: ${(res.durableSnapshot.recordCount || 0).toLocaleString()} raw records (distinct canonical titles matched)\n`;
       }
-      text += `🎬 New Movies: ${res.newMovies}\n`;
-      text += `📺 New Series: ${res.newSeries}\n`;
-      if (typeof res.updatedExisting === 'number' && res.updatedExisting > 0) {
-        text += `🔄 Existing Titles Updated: ${res.updatedExisting.toLocaleString()}\n`;
+      const newM = res.newMovies !== undefined ? res.newMovies : (res.newTitlesCount || 0);
+      const newS = res.newSeries !== undefined ? res.newSeries : 0;
+      text += `🎬 New Movies: ${newM}\n`;
+      text += `📺 New Series: ${newS}\n`;
+      const upd = res.updatedExisting !== undefined ? res.updatedExisting : (res.existingUpdatedCount || 0);
+      if (typeof upd === 'number' && upd > 0) {
+        text += `🔄 Existing Titles Updated: ${upd.toLocaleString()}\n`;
+      }
+      if (Array.isArray(res.existingTitlesUpdated) && res.existingTitlesUpdated.length > 0) {
+        text += `   - ${res.existingTitlesUpdated.map(x => x.displayTitle || x.title).join(', ')}\n`;
       }
       if (res.titleListSync) {
         text += `📝 Title List: +${res.titleListSync.appendedCount} appended (${res.titleListSync.skippedCount} existing)\n`;
@@ -1220,5 +1405,7 @@ module.exports = {
   formatIncompleteImportsWarning,
   formatProviderFailureNotification,
   formatTelegramReport,
-  sendTelegramReport
+  sendTelegramReport,
+  providerRegistry,
+  adapters
 };
