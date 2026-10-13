@@ -34,3 +34,4 @@ data/scripts/
 data/tests/
 scratch/
 data/.telegram-sent-runs.json
+.wrangler/
