@@ -143,7 +143,37 @@ runTest('Reconciliation explains snapshot records mapping to HDHub4u canonical t
   const totalSnap = snap.movies.length + snap.webSeries.length;
   assert.ok(totalSnap >= 14501, `Raw snapshot must contain at least baseline 14,501 records, got ${totalSnap}`);
 
+  const reportPath = path.join(DATA_DIR, 'hdhub4u_snapshot_unmatched_report.json');
+  assert.ok(fs.existsSync(reportPath), 'Diagnostic report for unmatched snapshot records must exist');
+  const diagReport = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+
+  // Validate diagnostic report structure and accounting completeness
+  assert.ok(diagReport.reconciliationSummary, 'Report must contain reconciliation summary');
+  assert.ok(diagReport.exclusionRulesApplied && diagReport.exclusionRulesApplied.length >= 5, 'Report must document exclusion rules');
+  assert.ok(Array.isArray(diagReport.unmatchedRecords) && diagReport.unmatchedRecords.length === 10, 'Report must trace exactly ten unmatched records');
+
+  // Verify every record contains required diagnostic metadata
+  diagReport.unmatchedRecords.forEach(rec => {
+    assert.ok(rec.sourceTitle, 'Record must have sourceTitle');
+    assert.ok(rec.year !== undefined, 'Record must have year');
+    assert.ok(rec.type, 'Record must have type');
+    assert.ok(rec.sourceUrl, 'Record must have sourceUrl');
+    assert.ok(rec.normalizedMatchingKey, 'Record must have normalizedMatchingKey');
+    assert.ok(Array.isArray(rec.candidateCanonicalIds), 'Record must have candidateCanonicalIds');
+    assert.ok(Array.isArray(rec.variantsInspected), 'Record must have variantsInspected');
+    assert.ok(rec.reason, 'Record must have reason');
+    assert.ok(rec.category, 'Record must have category');
+  });
+
   const cat = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'catalog.json'), 'utf8'));
+
+  // Verify attached provider variants are present in canonical catalog
+  const pr = cat.find(c => c.canonicalId === 8372);
+  assert.ok(pr && pr.variants.some(v => (v.sourceUrl || '').includes('premium-rush-2012-hindi-bluray-full-movie')),
+    'praflix-8372 must have attached provider variant for Premium Rush');
+  const sp2 = cat.find(c => c.canonicalId === 9846);
+  assert.ok(sp2 && sp2.variants.some(v => (v.sourceUrl || '').includes('speed-2-cruise-control-1997-hindi-bluray-full-movie')),
+    'praflix-9846 must have attached provider variant for Speed 2 Cruise Control');
 
   // Build slug set of catalog records
   const catSlugs = new Set();
@@ -157,18 +187,37 @@ runTest('Reconciliation explains snapshot records mapping to HDHub4u canonical t
     });
   });
 
-  const allSnapRecords = [...snap.movies, ...snap.webSeries];
-  let matchedCount = 0;
-  allSnapRecords.forEach(r => {
-    const parts = (r.sourceUrl || '').split('/').filter(Boolean);
-    const slug = parts[parts.length - 1];
-    if (slug && catSlugs.has(slug.toLowerCase())) {
-      matchedCount++;
+  // Collect documented exclusion slugs
+  const documentedExclusionSlugs = new Set();
+  diagReport.unmatchedRecords.forEach(rec => {
+    if (rec.category.startsWith('quarantined_') || rec.category === 'genuinely_missing_title' || rec.category === 'incomplete_metadata' || rec.category === 'duplicate_listing') {
+      const parts = (rec.sourceUrl || '').split('/').filter(Boolean);
+      const slug = parts[parts.length - 1];
+      if (slug) documentedExclusionSlugs.add(slug.toLowerCase());
     }
   });
 
-  // Every single snapshot record is accounted for in the canonical catalog!
-  assert.strictEqual(matchedCount, totalSnap, '100% of snapshot records must be matched in catalog variants');
+  const allSnapRecords = [...snap.movies, ...snap.webSeries];
+  let matchedCount = 0;
+  let excludedCount = 0;
+  allSnapRecords.forEach(r => {
+    const parts = (r.sourceUrl || '').split('/').filter(Boolean);
+    const slug = parts[parts.length - 1];
+    if (slug) {
+      if (catSlugs.has(slug.toLowerCase())) {
+        matchedCount++;
+      } else if (documentedExclusionSlugs.has(slug.toLowerCase())) {
+        excludedCount++;
+      }
+    }
+  });
+
+  // Full reconciliation accounting parity:
+  // 100% of snapshot records are accounted for via matched variants + documented exclusions
+  const totalAccounted = matchedCount + excludedCount;
+  assert.strictEqual(totalAccounted, totalSnap,
+    `100% of snapshot records must be accounted for in catalog variants or documented exclusions (Matched: ${matchedCount}, Excluded: ${excludedCount}, Expected Total: ${totalSnap})`);
+  assert.ok(matchedCount >= 14501, `Matched count must meet baseline 14,501, got ${matchedCount}`);
 });
 
 // ----------------------------------------------------

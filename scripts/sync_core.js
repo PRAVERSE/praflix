@@ -275,7 +275,18 @@ async function fetchProviderLatest(providerName, options = {}) {
     }
 
     const html = await response.text();
-    return parseProviderHtml(providerName, html);
+    const items = parseProviderHtml(providerName, html);
+
+    // Guard: Reachable website returning 0 parsed items must NOT be claimed as successful complete scan
+    if (items.length === 0 && html.length > 500) {
+      const isChallenge = html.includes('challenge-platform') || html.includes('cf-chl') || html.includes('Just a moment...');
+      const errReason = isChallenge
+        ? `HTTP 200 with anti-bot verification challenge from ${providerName} (INCONCLUSIVE)`
+        : `Reachable site ${providerName} returned 0 parsed titles: parser layout mismatch or incomplete listing (INCONCLUSIVE / PARSING_FAILED)`;
+      throw new Error(errReason);
+    }
+
+    return items;
   } catch (err) {
     clearTimeout(timeoutId);
     throw new Error(`Failed to sync ${providerName}: ${err.message}`);
@@ -287,39 +298,89 @@ async function fetchProviderLatest(providerName, options = {}) {
  */
 function parseProviderHtml(providerName, html) {
   const providerLower = providerName.toLowerCase();
+  if (html && (html.includes('challenge-platform') || html.includes('cf-chl') || html.includes('Just a moment...') || html.includes('cf-browser-verification'))) {
+    throw new Error(`HTTP 200 with anti-bot verification challenge from ${providerName} (INCONCLUSIVE)`);
+  }
   const items = [];
 
   if (providerLower === 'hdwall') {
-    // Regex extract HDWall articles
-    const articleRegex = /<div class="custom-poster"[^>]*>[\s\S]*?<a href="([^"]+)"[^>]*>[\s\S]*?<img [^>]*src="([^"]+)"[^>]*alt="([^"]+)"/g;
-    let match;
-    while ((match = articleRegex.exec(html)) !== null) {
-      const sourceUrl = match[1];
-      const sourcePosterUrl = match[2];
-      const rawTitle = match[3];
+    // Strategy 1: Modern card layout (<li class="thumb..."> or <figure>)
+    const cardRegex = /<li[^>]*class="[^"]*thumb[^"]*"[^>]*>([\s\S]*?)<\/li>/gi;
+    let cardMatch;
+    while ((cardMatch = cardRegex.exec(html)) !== null) {
+      const cardContent = cardMatch[1];
+      const aMatch = cardContent.match(/<a[^>]+href="([^"]+\.html)"/i);
+      const imgMatch = cardContent.match(/<img[\s\S]*?src="([^"]+)"[\s\S]*?alt="([^"]+)"/i) ||
+                       cardContent.match(/<img[\s\S]*?alt="([^"]+)"[\s\S]*?src="([^"]+)"/i);
 
-      let screenshotUrl = null;
-      if (sourcePosterUrl.includes('/uploads/posts/covers/photo_')) {
-        screenshotUrl = sourcePosterUrl.replace('/uploads/posts/covers/photo_', '/uploads/posts/screenshot/screenshot_');
+      if (aMatch && imgMatch) {
+        let sourceUrl = aMatch[1].trim();
+        if (sourceUrl.startsWith('/')) {
+          sourceUrl = `https://hdhub.club${sourceUrl}`;
+        }
+        let sourcePosterUrl = (imgMatch[1].startsWith('/') ? `https://hdhub.club${imgMatch[1]}` : imgMatch[1]).trim();
+        let rawTitle = imgMatch[2].replace(/&amp;/g, '&').replace(/&#038;/g, '&').replace(/&#xE02C;/g, '').trim();
+
+        let screenshotUrl = null;
+        if (sourcePosterUrl.includes('/uploads/posts/covers/photo_')) {
+          screenshotUrl = sourcePosterUrl.replace('/uploads/posts/covers/photo_', '/uploads/posts/screenshot/screenshot_');
+        }
+
+        const yearMatch = rawTitle.match(/\b(19\d{2}|20\d{2})\b/);
+        const meta = titleDecoder.extractTitleMetadata(rawTitle);
+        const year = meta.year || (yearMatch ? yearMatch[1] : '');
+        const type = detectContentType(rawTitle, '');
+
+        items.push({
+          provider: 'HDWall',
+          source: 'hdwall',
+          originalSourceTitle: titleDecoder.cleanTitle(rawTitle),
+          displayTitle: meta.displayTitle || titleDecoder.cleanTitle(rawTitle),
+          year: year,
+          type: type,
+          sourceUrl: sourceUrl,
+          sourcePosterUrl: sourcePosterUrl,
+          screenshots: screenshotUrl ? [screenshotUrl] : [],
+          qualities: [{ resolution: '720p', label: 'HD' }]
+        });
       }
+    }
 
-      const yearMatch = rawTitle.match(/\b(19\d{2}|20\d{2})\b/);
-      const meta = titleDecoder.extractTitleMetadata(rawTitle);
-      const year = meta.year || (yearMatch ? yearMatch[1] : '');
-      const type = detectContentType(rawTitle, '');
+    // Strategy 2: Legacy layout (<div class="custom-poster">)
+    if (items.length === 0) {
+      const articleRegex = /<div class="custom-poster"[^>]*>[\s\S]*?<a href="([^"]+)"[^>]*>[\s\S]*?<img [^>]*src="([^"]+)"[^>]*alt="([^"]+)"/g;
+      let match;
+      while ((match = articleRegex.exec(html)) !== null) {
+        let sourceUrl = match[1].trim();
+        if (sourceUrl.startsWith('/')) {
+          sourceUrl = `https://hdhub.club${sourceUrl}`;
+        }
+        let sourcePosterUrl = (match[2].startsWith('/') ? `https://hdhub.club${match[2]}` : match[2]).trim();
+        let rawTitle = match[3].replace(/&amp;/g, '&').replace(/&#038;/g, '&').replace(/&#xE02C;/g, '').trim();
 
-      items.push({
-        provider: 'HDWall',
-        source: 'hdwall',
-        originalSourceTitle: titleDecoder.cleanTitle(rawTitle),
-        displayTitle: meta.displayTitle,
-        year: year,
-        type: type,
-        sourceUrl: sourceUrl,
-        sourcePosterUrl: sourcePosterUrl,
-        screenshots: screenshotUrl ? [screenshotUrl] : [],
-        qualities: [{ resolution: '720p', label: 'HD' }]
-      });
+        let screenshotUrl = null;
+        if (sourcePosterUrl.includes('/uploads/posts/covers/photo_')) {
+          screenshotUrl = sourcePosterUrl.replace('/uploads/posts/covers/photo_', '/uploads/posts/screenshot/screenshot_');
+        }
+
+        const yearMatch = rawTitle.match(/\b(19\d{2}|20\d{2})\b/);
+        const meta = titleDecoder.extractTitleMetadata(rawTitle);
+        const year = meta.year || (yearMatch ? yearMatch[1] : '');
+        const type = detectContentType(rawTitle, '');
+
+        items.push({
+          provider: 'HDWall',
+          source: 'hdwall',
+          originalSourceTitle: titleDecoder.cleanTitle(rawTitle),
+          displayTitle: meta.displayTitle || titleDecoder.cleanTitle(rawTitle),
+          year: year,
+          type: type,
+          sourceUrl: sourceUrl,
+          sourcePosterUrl: sourcePosterUrl,
+          screenshots: screenshotUrl ? [screenshotUrl] : [],
+          qualities: [{ resolution: '720p', label: 'HD' }]
+        });
+      }
     }
   } else if (providerLower === '10moviez') {
     const itemRegex = /<a class="poster"[^>]*href="([^"]+)"[^>]*>[\s\S]*?<img [^>]*src="([^"]+)"[^>]*alt="([^"]+)"/g;
@@ -489,6 +550,29 @@ async function syncProvider(providerName, catalog, sourceRecords, options = {}) 
     let maxCanonicalId = catalog.reduce((max, item) => Math.max(max, item.canonicalId || 0), 0);
 
     for (const item of items) {
+      // For HDWall live crawls, fetch detail page to extract verified direct storage CDN links if needed
+      if (providerName.toLowerCase() === 'hdwall' && item.sourceUrl && (!item.downloadOptions || item.downloadOptions.length === 0) && !options.skipNetwork && !options.mockItems) {
+        try {
+          const detailResp = await fetch(item.sourceUrl, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 (PRAFLIX-Bot/1.0)'
+            },
+            signal: AbortSignal.timeout(6000)
+          });
+          if (detailResp.ok) {
+            const dHtml = await detailResp.text();
+            const HDWallAdapter = require('./adapters/hdwall_adapter');
+            const hdwallAdapter = new HDWallAdapter(providerConfig);
+            const parsedDls = hdwallAdapter.parseDetailPage(dHtml, item.sourceUrl);
+            if (parsedDls && parsedDls.length > 0) {
+              item.downloadOptions = parsedDls;
+            }
+          }
+        } catch (dErr) {
+          console.warn(`[WARN] Could not fetch detail page for HDWall item "${item.displayTitle}": ${dErr.message}`);
+        }
+      }
+
       const { verified: verifiedLinks, skippedDuplicates } = extractAndVerifyCandidateLinks(item, providerName);
       if (skippedDuplicates.length > 0) {
         result.duplicateLinksSkipped += skippedDuplicates.length;
@@ -1395,6 +1479,7 @@ module.exports = {
   detectContentType,
   matchExistingTitle,
   fetchProviderLatest,
+  parseProviderHtml,
   extractAndVerifyCandidateLinks,
   syncProvider,
   runFullSync,

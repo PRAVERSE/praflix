@@ -60,41 +60,41 @@ async function main() {
   console.log(`- Title List Entries Appended: ${summary.totals.titleListAppended || 0}`);
   console.log(`- Final catalog size: ${catalog.length.toLocaleString()}`);
 
+  const REPORT_PATH = path.join(DATA_DIR, '.sync-report.json');
+  fs.writeFileSync(REPORT_PATH, JSON.stringify({
+    summary,
+    reportText,
+    totalAdded,
+    totalUpdated,
+    timestamp: new Date().toISOString()
+  }, null, 2), 'utf8');
+
   const providerEntries = Object.values(summary.providers);
   const failedProviders = providerEntries.filter(p => p.failed);
   const allProvidersFailed = providerEntries.length > 0 && failedProviders.length === providerEntries.length;
+  const isSingleProviderRun = Boolean(targetProvider && targetProvider.toLowerCase() !== 'all');
+
+  // Handle single-provider and all-provider failures explicitly:
+  // A blocked crawl (HTTP 403, 5xx, or network failure) must NOT be misrepresented as a successful scan,
+  // and deployment must be blocked when the targeted crawl fails.
+  if (isSingleProviderRun && failedProviders.length > 0) {
+    const failedP = failedProviders[0];
+    console.error(`\n[FATAL] Provider "${targetProvider}" sync failed or was blocked: ${failedP.error || 'Unknown error'}`);
+    console.error('[FATAL] Aborting pipeline to prevent false success and block invalid edge deployment.');
+    if (!skipTelegram && !deferTelegram) {
+      console.log('Dispatching failure report to Telegram...');
+      await sendTelegramReport(reportText);
+    }
+    throw new Error(`CRITICAL: Provider "${targetProvider}" failed during synchronization (${failedP.error}). Workflow halted to block deployment.`);
+  }
 
   if (allProvidersFailed) {
-    // For a single-provider run, a network/fetch failure is non-fatal: the provider site
-    // may be temporarily unreachable. Log a clear warning and continue (catalog unchanged).
-    // For multi-provider runs (all 3 failed), this is a fatal pipeline failure.
-    const isSingleProviderRun = targetProvider && targetProvider.toLowerCase() !== 'all';
-    const isNetworkFailure = failedProviders.every(p =>
-      p.error && (
-        p.error.includes('Failed to sync') ||
-        p.error.includes('fetch') ||
-        p.error.includes('network') ||
-        p.error.includes('timeout') ||
-        p.error.includes('ENOTFOUND') ||
-        p.error.includes('ECONNREFUSED') ||
-        p.error.includes('aborted') ||
-        p.error.includes('HTTP ')
-      )
-    );
-
-    if (isSingleProviderRun && isNetworkFailure) {
-      console.warn(`\n[WARN] ${targetProvider} live endpoint unreachable — network failure during scheduled sync.`);
-      console.warn(`[WARN] Error: ${failedProviders[0].error}`);
-      console.warn('[WARN] Catalog unchanged. Proceeding with build and deployment using existing catalog.');
-      // Non-fatal: continue to build and deploy with the existing catalog
-    } else {
-      console.error(`\n[FATAL] Complete sync failure: all requested providers (${providerEntries.length}) failed to synchronize.`);
-      if (!skipTelegram) {
-        console.log('Dispatching complete failure alert to Telegram...');
-        await sendTelegramReport(reportText);
-      }
-      throw new Error(`CRITICAL: All ${providerEntries.length} requested providers failed during synchronization. Workflow halted to prevent deployment.`);
+    console.error(`\n[FATAL] Complete sync failure: all requested providers (${providerEntries.length}) failed to synchronize.`);
+    if (!skipTelegram && !deferTelegram) {
+      console.log('Dispatching complete failure alert to Telegram...');
+      await sendTelegramReport(reportText);
     }
+    throw new Error(`CRITICAL: All ${providerEntries.length} requested providers failed during synchronization. Workflow halted to prevent deployment.`);
   }
 
   if (catalog.length < initialCount) {
@@ -121,15 +121,6 @@ async function main() {
   } else {
     console.log('\nNo catalog modifications required today.');
   }
-
-  const REPORT_PATH = path.join(DATA_DIR, '.sync-report.json');
-  fs.writeFileSync(REPORT_PATH, JSON.stringify({
-    summary,
-    reportText,
-    totalAdded,
-    totalUpdated,
-    timestamp: new Date().toISOString()
-  }, null, 2), 'utf8');
 
   // Telegram Report Dispatch
   console.log('\n[3/3] Telegram Dispatch...');

@@ -154,7 +154,7 @@ jobs:
         run: npx wrangler deploy
 
       - name: 9. Dispatch Confirmed Telegram Notification
-        if: always() && steps.deploy.conclusion != 'skipped'
+        if: always()
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
