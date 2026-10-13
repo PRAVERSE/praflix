@@ -1,13 +1,13 @@
 {
-  "syncTimestamp": "2026-10-12T18:29:57.504Z",
+  "syncTimestamp": "2026-10-13T03:49:20.265Z",
   "liveCrawl": {
     "attempted": true,
-    "liveReachable": true,
+    "liveReachable": false,
     "succeeded": false,
     "interrupted": true,
-    "liveDiscoveredCount": 70,
+    "liveDiscoveredCount": 0,
     "newlyDiscoveredCount": 0,
-    "error": "Live crawl interrupted/incomplete; durable snapshot utilized for full catalog reconciliation"
+    "error": "This operation was aborted"
   },
   "durableSnapshot": {
     "loaded": true,
@@ -21,45 +21,33 @@
     "totalDiscovered": 14471,
     "uniqueMovies": 12706,
     "uniqueWebSeries": 1765,
-    "alreadyPresentInCatalog": 12980,
+    "alreadyPresentInCatalog": 12063,
     "newlyAddedToCatalog": 0,
     "newlyAddedMovies": 0,
     "newlyAddedSeries": 0,
     "newlyDiscoveredLive": 0,
-    "existingUpdatedWithLinks": 12980,
-    "duplicatesPrevented": 1491,
+    "existingUpdatedWithLinks": 4866,
+    "duplicatesPrevented": 2408,
     "ambiguousTitlesCount": 0,
     "downloadOptionsCollected": 41392,
     "destinationsVerified": 41074,
     "destinationsBroken": 184,
     "destinationsTemporarilyUnavailable": 0,
     "destinationsUnverified": 134,
-    "titlesWithDownloads": 4781,
-    "titlesWithoutDownloads": 8199
+    "titlesWithDownloads": 4866,
+    "titlesWithoutDownloads": 0,
+    "incompleteTitlesCount": 0
   },
   "newlyAddedTitles": [],
   "newlyAddedCanonicalItems": [],
+  "incompleteTitles": [],
   "titleListSync": {
     "success": true,
     "provider": "hdhub4u",
     "filePath": "/home/runner/work/praflix/praflix/title list/HDHUB4U TITLE.txt",
-    "appendedCount": 13,
-    "skippedCount": 14443,
-    "appendedTitles": [
-      "12/10/26 The Deal Short Film HOT Hindi",
-      "12/10/26 Ong-bak Trilogy",
-      "12/10/26 My Last Imagination HOT Hindi",
-      "12/10/26 Indrajith The Real Jackpot 2 Hindi",
-      "12/10/26 Sankarabharanam Encounter Man 2 UNCUT Hindi",
-      "12/10/26 Sankarabharanam Encounter Man 2 UNCUT Hindi",
-      "12/10/26 Power Unlimited 2 Touch Chesi Chudu UNCUT ORG Hindi",
-      "12/10/26 Power Unlimited 2 Touch Chesi Chudu UNCUT ORG Hindi",
-      "12/10/26 Power Unlimited 2 Touch Chesi Chudu UNCUT Hindi",
-      "12/10/26 Virgin Boys Part 1 Hindi",
-      "12/10/26 Money Heist S04 La Casa De Papel Complete",
-      "12/10/26 Into The Wild with Bear Grylls and Superstar Rajinikanth in Hindi",
-      "12/10/26 Ekkadiki Ee Parugu Hindi"
-    ]
+    "appendedCount": 0,
+    "skippedCount": 0,
+    "appendedTitles": []
   },
   "ambiguousTitles": []
 }
