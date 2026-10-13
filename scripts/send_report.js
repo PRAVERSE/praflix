@@ -18,6 +18,7 @@ const path = require('path');
 const {
   sendTelegramReport,
   formatNewTitlesTelegramReport,
+  formatExistingTitlesUpdatedReport,
   formatIncompleteImportsWarning,
   formatProviderFailureNotification,
   formatIstDateTime
@@ -26,7 +27,7 @@ const {
 const BASE_DIR = path.dirname(__dirname);
 const DATA_DIR = path.join(BASE_DIR, 'data');
 const REPORT_PATH = path.join(DATA_DIR, '.sync-report.json');
-const SENT_RUNS_PATH = path.join(DATA_DIR, '.telegram-sent-runs.json');
+const SENT_RUNS_PATH = path.join(DATA_DIR, 'telegram_sent_runs.json');
 
 function loadSentRuns() {
   if (fs.existsSync(SENT_RUNS_PATH)) {
@@ -61,7 +62,14 @@ async function main() {
   const summary = reportData.summary || {};
   const targetProvider = summary.targetProvider || 'HDHub4u';
   const newTitles = summary.newCanonicalTitles || [];
+  const existingUpdated = summary.existingTitlesUpdated || [];
   const hasNewTitles = Boolean(summary.hasNewTitles && newTitles.length > 0);
+  const hasExistingUpdated = Boolean(existingUpdated.length > 0);
+  const newLinksCount = (summary.newProviderLinks || []).length;
+  const titleListAppendedCount = (summary.titleListEntriesAppended || []).length;
+  const duplicateLinksSkippedCount = typeof summary.duplicateLinksSkipped === 'number'
+    ? summary.duplicateLinksSkipped
+    : (summary.duplicateLinksSkipped || []).length;
 
   // Deployment status confirmation from environment or args
   const args = process.argv.slice(2);
@@ -71,13 +79,12 @@ async function main() {
     deploymentStatus = args[depIdx + 1].trim();
   }
 
-  // Idempotency check: compute stable run key
+  // Idempotency check: compute stable run key across workflow retries
   const runId = process.env.GITHUB_RUN_ID || 'local';
-  const runAttempt = process.env.GITHUB_RUN_ATTEMPT || '1';
   const syncTime = reportData.timestamp || summary.syncTime || new Date().toISOString();
   const dateKey = syncTime.slice(0, 10); // YYYY-MM-DD
   const titlesSignature = newTitles.map(t => t.canonicalId || t.displayTitle).sort().join('_');
-  const runKey = `${targetProvider}_${dateKey}_run_${runId}_att_${runAttempt}_${titlesSignature || 'none'}`;
+  const runKey = `${targetProvider}_${dateKey}_run_${runId}_${titlesSignature || 'none'}`;
 
   const sentRuns = loadSentRuns();
   if (sentRuns[runKey] && sentRuns[runKey].sent) {
@@ -116,7 +123,23 @@ async function main() {
       provider: targetProvider,
       runTime: summary.runTimeIst || formatIstDateTime(new Date()),
       newTitles: newTitles,
+      existingUpdated: existingUpdated,
+      newProviderLinksCount: newLinksCount,
+      titleListAppendedCount: titleListAppendedCount,
       incompleteTitles: summary.incompleteTitles || [],
+      duplicateLinksSkippedCount: duplicateLinksSkippedCount,
+      validationStatus: 'Passed',
+      deploymentStatus: deploymentStatus
+    });
+  } else if (hasExistingUpdated) {
+    // Dedicated PRAFLIX — EXISTING TITLES UPDATED WITH NEW LINKS format
+    finalMessage = formatExistingTitlesUpdatedReport({
+      provider: targetProvider,
+      runTime: summary.runTimeIst || formatIstDateTime(new Date()),
+      existingUpdated: existingUpdated,
+      newProviderLinksCount: newLinksCount,
+      incompleteTitles: summary.incompleteTitles || [],
+      duplicateLinksSkippedCount: duplicateLinksSkippedCount,
       validationStatus: 'Passed',
       deploymentStatus: deploymentStatus
     });
@@ -152,9 +175,24 @@ async function main() {
       sentAt: new Date().toISOString(),
       provider: targetProvider,
       newTitlesCount: newTitles.length,
+      existingUpdatedCount: existingUpdated.length,
       deploymentStatus
     };
     saveSentRuns(sentRuns);
+
+    // Persist ledger under GitHub Actions if repo credentials are active
+    if (process.env.GITHUB_ACTIONS && process.env.GITHUB_REF_NAME) {
+      try {
+        const { execSync } = require('child_process');
+        execSync('git config user.name "PRAFLIX Automated Sync Bot" && git config user.email "bot@praflix.us.ci"');
+        execSync('git add data/telegram_sent_runs.json');
+        execSync('git commit -m "chore(sync): update telegram idempotency ledger [skip ci]" || true');
+        execSync(`git pull --rebase --autostash origin ${process.env.GITHUB_REF_NAME} || true`);
+        execSync(`git push origin ${process.env.GITHUB_REF_NAME} || true`);
+      } catch (gitErr) {
+        console.warn('[WARN] Could not git-push telegram ledger:', gitErr.message);
+      }
+    }
   } else {
     console.warn(`⚠️ Telegram dispatch notice: ${result.error}`);
     console.warn('Catalog modifications and deployment are preserved. Notification failure safely logged.');

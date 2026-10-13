@@ -128,7 +128,8 @@ check(5, "Title available from multiple providers",
     sourceUrl: 'https://new1.hdhub4u.free/the-new-galaxy-explorer-2026/',
     sourcePosterUrl: 'https://example.com/poster.jpg',
     screenshots: ['https://example.com/ss1.jpg'],
-    qualities: [{ resolution: '1080p', label: '1080p' }]
+    qualities: [{ resolution: '1080p', label: '1080p' }],
+    links: [{ downloadUrl: 'https://hubcdn.io/file/galaxy-explorer-1080p', resolution: '1080p' }]
   };
 
   const resNew = await syncProvider('HDHub4u', testCatalog, testSources, {
@@ -183,7 +184,8 @@ check(5, "Title available from multiple providers",
     sourceUrl: 'https://new1.hdhub4u.free/solar-odyssey-2026/',
     sourcePosterUrl: 'https://example.com/p1.jpg',
     screenshots: [],
-    qualities: [{ resolution: '1080p', label: '1080p' }]
+    qualities: [{ resolution: '1080p', label: '1080p' }],
+    links: [{ downloadUrl: 'https://hubcdn.io/file/solar-odyssey-1080p', resolution: '1080p' }]
   };
   const sharedTitleItem10M = {
     provider: '10Moviez',
@@ -195,7 +197,8 @@ check(5, "Title available from multiple providers",
     sourceUrl: 'https://10moviez.biz/solar-odyssey-2026/',
     sourcePosterUrl: 'https://example.com/p2.jpg',
     screenshots: [],
-    qualities: [{ resolution: '720p', label: '720p' }]
+    qualities: [{ resolution: '720p', label: '720p' }],
+    links: [{ downloadUrl: 'https://hubcdn.io/file/solar-odyssey-720p', resolution: '720p' }]
   };
 
   const syncDupe = await runFullSync(freshCatalog, freshSources, {

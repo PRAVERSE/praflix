@@ -543,13 +543,15 @@ async function runHDHub4uSync(options = {}) {
 
         registerDiscovered(itemObj, isSeries);
 
-        // Also record into durable snapshot so subsequent runs preserve it
-        if (isSeries) {
-          if (!hdhubCompleteData.webSeries) hdhubCompleteData.webSeries = [];
-          hdhubCompleteData.webSeries.push(itemObj);
-        } else {
-          if (!hdhubCompleteData.movies) hdhubCompleteData.movies = [];
-          hdhubCompleteData.movies.push(itemObj);
+        // Only record into durable snapshot if live detail page actually fetched valid download options
+        if (detailData && Array.isArray(detailData.downloadOptions) && detailData.downloadOptions.length > 0) {
+          if (isSeries) {
+            if (!hdhubCompleteData.webSeries) hdhubCompleteData.webSeries = [];
+            hdhubCompleteData.webSeries.push(itemObj);
+          } else {
+            if (!hdhubCompleteData.movies) hdhubCompleteData.movies = [];
+            hdhubCompleteData.movies.push(itemObj);
+          }
         }
       } else {
         // Existing item in snapshot: ensure live poster is adopted if existing had none
@@ -626,6 +628,9 @@ async function runHDHub4uSync(options = {}) {
   let titlesWithoutDownloads = 0;
 
   const newlyAddedCanonicalItems = [];
+  const existingTitlesUpdated = [];
+  const newProviderLinks = [];
+  const duplicateLinksSkipped = [];
   const incompleteTitles = [];
   const ambiguousReviewList = [];
   const auditRecords = [];
@@ -772,7 +777,7 @@ async function runHDHub4uSync(options = {}) {
       let existingEntry = downloadsMap.get(targetCanonicalId);
       if (verifiedLinks.length > 0) {
         titlesWithDownloads++;
-        existingUpdatedCount++;
+        let newLinksCountForThisTitle = 0;
         if (!existingEntry) {
           existingEntry = {
             catalogueId: targetCanonicalId,
@@ -787,6 +792,15 @@ async function runHDHub4uSync(options = {}) {
           };
           downloadsMap.set(targetCanonicalId, existingEntry);
           downloadsData.entries.push(existingEntry);
+          newLinksCountForThisTitle = verifiedLinks.length;
+          verifiedLinks.forEach(vl => {
+            newProviderLinks.push({
+              canonicalId: targetCanonicalId,
+              provider: 'HDHub4u',
+              downloadUrl: vl.downloadUrl,
+              resolution: vl.resolution
+            });
+          });
         } else {
           const existingUrls = new Set((existingEntry.links || []).map(l => `${l.downloadUrl}__${l.resolution}`));
           verifiedLinks.forEach(vl => {
@@ -795,11 +809,38 @@ async function runHDHub4uSync(options = {}) {
               existingUrls.add(k);
               if (!existingEntry.links) existingEntry.links = [];
               existingEntry.links.push(vl);
+              newLinksCountForThisTitle++;
+              newProviderLinks.push({
+                canonicalId: targetCanonicalId,
+                provider: 'HDHub4u',
+                downloadUrl: vl.downloadUrl,
+                resolution: vl.resolution
+              });
+            } else {
+              duplicatesPrevented++;
+              duplicateLinksSkipped.push({
+                canonicalId: targetCanonicalId,
+                provider: 'HDHub4u',
+                downloadUrl: vl.downloadUrl,
+                reason: 'duplicate_link'
+              });
             }
           });
           existingEntry.lastCheckedAt = nowIso;
           existingEntry.discoveryStatus = 'links_found';
           existingEntry.verificationStatus = 'verified';
+        }
+
+        if (newLinksCountForThisTitle > 0) {
+          existingUpdatedCount++;
+          existingTitlesUpdated.push({
+            canonicalId: targetCanonicalId,
+            displayTitle: targetCanonicalItem.displayTitle,
+            year: targetCanonicalItem.year,
+            type: targetCanonicalItem.type,
+            provider: 'HDHub4u',
+            newLinksCount: newLinksCountForThisTitle
+          });
         }
       }
 
@@ -918,6 +959,15 @@ async function runHDHub4uSync(options = {}) {
       downloadsMap.set(targetCanonicalId, downloadsEntry);
       downloadsData.entries.push(downloadsEntry);
 
+      verifiedLinks.forEach(vl => {
+        newProviderLinks.push({
+          canonicalId: targetCanonicalId,
+          provider: 'HDHub4u',
+          downloadUrl: vl.downloadUrl,
+          resolution: vl.resolution
+        });
+      });
+
       auditRecords.push({
         canonicalId: targetCanonicalId,
         title: targetCanonicalItem.displayTitle,
@@ -1005,6 +1055,9 @@ async function runHDHub4uSync(options = {}) {
       provider: 'HDHub4u'
     })),
     newlyAddedCanonicalItems: newlyAddedCanonicalItems,
+    existingTitlesUpdated: existingTitlesUpdated,
+    newProviderLinks: newProviderLinks,
+    duplicateLinksSkipped: duplicateLinksSkipped,
     incompleteTitles: incompleteTitles,
     titleListSync: titleListResult,
     ambiguousTitles: ambiguousReviewList

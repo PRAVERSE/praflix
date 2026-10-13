@@ -123,7 +123,7 @@ jobs:
           fi
 
           echo "✓ All required catalog assets verified in $(pwd). Staging files for persistence..."
-          git add data/catalog.json data/source-records.json data/catalog-manifest.json data/catalog-chunk-*.json data/catalog_chunk_*.js data/downloads.json data/poster-valid-ids.js "title list/"
+          git add data/catalog.json data/source-records.json data/catalog-manifest.json data/catalog-chunk-*.json data/catalog_chunk_*.js data/downloads.json data/poster-valid-ids.js data/telegram_sent_runs.json "title list/"
           git add -u
           if git diff --staged --quiet; then
             echo "No catalog modifications to commit today."

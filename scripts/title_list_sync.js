@@ -167,28 +167,45 @@ function syncProviderTitleList(providerName, candidateTitles = [], options = {})
 
   const entryDate = formatTitleListDate(options.date || new Date());
   const appendedTitles = [];
+  const appendedEntries = [];
   let skippedCount = 0;
 
   for (const item of candidateTitles) {
     const rawTitle = typeof item === 'string' ? item : (item.displayTitle || item.title || item.originalSourceTitle || '');
     if (!rawTitle) continue;
 
+    const cleanTitle = cleanTitleForEntry(rawTitle);
+    if (!cleanTitle) continue;
+
     const keys = extractTitleKeys(rawTitle);
     if (keys.length === 0) continue;
 
-    const isDuplicate = keys.some(k => normalizedSet.has(k));
+    const cleanLower = cleanTitle.toLowerCase().trim();
+    const normClean = normalizeTitleForComparison(cleanTitle);
+
+    const isDuplicate = keys.some(k => normalizedSet.has(k)) ||
+                        normalizedSet.has(cleanLower) ||
+                        (normClean && normalizedSet.has(normClean));
     if (isDuplicate) {
       skippedCount++;
       continue;
     }
 
-    const cleanTitle = cleanTitleForEntry(rawTitle);
     const entryLine = `${entryDate} ${cleanTitle}`;
 
     appendedTitles.push(entryLine);
+    appendedEntries.push({
+      title: cleanTitle,
+      date: entryDate,
+      provider: providerName,
+      formattedEntry: entryLine
+    });
+
     for (const k of keys) {
       normalizedSet.add(k); // Prevent duplicates within the same batch
     }
+    normalizedSet.add(cleanLower);
+    if (normClean) normalizedSet.add(normClean);
   }
 
   if (appendedTitles.length > 0 && !options.dryRun) {
@@ -206,7 +223,8 @@ function syncProviderTitleList(providerName, candidateTitles = [], options = {})
     filePath,
     appendedCount: appendedTitles.length,
     skippedCount,
-    appendedTitles
+    appendedTitles,
+    appendedEntries
   };
 }
 
@@ -217,6 +235,7 @@ module.exports = {
   formatTitleListDate,
   cleanTitleForEntry,
   normalizeTitleForComparison,
+  extractTitleKeys,
   loadExistingTitles,
   syncProviderTitleList
 };

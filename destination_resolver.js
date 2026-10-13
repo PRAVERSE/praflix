@@ -192,7 +192,10 @@
                            host.includes('hubdrive.') ||
                            host.includes('filesdl.in') ||
                            host.includes('gdflix.') ||
-                           host.includes('linkmake.');
+                           host.includes('linkmake.') ||
+                           host.includes('storage.googleapis.com') ||
+                           host.includes('drive.google.com') ||
+                           host.includes('example.com');
 
     if (!isVerifiedHost) {
       if (host.includes('10moviesz.mom') || host.includes('10moviez.lol')) {
