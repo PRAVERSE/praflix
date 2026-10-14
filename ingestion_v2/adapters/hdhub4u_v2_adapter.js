@@ -166,7 +166,8 @@ class HDHub4uV2Adapter extends BaseV2Adapter {
           downloadUrl: href,
           rawQuality: text,
           isSeries: type === 'Web Series',
-          type: type
+          type: type,
+          titleContext: rawHeading
         }, pageUrl);
 
         if (val.isValid) {

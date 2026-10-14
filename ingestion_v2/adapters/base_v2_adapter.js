@@ -53,13 +53,20 @@ class BaseV2Adapter {
     return 'Movie';
   }
 
-  normalizeQuality(raw) {
-    if (!raw) return '720p';
-    const s = String(raw).toLowerCase().trim();
+  normalizeQuality(raw, fallbackContext = '') {
+    const s = String(raw || '').toLowerCase().trim();
     if (s.includes('2160') || s.includes('4k') || s.includes('uhd')) return '4K';
     if (s.includes('1080') || s.includes('fhd') || s.includes('full hd')) return '1080p';
     if (s.includes('720') || s.includes('hd')) return '720p';
     if (s.includes('480') || s.includes('sd')) return '480p';
+
+    if (fallbackContext) {
+      const fb = String(fallbackContext).toLowerCase().trim();
+      if (fb.includes('2160') || fb.includes('4k') || fb.includes('uhd')) return '4K';
+      if (fb.includes('1080') || fb.includes('fhd') || fb.includes('full hd')) return '1080p';
+      if (fb.includes('720')) return '720p';
+      if (fb.includes('480')) return '480p';
+    }
     return '720p';
   }
 
@@ -102,7 +109,8 @@ class BaseV2Adapter {
       return { isValid: false, status: classification.status, reason: classification.reason || 'unverified_destination' };
     }
 
-    const res = this.normalizeQuality(candidate.resolution || candidate.quality || candidate.rawQuality || '720p');
+    const fallbackCtx = (typeof candidate === 'object') ? (candidate.titleContext || candidate.originalTitle || '') : '';
+    const res = this.normalizeQuality(candidate.resolution || candidate.quality || candidate.rawQuality || '', fallbackCtx);
     return {
       isValid: true,
       status: 'verified',
