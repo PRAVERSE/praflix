@@ -1,12 +1,12 @@
 {
-  "syncTimestamp": "2026-10-13T16:38:57.848Z",
+  "syncTimestamp": "2026-10-14T09:38:17.606Z",
   "liveCrawl": {
     "attempted": true,
     "liveReachable": true,
     "succeeded": true,
     "interrupted": false,
     "liveDiscoveredCount": 75,
-    "newlyDiscoveredCount": 11,
+    "newlyDiscoveredCount": 12,
     "error": null
   },
   "durableSnapshot": {
@@ -18,16 +18,16 @@
     "preserved": true
   },
   "metrics": {
-    "totalDiscovered": 14480,
+    "totalDiscovered": 14481,
     "uniqueMovies": 12714,
-    "uniqueWebSeries": 1766,
+    "uniqueWebSeries": 1767,
     "alreadyPresentInCatalog": 12063,
     "newlyAddedToCatalog": 0,
     "newlyAddedMovies": 0,
     "newlyAddedSeries": 0,
-    "newlyDiscoveredLive": 11,
-    "existingUpdatedWithLinks": 1,
-    "duplicatesPrevented": 43141,
+    "newlyDiscoveredLive": 12,
+    "existingUpdatedWithLinks": 0,
+    "duplicatesPrevented": 43145,
     "ambiguousTitlesCount": 0,
     "downloadOptionsCollected": 41328,
     "destinationsVerified": 41095,
@@ -35,47 +35,13 @@
     "destinationsTemporarilyUnavailable": 0,
     "destinationsUnverified": 107,
     "titlesWithDownloads": 4870,
-    "titlesWithoutDownloads": 8,
-    "incompleteTitlesCount": 8
+    "titlesWithoutDownloads": 9,
+    "incompleteTitlesCount": 9
   },
   "newlyAddedTitles": [],
   "newlyAddedCanonicalItems": [],
-  "existingTitlesUpdated": [
-    {
-      "canonicalId": 1087,
-      "displayTitle": "Weapons",
-      "year": "2025",
-      "type": "Movie",
-      "provider": "HDHub4u",
-      "newLinksCount": 4
-    }
-  ],
-  "newProviderLinks": [
-    {
-      "canonicalId": 1087,
-      "provider": "HDHub4u",
-      "downloadUrl": "https://hubdrive.pics/file/2237002897",
-      "resolution": "720p"
-    },
-    {
-      "canonicalId": 1087,
-      "provider": "HDHub4u",
-      "downloadUrl": "https://hubdrive.pics/file/2948635848",
-      "resolution": "1080p"
-    },
-    {
-      "canonicalId": 1087,
-      "provider": "HDHub4u",
-      "downloadUrl": "https://hubdrive.pics/file/14876131191",
-      "resolution": "1080p"
-    },
-    {
-      "canonicalId": 1087,
-      "provider": "HDHub4u",
-      "downloadUrl": "https://hubdrive.pics/file/10962098414",
-      "resolution": "4K"
-    }
-  ],
+  "existingTitlesUpdated": [],
+  "newProviderLinks": [],
   "duplicateLinksSkipped": [
     {
       "canonicalId": 9379,
@@ -72813,6 +72779,30 @@
       "canonicalId": 13687,
       "provider": "HDHub4u",
       "downloadUrl": "https://hubdrive.pics/file/2436289108",
+      "reason": "duplicate_link"
+    },
+    {
+      "canonicalId": 1087,
+      "provider": "HDHub4u",
+      "downloadUrl": "https://hubdrive.pics/file/2237002897",
+      "reason": "duplicate_link"
+    },
+    {
+      "canonicalId": 1087,
+      "provider": "HDHub4u",
+      "downloadUrl": "https://hubdrive.pics/file/2948635848",
+      "reason": "duplicate_link"
+    },
+    {
+      "canonicalId": 1087,
+      "provider": "HDHub4u",
+      "downloadUrl": "https://hubdrive.pics/file/14876131191",
+      "reason": "duplicate_link"
+    },
+    {
+      "canonicalId": 1087,
+      "provider": "HDHub4u",
+      "downloadUrl": "https://hubdrive.pics/file/10962098414",
       "reason": "duplicate_link"
     },
     {
@@ -244472,6 +244462,14 @@
   ],
   "incompleteTitles": [
     {
+      "displayTitle": "VisionQuest (Season 1)",
+      "rawTitle": "&#xE02C; VisionQuest (Season 1) WEB-DL [Hindi (DD5.1) &#038; English] 4K 1080p 720p &#038; 480p [x264/10Bit-HEVC] | DisneyPlus Series | [EP-02 Added]",
+      "year": "",
+      "type": "Web Series",
+      "sourceUrl": "https://new7.hdhub4u.cl/visionquest-season-1-hindi-webrip-all-episodes/",
+      "reason": "no_eligible_links"
+    },
+    {
       "displayTitle": "Papa's Friend (Season 1)",
       "rawTitle": "&#xE02C; Papa&#8217;s Friend (Season 1) WEB-DL [Hindi 2.0] 1080p 720p &#038; 480p [x264/ESub] HD | ALL Episodes [Atrangii Series]",
       "year": "",
@@ -244539,7 +244537,7 @@
   "titleListSync": {
     "success": true,
     "provider": "hdhub4u",
-    "filePath": "C:\\Users\\hp\\OneDrive\\Desktop\\PRAFLIX\\title list\\HDHUB4U TITLE.txt",
+    "filePath": "/home/runner/work/praflix/praflix/title list/HDHUB4U TITLE.txt",
     "appendedCount": 0,
     "skippedCount": 0,
     "appendedTitles": [],
