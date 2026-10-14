@@ -38,5 +38,13 @@
     "newTitlesCount": 0,
     "existingUpdatedCount": 0,
     "deploymentStatus": "Confirmed successful"
+  },
+  "10Moviez_2026-10-14_run_38550064773_none": {
+    "sent": true,
+    "sentAt": "2026-10-14T10:31:00.776Z",
+    "provider": "10Moviez",
+    "newTitlesCount": 0,
+    "existingUpdatedCount": 0,
+    "deploymentStatus": "Failed"
   }
 }
