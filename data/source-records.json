@@ -697,5 +697,77 @@
     "screenshots": [
       "https://hdhub.club/uploads/posts/screenshot/screenshot_meesaya-murukku-2017-hindi-tamil-dual-audio-uncut-south-movie-hd-esub.png"
     ]
+  },
+  {
+    "id": 1371300,
+    "source": "hdhub4u",
+    "sourceId": "src-hdhub4u-13713-0",
+    "displayTitle": "Love of Your Life",
+    "originalSourceTitle": "&#xE02C; Love of Your Life (2026) WEB-DL [Hindi (DD5.1) &#038; English] 4K 1080p 720p &#038; 480p Dual Audio [x264/10Bit-HEVC] | Full Movie,",
+    "normalizedTitle": "love of your life",
+    "year": "2026",
+    "type": "Movie",
+    "season": null,
+    "sourceUrl": "https://new7.hdhub4u.cl/love-of-your-life-2026-webrip-hindi-full-movie/",
+    "sourcePosterUrl": "https://image.tmdb.org/t/p/w400/gOaRyRpilYPEsVLEPHOH9eHNw5E.jpg",
+    "qualities": [
+      {
+        "link": "https://hubdrive.pics/file/2303824242",
+        "quality": "720p",
+        "rawText": "720p 10Bit HEVC [840MB]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/2666356978",
+        "quality": "1080p",
+        "rawText": "1080p 10Bit HEVC [1.9GB]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/9135339872",
+        "quality": "1080p",
+        "rawText": "1080p WEB-DL [8.9GB]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/3382341087",
+        "quality": "4K",
+        "rawText": "4K [2160p SDR WEB-DL – 13.4GB]",
+        "isComplete": false
+      }
+    ],
+    "sightings": [
+      {
+        "surface": "hdhub4u_sync",
+        "discoveredAt": "2026-10-14T18:12:36.404Z"
+      }
+    ]
+  },
+  {
+    "id": 1371400,
+    "source": "hdhub4u",
+    "sourceId": "src-hdhub4u-13714-0",
+    "displayTitle": "Charukesi",
+    "originalSourceTitle": "&#xE02C; Charukesi (2026) WEB-DL [Hindi (DD5.1) &#038; Tamil] 1080p 720p &#038; 480p Dual Audio [x264/HEVC ESubs] | Full Movie",
+    "normalizedTitle": "charukesi",
+    "year": "2026",
+    "type": "Movie",
+    "season": null,
+    "sourceUrl": "https://new7.hdhub4u.cl/charukesi-2026-webrip-hindi-full-movie/",
+    "sourcePosterUrl": "https://catimages.org/images/2026/10/14/Charukesi-2026.jpg",
+    "qualities": [
+      {
+        "link": "https://hubdrive.pics/file/1828448262",
+        "quality": "1080p",
+        "rawText": "1080p WEB-DL Untouch [5.2GB]",
+        "isComplete": false
+      }
+    ],
+    "sightings": [
+      {
+        "surface": "hdhub4u_sync",
+        "discoveredAt": "2026-10-14T18:12:36.404Z"
+      }
+    ]
   }
 ]

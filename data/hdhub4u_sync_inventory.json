@@ -1,47 +1,212 @@
 {
-  "syncTimestamp": "2026-10-14T09:38:17.606Z",
+  "syncTimestamp": "2026-10-14T18:12:36.404Z",
   "liveCrawl": {
     "attempted": true,
     "liveReachable": true,
     "succeeded": true,
     "interrupted": false,
-    "liveDiscoveredCount": 75,
-    "newlyDiscoveredCount": 12,
+    "liveDiscoveredCount": 45,
+    "newlyDiscoveredCount": 13,
     "error": null
   },
   "durableSnapshot": {
     "loaded": true,
-    "recordCount": 14505,
-    "moviesCount": 12730,
+    "recordCount": 14507,
+    "moviesCount": 12732,
     "webSeriesCount": 1775,
     "source": "hdhub4u_catalog_complete.json",
     "preserved": true
   },
   "metrics": {
-    "totalDiscovered": 14481,
-    "uniqueMovies": 12714,
+    "totalDiscovered": 14482,
+    "uniqueMovies": 12715,
     "uniqueWebSeries": 1767,
     "alreadyPresentInCatalog": 12063,
-    "newlyAddedToCatalog": 0,
-    "newlyAddedMovies": 0,
+    "newlyAddedToCatalog": 2,
+    "newlyAddedMovies": 2,
     "newlyAddedSeries": 0,
-    "newlyDiscoveredLive": 12,
+    "newlyDiscoveredLive": 13,
     "existingUpdatedWithLinks": 0,
     "duplicatesPrevented": 43145,
     "ambiguousTitlesCount": 0,
-    "downloadOptionsCollected": 41328,
-    "destinationsVerified": 41095,
+    "downloadOptionsCollected": 41333,
+    "destinationsVerified": 41100,
     "destinationsBroken": 126,
     "destinationsTemporarilyUnavailable": 0,
     "destinationsUnverified": 107,
-    "titlesWithDownloads": 4870,
-    "titlesWithoutDownloads": 9,
-    "incompleteTitlesCount": 9
+    "titlesWithDownloads": 4872,
+    "titlesWithoutDownloads": 8,
+    "incompleteTitlesCount": 8
   },
-  "newlyAddedTitles": [],
-  "newlyAddedCanonicalItems": [],
+  "newlyAddedTitles": [
+    {
+      "canonicalId": 13713,
+      "title": "Love of Your Life",
+      "displayTitle": "Love of Your Life",
+      "year": "2026",
+      "type": "Movie",
+      "provider": "HDHub4u"
+    },
+    {
+      "canonicalId": 13714,
+      "title": "Charukesi",
+      "displayTitle": "Charukesi",
+      "year": "2026",
+      "type": "Movie",
+      "provider": "HDHub4u"
+    }
+  ],
+  "newlyAddedCanonicalItems": [
+    {
+      "id": "praflix-13713",
+      "canonicalId": 13713,
+      "displayTitle": "Love of Your Life",
+      "originalSourceTitle": "&#xE02C; Love of Your Life (2026) WEB-DL [Hindi (DD5.1) &#038; English] 4K 1080p 720p &#038; 480p Dual Audio [x264/10Bit-HEVC] | Full Movie,",
+      "normalizedTitle": "love of your life",
+      "year": "2026",
+      "type": "Movie",
+      "season": null,
+      "episodeStatus": null,
+      "genres": [
+        "Cinema"
+      ],
+      "languages": [
+        "Hindi"
+      ],
+      "audioTracks": [
+        "DD 5.1"
+      ],
+      "audio": "DD 5.1",
+      "platform": null,
+      "platforms": [],
+      "releaseType": "WEB-DL",
+      "poster": "https://image.tmdb.org/t/p/w400/gOaRyRpilYPEsVLEPHOH9eHNw5E.jpg",
+      "sourcePosterUrl": "https://image.tmdb.org/t/p/w400/gOaRyRpilYPEsVLEPHOH9eHNw5E.jpg",
+      "qualities": [
+        "720p",
+        "1080p",
+        "4K"
+      ],
+      "variantCount": 1,
+      "variants": [
+        {
+          "sourceId": 1371300,
+          "sourceUrl": "https://new7.hdhub4u.cl/love-of-your-life-2026-webrip-hindi-full-movie/",
+          "source": "hdhub4u",
+          "originalSourceTitle": "&#xE02C; Love of Your Life (2026) WEB-DL [Hindi (DD5.1) &#038; English] 4K 1080p 720p &#038; 480p Dual Audio [x264/10Bit-HEVC] | Full Movie,",
+          "languages": [
+            "Hindi"
+          ],
+          "qualities": [
+            {
+              "resolution": "720p",
+              "label": "720p"
+            },
+            {
+              "resolution": "1080p",
+              "label": "1080p"
+            },
+            {
+              "resolution": "1080p",
+              "label": "1080p"
+            },
+            {
+              "resolution": "4K",
+              "label": "4K"
+            }
+          ],
+          "releaseType": "WEB-DL",
+          "audio": "DD 5.1",
+          "poster": "https://image.tmdb.org/t/p/w400/gOaRyRpilYPEsVLEPHOH9eHNw5E.jpg"
+        }
+      ],
+      "status": "active"
+    },
+    {
+      "id": "praflix-13714",
+      "canonicalId": 13714,
+      "displayTitle": "Charukesi",
+      "originalSourceTitle": "&#xE02C; Charukesi (2026) WEB-DL [Hindi (DD5.1) &#038; Tamil] 1080p 720p &#038; 480p Dual Audio [x264/HEVC ESubs] | Full Movie",
+      "normalizedTitle": "charukesi",
+      "year": "2026",
+      "type": "Movie",
+      "season": null,
+      "episodeStatus": null,
+      "genres": [
+        "Cinema"
+      ],
+      "languages": [
+        "Hindi"
+      ],
+      "audioTracks": [
+        "DD 5.1"
+      ],
+      "audio": "DD 5.1",
+      "platform": null,
+      "platforms": [],
+      "releaseType": "WEB-DL",
+      "poster": "https://catimages.org/images/2026/10/14/Charukesi-2026.jpg",
+      "sourcePosterUrl": "https://catimages.org/images/2026/10/14/Charukesi-2026.jpg",
+      "qualities": [
+        "1080p"
+      ],
+      "variantCount": 1,
+      "variants": [
+        {
+          "sourceId": 1371400,
+          "sourceUrl": "https://new7.hdhub4u.cl/charukesi-2026-webrip-hindi-full-movie/",
+          "source": "hdhub4u",
+          "originalSourceTitle": "&#xE02C; Charukesi (2026) WEB-DL [Hindi (DD5.1) &#038; Tamil] 1080p 720p &#038; 480p Dual Audio [x264/HEVC ESubs] | Full Movie",
+          "languages": [
+            "Hindi"
+          ],
+          "qualities": [
+            {
+              "resolution": "1080p",
+              "label": "1080p"
+            }
+          ],
+          "releaseType": "WEB-DL",
+          "audio": "DD 5.1",
+          "poster": "https://catimages.org/images/2026/10/14/Charukesi-2026.jpg"
+        }
+      ],
+      "status": "active"
+    }
+  ],
   "existingTitlesUpdated": [],
-  "newProviderLinks": [],
+  "newProviderLinks": [
+    {
+      "canonicalId": 13713,
+      "provider": "HDHub4u",
+      "downloadUrl": "https://hubdrive.pics/file/2303824242",
+      "resolution": "720p"
+    },
+    {
+      "canonicalId": 13713,
+      "provider": "HDHub4u",
+      "downloadUrl": "https://hubdrive.pics/file/2666356978",
+      "resolution": "1080p"
+    },
+    {
+      "canonicalId": 13713,
+      "provider": "HDHub4u",
+      "downloadUrl": "https://hubdrive.pics/file/9135339872",
+      "resolution": "1080p"
+    },
+    {
+      "canonicalId": 13713,
+      "provider": "HDHub4u",
+      "downloadUrl": "https://hubdrive.pics/file/3382341087",
+      "resolution": "4K"
+    },
+    {
+      "canonicalId": 13714,
+      "provider": "HDHub4u",
+      "downloadUrl": "https://hubdrive.pics/file/1828448262",
+      "resolution": "1080p"
+    }
+  ],
   "duplicateLinksSkipped": [
     {
       "canonicalId": 9379,
@@ -244524,24 +244689,32 @@
       "type": "Movie",
       "sourceUrl": "https://new7.hdhub4u.cl/speed-1994-hindi-bluray-full-movie/",
       "reason": "no_eligible_links"
-    },
-    {
-      "displayTitle": "The Silent Planet",
-      "rawTitle": "&#xE02C; The Silent Planet (2024) BluRay [Hindi (DD5.1) &#038; English] 1080p 720p &#038; 480p Dual Audio [x264] | Full Movie",
-      "year": "2024",
-      "type": "Movie",
-      "sourceUrl": "https://new7.hdhub4u.cl/the-silent-planet-2025-hindi-dubbed-dual-audio-web-dl-full-movie/",
-      "reason": "no_eligible_links"
     }
   ],
   "titleListSync": {
     "success": true,
     "provider": "hdhub4u",
     "filePath": "/home/runner/work/praflix/praflix/title list/HDHUB4U TITLE.txt",
-    "appendedCount": 0,
+    "appendedCount": 2,
     "skippedCount": 0,
-    "appendedTitles": [],
-    "appendedEntries": []
+    "appendedTitles": [
+      "14/10/26 Love of Your Life",
+      "14/10/26 Charukesi"
+    ],
+    "appendedEntries": [
+      {
+        "title": "Love of Your Life",
+        "date": "14/10/26",
+        "provider": "hdhub4u",
+        "formattedEntry": "14/10/26 Love of Your Life"
+      },
+      {
+        "title": "Charukesi",
+        "date": "14/10/26",
+        "provider": "hdhub4u",
+        "formattedEntry": "14/10/26 Charukesi"
+      }
+    ]
   },
   "ambiguousTitles": []
 }

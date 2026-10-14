@@ -1,7 +1,7 @@
 {
   "source": "https://new7.hdhub4u.cl/",
-  "lastUpdated": "2026-10-14T09:38:17.606Z",
-  "totalMovies": 12714,
+  "lastUpdated": "2026-10-14T18:12:36.404Z",
+  "totalMovies": 12715,
   "totalWebSeries": 1767,
   "movies": [
     {
@@ -281665,6 +281665,50 @@
           "link": "https://hubdrive.pics/file/3219279654",
           "quality": "1080p",
           "rawText": "1080p WEB-DL [3.6GB]",
+          "isComplete": false
+        }
+      ]
+    },
+    {
+      "title": "&#xE02C; Love of Your Life (2026) WEB-DL [Hindi (DD5.1) &#038; English] 4K 1080p 720p &#038; 480p Dual Audio [x264/10Bit-HEVC] | Full Movie,",
+      "sourceUrl": "https://new7.hdhub4u.cl/love-of-your-life-2026-webrip-hindi-full-movie/",
+      "posterUrl": "https://image.tmdb.org/t/p/w400/gOaRyRpilYPEsVLEPHOH9eHNw5E.jpg",
+      "qualities": [
+        {
+          "link": "https://hubdrive.pics/file/2303824242",
+          "quality": "720p",
+          "rawText": "720p 10Bit HEVC [840MB]",
+          "isComplete": false
+        },
+        {
+          "link": "https://hubdrive.pics/file/2666356978",
+          "quality": "1080p",
+          "rawText": "1080p 10Bit HEVC [1.9GB]",
+          "isComplete": false
+        },
+        {
+          "link": "https://hubdrive.pics/file/9135339872",
+          "quality": "1080p",
+          "rawText": "1080p WEB-DL [8.9GB]",
+          "isComplete": false
+        },
+        {
+          "link": "https://hubdrive.pics/file/3382341087",
+          "quality": "4K",
+          "rawText": "4K [2160p SDR WEB-DL – 13.4GB]",
+          "isComplete": false
+        }
+      ]
+    },
+    {
+      "title": "&#xE02C; Charukesi (2026) WEB-DL [Hindi (DD5.1) &#038; Tamil] 1080p 720p &#038; 480p Dual Audio [x264/HEVC ESubs] | Full Movie",
+      "sourceUrl": "https://new7.hdhub4u.cl/charukesi-2026-webrip-hindi-full-movie/",
+      "posterUrl": "https://catimages.org/images/2026/10/14/Charukesi-2026.jpg",
+      "qualities": [
+        {
+          "link": "https://hubdrive.pics/file/1828448262",
+          "quality": "1080p",
+          "rawText": "1080p WEB-DL Untouch [5.2GB]",
           "isComplete": false
         }
       ]

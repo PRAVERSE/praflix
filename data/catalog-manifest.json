@@ -2,9 +2,9 @@
   "catalog": "PRAFLIX Master Cinema & Web Series Catalog",
   "publisher": "A PRAVERSE Company",
   "version": "20261011_p13",
-  "buildTimestamp": "2026-10-14T13:51:05.012Z",
-  "totalRecords": 13712,
-  "uniqueCanonicalIds": 13712,
+  "buildTimestamp": "2026-10-14T18:12:39.691Z",
+  "totalRecords": 13714,
+  "uniqueCanonicalIds": 13714,
   "chunkCount": 4,
   "maxFileLimitBytes": 26214400,
   "chunks": [
@@ -16,43 +16,43 @@
   "chunkMetadata": [
     {
       "chunk": 1,
-      "recordCount": 3428,
+      "recordCount": 3429,
       "startCanonicalId": 1,
-      "endCanonicalId": 3428,
+      "endCanonicalId": 3429,
       "jsonFile": "data/catalog-chunk-1.json",
       "jsFile": "data/catalog_chunk_1.js",
-      "jsonSizeBytes": 6353938,
-      "jsSizeBytes": 6353998
+      "jsonSizeBytes": 6355927,
+      "jsSizeBytes": 6355987
     },
     {
       "chunk": 2,
-      "recordCount": 3428,
-      "startCanonicalId": 3429,
-      "endCanonicalId": 6856,
+      "recordCount": 3429,
+      "startCanonicalId": 3430,
+      "endCanonicalId": 6858,
       "jsonFile": "data/catalog-chunk-2.json",
       "jsFile": "data/catalog_chunk_2.js",
-      "jsonSizeBytes": 4918887,
-      "jsSizeBytes": 4918947
+      "jsonSizeBytes": 4918740,
+      "jsSizeBytes": 4918800
     },
     {
       "chunk": 3,
-      "recordCount": 3428,
-      "startCanonicalId": 6857,
-      "endCanonicalId": 10284,
+      "recordCount": 3429,
+      "startCanonicalId": 6859,
+      "endCanonicalId": 10287,
       "jsonFile": "data/catalog-chunk-3.json",
       "jsFile": "data/catalog_chunk_3.js",
-      "jsonSizeBytes": 4801017,
-      "jsSizeBytes": 4801077
+      "jsonSizeBytes": 4803750,
+      "jsSizeBytes": 4803810
     },
     {
       "chunk": 4,
-      "recordCount": 3428,
-      "startCanonicalId": 10285,
-      "endCanonicalId": 13712,
+      "recordCount": 3427,
+      "startCanonicalId": 10288,
+      "endCanonicalId": 13714,
       "jsonFile": "data/catalog-chunk-4.json",
       "jsFile": "data/catalog_chunk_4.js",
-      "jsonSizeBytes": 5547995,
-      "jsSizeBytes": 5548055
+      "jsonSizeBytes": 5545860,
+      "jsSizeBytes": 5545920
     }
   ]
 }
