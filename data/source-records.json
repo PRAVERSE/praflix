@@ -203,7 +203,11 @@
     "qualities": [
       {
         "resolution": "720p",
-        "label": "HD"
+        "label": "720p"
+      },
+      {
+        "resolution": "1080p",
+        "label": "1080p"
       }
     ],
     "screenshots": [
@@ -223,7 +227,15 @@
     "qualities": [
       {
         "resolution": "720p",
-        "label": "HD"
+        "label": "720p"
+      },
+      {
+        "resolution": "1080p",
+        "label": "1080p"
+      },
+      {
+        "resolution": "4K",
+        "label": "4K"
       }
     ],
     "screenshots": [
@@ -243,7 +255,11 @@
     "qualities": [
       {
         "resolution": "720p",
-        "label": "HD"
+        "label": "720p"
+      },
+      {
+        "resolution": "1080p",
+        "label": "1080p"
       }
     ],
     "screenshots": [
@@ -263,7 +279,11 @@
     "qualities": [
       {
         "resolution": "720p",
-        "label": "HD"
+        "label": "720p"
+      },
+      {
+        "resolution": "1080p",
+        "label": "1080p"
       }
     ],
     "screenshots": [
@@ -282,8 +302,16 @@
     "sourcePosterUrl": "https://hdhub.club/uploads/posts/covers/photo_visionquest-s01-2026-hindi-english-dual-audio-mcu-completed-web-series-hevc-esub.png",
     "qualities": [
       {
+        "resolution": "480p",
+        "label": "480p"
+      },
+      {
         "resolution": "720p",
-        "label": "HD"
+        "label": "720p"
+      },
+      {
+        "resolution": "1080p",
+        "label": "1080p"
       }
     ],
     "screenshots": [
@@ -303,7 +331,11 @@
     "qualities": [
       {
         "resolution": "720p",
-        "label": "HD"
+        "label": "720p"
+      },
+      {
+        "resolution": "1080p",
+        "label": "1080p"
       }
     ],
     "screenshots": [
@@ -322,8 +354,16 @@
     "sourcePosterUrl": "https://hdhub.club/uploads/posts/covers/photo_take-charge-of-my-heart-s01-2026-hindi-english-dual-audio-completed-web-series-hevc-esub.png",
     "qualities": [
       {
+        "resolution": "480p",
+        "label": "480p"
+      },
+      {
         "resolution": "720p",
-        "label": "HD"
+        "label": "720p"
+      },
+      {
+        "resolution": "1080p",
+        "label": "1080p"
       }
     ],
     "screenshots": [
@@ -343,7 +383,11 @@
     "qualities": [
       {
         "resolution": "720p",
-        "label": "HD"
+        "label": "720p"
+      },
+      {
+        "resolution": "1080p",
+        "label": "1080p"
       }
     ],
     "screenshots": [
@@ -363,7 +407,11 @@
     "qualities": [
       {
         "resolution": "720p",
-        "label": "HD"
+        "label": "720p"
+      },
+      {
+        "resolution": "1080p",
+        "label": "1080p"
       }
     ],
     "screenshots": [
@@ -383,7 +431,15 @@
     "qualities": [
       {
         "resolution": "720p",
-        "label": "HD"
+        "label": "720p"
+      },
+      {
+        "resolution": "1080p",
+        "label": "1080p"
+      },
+      {
+        "resolution": "4K",
+        "label": "4K"
       }
     ],
     "screenshots": [
@@ -403,7 +459,11 @@
     "qualities": [
       {
         "resolution": "720p",
-        "label": "HD"
+        "label": "720p"
+      },
+      {
+        "resolution": "1080p",
+        "label": "1080p"
       }
     ],
     "screenshots": [
@@ -423,7 +483,15 @@
     "qualities": [
       {
         "resolution": "720p",
-        "label": "HD"
+        "label": "720p"
+      },
+      {
+        "resolution": "1080p",
+        "label": "1080p"
+      },
+      {
+        "resolution": "4K",
+        "label": "4K"
       }
     ],
     "screenshots": [
@@ -443,7 +511,15 @@
     "qualities": [
       {
         "resolution": "720p",
-        "label": "HD"
+        "label": "720p"
+      },
+      {
+        "resolution": "1080p",
+        "label": "1080p"
+      },
+      {
+        "resolution": "4K",
+        "label": "4K"
       }
     ],
     "screenshots": [
@@ -463,7 +539,11 @@
     "qualities": [
       {
         "resolution": "720p",
-        "label": "HD"
+        "label": "720p"
+      },
+      {
+        "resolution": "1080p",
+        "label": "1080p"
       }
     ],
     "screenshots": [
@@ -483,7 +563,15 @@
     "qualities": [
       {
         "resolution": "720p",
-        "label": "HD"
+        "label": "720p"
+      },
+      {
+        "resolution": "1080p",
+        "label": "1080p"
+      },
+      {
+        "resolution": "4K",
+        "label": "4K"
       }
     ],
     "screenshots": [
@@ -503,7 +591,11 @@
     "qualities": [
       {
         "resolution": "720p",
-        "label": "HD"
+        "label": "720p"
+      },
+      {
+        "resolution": "1080p",
+        "label": "1080p"
       }
     ],
     "screenshots": [
@@ -523,7 +615,11 @@
     "qualities": [
       {
         "resolution": "720p",
-        "label": "HD"
+        "label": "720p"
+      },
+      {
+        "resolution": "1080p",
+        "label": "1080p"
       }
     ],
     "screenshots": [
@@ -543,7 +639,11 @@
     "qualities": [
       {
         "resolution": "720p",
-        "label": "HD"
+        "label": "720p"
+      },
+      {
+        "resolution": "1080p",
+        "label": "1080p"
       }
     ],
     "screenshots": [
@@ -563,7 +663,11 @@
     "qualities": [
       {
         "resolution": "720p",
-        "label": "HD"
+        "label": "720p"
+      },
+      {
+        "resolution": "1080p",
+        "label": "1080p"
       }
     ],
     "screenshots": [
@@ -583,7 +687,11 @@
     "qualities": [
       {
         "resolution": "720p",
-        "label": "HD"
+        "label": "720p"
+      },
+      {
+        "resolution": "1080p",
+        "label": "1080p"
       }
     ],
     "screenshots": [
