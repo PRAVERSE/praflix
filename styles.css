@@ -1766,6 +1766,7 @@ body {
 .dl-res-badge.res-720  { color: #60a5fa; }
 .dl-res-badge.res-480  { color: #94a3b8; }
 .dl-res-badge.res-360  { color: #64748b; }
+.dl-res-badge.res-unknown { color: #9ca3af; }
 
 .dl-size-label {
   color: var(--text-faint);
@@ -2088,6 +2089,11 @@ body {
 .version-quality-badge.res-480 {
   background: linear-gradient(135deg, #475569, #334155);
   border-color: #94a3b8;
+}
+
+.version-quality-badge.res-unknown {
+  background: linear-gradient(135deg, #374151, #1f2937);
+  border-color: #6b7280;
 }
 
 .btn-version-disabled {

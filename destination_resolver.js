@@ -228,15 +228,20 @@
    * Normalize resolution string into canonical quality key ('2160p', '1440p', '1080p', '720p', '480p', '360p').
    */
   function normalizeQualityKey(res) {
-    if (!res) return '720p';
-    const s = String(res).toLowerCase();
-    if (s.includes('2160') || s.includes('4k') || s.includes('uhd')) return '2160p';
-    if (s.includes('1440') || s.includes('2k')) return '1440p';
-    if (s.includes('1080') || s.includes('fhd')) return '1080p';
-    if (s.includes('720') || s.includes('hd')) return '720p';
-    if (s.includes('480') || s.includes('sd') || s.includes('cam')) return '480p';
-    if (s.includes('360')) return '360p';
-    return '720p';
+    if (!res) return 'unknown';
+    const s = String(res).toLowerCase().trim();
+    if (s === 'unknown' || s.includes('pending')) return 'unknown';
+    if (/\b(?:2160p?|4k|uhd)\b/i.test(s)) return '2160p';
+    if (/\b(?:1440p?|2k)\b/i.test(s)) return '1440p';
+    if (/\b(?:1080p?|fhd|full\s*hd)\b/i.test(s)) return '1080p';
+    if (/\b(?:720p?)\b/i.test(s) || (/\bhd\b/i.test(s) && !s.includes('hdhub') && !s.includes('hdwall') && !s.includes('full hd'))) return '720p';
+    if (/\b(?:480p?|sd)\b/i.test(s)) return '480p';
+    if (/\b(?:360p?)\b/i.test(s)) return '360p';
+    if (s.includes('2160') || s.includes('4k')) return '2160p';
+    if (s.includes('1080')) return '1080p';
+    if (s.includes('720')) return '720p';
+    if (s.includes('480')) return '480p';
+    return 'unknown';
   }
 
   /**
@@ -250,6 +255,7 @@
       case '720p':  return '720p HD';
       case '480p':  return '480p SD';
       case '360p':  return '360p';
+      case 'unknown': return 'Quality Pending Verification';
       default:      return String(qualityKey).toUpperCase();
     }
   }
@@ -265,6 +271,7 @@
       case '720p':  return 'res-720';
       case '480p':  return 'res-480';
       case '360p':  return 'res-360';
+      case 'unknown': return 'res-unknown';
       default:      return 'res-720';
     }
   }

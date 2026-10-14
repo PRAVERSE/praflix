@@ -12,7 +12,8 @@ secrets.*
 credentials.json
 data/cache/
 data/backup_*/
-data/*.backup.json
+data/*.backup*.json
+staging_v2/
 
 # Dependencies
 node_modules/

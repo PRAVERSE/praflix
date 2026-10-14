@@ -83,16 +83,19 @@ class Normalizer {
     if (Array.isArray(rawItem.qualities)) {
       rawItem.qualities.forEach(q => {
         const label = typeof q === 'string' ? q : (q.resolution || q.quality || q.label);
-        if (label) qualities.add(label);
+        if (label && label !== 'unknown') qualities.add(label);
       });
     }
     if (Array.isArray(rawItem.downloadLinks)) {
       rawItem.downloadLinks.forEach(l => {
-        if (l.quality) qualities.add(l.quality);
+        if (l.quality && l.quality !== 'unknown') qualities.add(l.quality);
       });
     }
     if (qualities.size === 0) {
-      qualities.add('720p');
+      const hasLinks = Array.isArray(rawItem.downloadLinks) && rawItem.downloadLinks.length > 0;
+      if (hasLinks) {
+        qualities.add('unknown');
+      }
     }
 
     // Variant representation

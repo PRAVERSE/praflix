@@ -311,6 +311,7 @@
     if (r.includes('720'))   return 'res-720';
     if (r.includes('480'))   return 'res-480';
     if (r.includes('360'))   return 'res-360';
+    if (r.includes('unknown') || r.includes('pending')) return 'res-unknown';
     return '';
   }
 
@@ -324,6 +325,7 @@
     if (r === '720p'  || r.includes('720'))   return '720p HD';
     if (r === '480p'  || r.includes('480'))   return '480p SD';
     if (r === '360p'  || r.includes('360'))   return '360p';
+    if (r.includes('unknown') || r.includes('pending')) return 'Quality Pending Verification';
     return resolution || 'Unknown';
   }
 

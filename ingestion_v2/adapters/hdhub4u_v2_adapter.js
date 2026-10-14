@@ -177,6 +177,9 @@ class HDHub4uV2Adapter extends BaseV2Adapter {
             downloadUrl: href,
             quality: val.resolution,
             rawQuality: text || val.resolution,
+            sourceLabel: text,
+            hasQualityConflict: val.hasQualityConflict || false,
+            resolutionSource: val.resolutionSource || 'unknown',
             codec: lower.includes('hevc') || lower.includes('x265') ? 'HEVC' : 'x264',
             fileSize: (text.match(/\[([^\]]+)\]/) || [])[1] || 'Unknown',
             evidence: val.evidence

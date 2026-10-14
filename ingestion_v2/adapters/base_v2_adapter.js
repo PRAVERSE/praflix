@@ -53,30 +53,225 @@ class BaseV2Adapter {
     return 'Movie';
   }
 
-  normalizeQuality(raw, fallbackContext = '') {
-    const s = String(raw || '').toLowerCase().trim();
-    if (s.includes('2160') || s.includes('4k') || s.includes('uhd')) return '4K';
-    if (s.includes('1080') || s.includes('fhd') || s.includes('full hd')) return '1080p';
-    if (s.includes('720') || s.includes('hd')) return '720p';
-    if (s.includes('480') || s.includes('sd')) return '480p';
+  /**
+   * Extracts explicit resolution token from a text string.
+   * Returns: '4K', '1080p', '720p', '480p', '360p', or null if unspecified / generic.
+   * Avoids false positives on words like "HDHub4u", "HDRip", "HQ", "Full Movie".
+   */
+  extractExplicitResolution(text) {
+    if (!text || typeof text !== 'string') return null;
+    const s = text.toLowerCase().trim();
 
-    if (fallbackContext) {
-      const fb = String(fallbackContext).toLowerCase().trim();
-      if (fb.includes('2160') || fb.includes('4k') || fb.includes('uhd')) return '4K';
-      if (fb.includes('1080') || fb.includes('fhd') || fb.includes('full hd')) return '1080p';
-      if (fb.includes('720')) return '720p';
-      if (fb.includes('480')) return '480p';
+    // 1. 4K / 2160p / UHD
+    if (/\b(?:4k|2160p?|uhd)\b/i.test(s) || /2160\s*p/i.test(s)) {
+      return '4K';
     }
-    return '720p';
+
+    // 2. 1080p / FHD / Full HD
+    if (/\b(?:1080p?|fhd)\b/i.test(s) || /full[\s_-]?hd\b/i.test(s) || /1080\s*p/i.test(s)) {
+      return '1080p';
+    }
+
+    // 3. 720p / HD (ensure "HD" is standalone and not part of "Full HD", "HDHub4u", "HDWall", "HDRip", "HDTC", etc.)
+    if (/\b(?:720p?)\b/i.test(s) || /720\s*p/i.test(s)) {
+      return '720p';
+    }
+    if (/\bhd\b/i.test(s) && !/full[\s_-]?hd/i.test(s) && !/hdhub/i.test(s) && !/hdwall/i.test(s) && !/hdrip/i.test(s) && !/hdtc/i.test(s)) {
+      return '720p';
+    }
+
+    // 4. 480p / SD
+    if (/\b(?:480p?|sd)\b/i.test(s) || /480\s*p/i.test(s)) {
+      return '480p';
+    }
+
+    // 5. 360p
+    if (/\b(?:360p?)\b/i.test(s) || /360\s*p/i.test(s)) {
+      return '360p';
+    }
+
+    return null;
+  }
+
+  /**
+   * Extracts unambiguous single resolution from surrounding context (e.g. post heading).
+   * If multiple distinct resolutions are mentioned, returns null to avoid misattributing.
+   */
+  extractContextResolution(context) {
+    if (!context || typeof context !== 'string') return null;
+    const resolutions = new Set();
+    const s = context.toLowerCase();
+    if (/\b(?:4k|2160p?|uhd)\b/i.test(s)) resolutions.add('4K');
+    if (/\b(?:1080p?|fhd|full[\s_-]?hd)\b/i.test(s)) resolutions.add('1080p');
+    if (/\b(?:720p?)\b/i.test(s)) resolutions.add('720p');
+    if (/\b(?:480p?|sd)\b/i.test(s)) resolutions.add('480p');
+    if (/\b(?:360p?)\b/i.test(s)) resolutions.add('360p');
+
+    if (resolutions.size === 1) {
+      return Array.from(resolutions)[0];
+    }
+    return null;
+  }
+
+  /**
+   * Resolves quality resolution with source attribution, conflict detection, and file metadata support.
+   */
+  resolveQualityDetailed({ rawLabel = '', fallbackContext = '', fileMetadata = null, probeFailed = false, candidate = null } = {}) {
+    const originalLabel = typeof rawLabel === 'string' ? rawLabel.trim() : '';
+
+    // 1. Check explicit resolution in source link label
+    const labelRes = this.extractExplicitResolution(originalLabel);
+
+    // 2. Check candidate structured metadata (e.g. candidate.resolution, candidate.quality)
+    let candidateRes = null;
+    if (candidate && typeof candidate === 'object') {
+      const explicitCand = candidate.resolution || candidate.quality;
+      if (explicitCand && typeof explicitCand === 'string' && explicitCand.toLowerCase() !== 'unknown' && explicitCand.toLowerCase() !== '720p') {
+        candidateRes = this.extractExplicitResolution(explicitCand);
+      }
+    }
+
+    // 3. Check file metadata (handling timeout, redirect, malformed, and failed probes)
+    let fileRes = null;
+    let fileSourceType = 'file_metadata';
+    const isProbeFailed = probeFailed || (fileMetadata && (
+      fileMetadata.status === 'failed' ||
+      fileMetadata.status === 'timeout' ||
+      fileMetadata.status === 'redirect_blocked' ||
+      fileMetadata.status === 'malformed_response' ||
+      fileMetadata.error
+    ));
+
+    if (fileMetadata && !isProbeFailed) {
+      // First priority: physical video stream height / container metadata
+      if (typeof fileMetadata.height === 'number') {
+        if (fileMetadata.height >= 2160) fileRes = '4K';
+        else if (fileMetadata.height >= 1080) fileRes = '1080p';
+        else if (fileMetadata.height >= 720) fileRes = '720p';
+        else if (fileMetadata.height >= 480) fileRes = '480p';
+        else if (fileMetadata.height >= 360) fileRes = '360p';
+        fileSourceType = 'file_metadata';
+      } else if (fileMetadata.resolution && (fileMetadata.videoStream || fileMetadata.probeType === 'stream')) {
+        fileRes = this.extractExplicitResolution(fileMetadata.resolution);
+        fileSourceType = 'file_metadata';
+      }
+
+      // Second priority: filename on storage server / CDN
+      if (!fileRes) {
+        const metaFilename = fileMetadata.filename || fileMetadata.name || '';
+        const metaTitle = fileMetadata.title || '';
+        if (metaFilename) {
+          fileRes = this.extractExplicitResolution(metaFilename);
+          if (fileRes) fileSourceType = 'filename_metadata';
+        }
+        if (!fileRes && metaTitle) {
+          fileRes = this.extractExplicitResolution(metaTitle);
+          if (fileRes) fileSourceType = 'filename_metadata';
+        }
+        if (!fileRes && typeof fileMetadata.resolution === 'string') {
+          fileRes = this.extractExplicitResolution(fileMetadata.resolution);
+          if (fileRes) fileSourceType = 'file_metadata';
+        }
+      }
+    }
+
+    // 4. Determine resolution and check for conflicts
+    let finalResolution = 'unknown';
+    let source = 'unknown';
+    let hasConflict = false;
+
+    if (fileRes && labelRes) {
+      if (fileRes !== labelRes) {
+        hasConflict = true;
+        // Authoritative file probe represents the actual binary payload file
+        finalResolution = fileRes;
+        source = fileSourceType === 'filename_metadata'
+          ? 'filename_metadata_override_conflict'
+          : 'file_metadata_override_conflict';
+      } else {
+        finalResolution = fileRes;
+        source = fileSourceType === 'filename_metadata'
+          ? 'filename_metadata_confirmed'
+          : 'file_metadata_confirmed';
+      }
+    } else if (fileRes && !labelRes) {
+      // Generic or missing label, but file metadata probe provided resolution
+      finalResolution = fileRes;
+      source = fileSourceType;
+    } else if (labelRes) {
+      // Explicit source label (and no contradictory file metadata or probe missing/failed)
+      finalResolution = labelRes;
+      source = 'explicit_source_label';
+    } else if (candidateRes) {
+      finalResolution = candidateRes;
+      source = 'structured_metadata';
+    } else {
+      // Try unambiguous context from page heading
+      const ctxRes = this.extractContextResolution(fallbackContext);
+      if (ctxRes) {
+        finalResolution = ctxRes;
+        source = 'unambiguous_context';
+      } else {
+        // Unknown or pending verification - NEVER fabricate 720p!
+        finalResolution = 'unknown';
+        source = 'unknown';
+      }
+    }
+
+    return {
+      resolution: finalResolution,
+      sourceLabel: originalLabel,
+      hasConflict,
+      source,
+      resolutionSource: source,
+      fileResolution: fileRes,
+      labelResolution: labelRes
+    };
+  }
+
+  /**
+   * Normalizes raw quality text into a canonical resolution string:
+   * '4K', '1080p', '720p', '480p', '360p', or 'unknown'.
+   * Never fabricates '720p' when resolution is unspecified or generic.
+   */
+  normalizeQuality(raw, fallbackContext = '', options = {}) {
+    let rawLabel = '';
+    if (typeof raw === 'string') {
+      rawLabel = raw;
+    } else if (raw && typeof raw === 'object') {
+      rawLabel = raw.rawQuality || raw.quality || raw.label || raw.text || '';
+    }
+
+    let fbContext = '';
+    if (typeof fallbackContext === 'string') {
+      fbContext = fallbackContext;
+    } else if (fallbackContext && typeof fallbackContext === 'object') {
+      options = fallbackContext;
+    }
+
+    const fileMetadata = options.fileMetadata || (raw && typeof raw === 'object' ? raw.fileMetadata : null) || null;
+    const probeFailed = options.probeFailed || (raw && typeof raw === 'object' ? raw.probeFailed : false) || false;
+    const candidate = options.candidate || (raw && typeof raw === 'object' ? raw : null);
+
+    const detailed = this.resolveQualityDetailed({
+      rawLabel,
+      fallbackContext: fbContext,
+      fileMetadata,
+      probeFailed,
+      candidate
+    });
+
+    return detailed.resolution;
   }
 
   /**
    * Validates a candidate link against destination_resolver and provider eligibility rules
    * @param {Object|string} candidate
    * @param {string} sourceUrl
+   * @param {Object} [options]
    * @returns {{ isValid: boolean, status: string, resolution?: string, reason?: string, evidence?: string }}
    */
-  validateLink(candidate, sourceUrl) {
+  validateLink(candidate, sourceUrl, options = {}) {
     const rawUrl = typeof candidate === 'string'
       ? candidate
       : (candidate.downloadUrl || candidate.url || candidate.link || '');
@@ -109,12 +304,39 @@ class BaseV2Adapter {
       return { isValid: false, status: classification.status, reason: classification.reason || 'unverified_destination' };
     }
 
-    const fallbackCtx = (typeof candidate === 'object') ? (candidate.titleContext || candidate.originalTitle || '') : '';
-    const res = this.normalizeQuality(candidate.resolution || candidate.quality || candidate.rawQuality || '', fallbackCtx);
+    const rawLabel = typeof candidate === 'string'
+      ? ''
+      : (candidate.rawQuality || candidate.text || candidate.label || candidate.rawLabel || '');
+
+    const fallbackCtx = (typeof candidate === 'object')
+      ? (candidate.titleContext || candidate.originalTitle || candidate.rawHeading || '')
+      : '';
+
+    const fileMeta = (typeof candidate === 'object')
+      ? (candidate.fileMetadata || candidate.probe || options.fileMetadata || null)
+      : (options.fileMetadata || null);
+
+    const probeFailed = (typeof candidate === 'object')
+      ? (candidate.probeFailed || options.probeFailed || false)
+      : (options.probeFailed || false);
+
+    const detailed = this.resolveQualityDetailed({
+      rawLabel,
+      fallbackContext: fallbackCtx,
+      fileMetadata: fileMeta,
+      probeFailed,
+      candidate: typeof candidate === 'object' ? candidate : null
+    });
+
     return {
       isValid: true,
       status: 'verified',
-      resolution: res,
+      resolution: detailed.resolution,
+      quality: detailed.resolution,
+      rawQuality: rawLabel || detailed.resolution,
+      sourceLabel: rawLabel,
+      hasQualityConflict: detailed.hasConflict,
+      resolutionSource: detailed.source,
       evidence: classification.evidence || 'destination_resolved'
     };
   }

@@ -50,6 +50,12 @@ class CatalogMerger {
     const quarantinedUnverified = [];
     const approvedExistingUpdates = [];
     const downloadEntriesToAdd = [];
+    const existingTitleLookup = new Map();
+
+    for (const item of currentCatalog) {
+      const key = `${(item.normalizedTitle || item.displayTitle).toLowerCase().trim()}__${(item.year || '').trim()}__${(item.type || 'Movie').trim()}`;
+      existingTitleLookup.set(key, item);
+    }
 
     // 1. Process candidate new canonical titles
     for (const item of stagedTitles) {
@@ -63,8 +69,29 @@ class CatalogMerger {
         continue;
       }
 
+      // Defense-in-depth: check if title already exists in master catalog
+      const titleKey = `${(item.normalizedTitle || item.displayTitle).toLowerCase().trim()}__${(item.year || '').trim()}__${(item.type || 'Movie').trim()}`;
+      const existingMatch = existingTitleLookup.get(titleKey);
+
+      if (existingMatch) {
+        // Fold into existing update instead of creating a duplicate canonical title!
+        existingUpdates.push({
+          canonicalId: existingMatch.canonicalId,
+          displayTitle: existingMatch.displayTitle,
+          incomingRecord: item
+        });
+        continue;
+      }
+
       maxId++;
       const assignedId = maxId;
+
+      // Clean qualities: if verified qualities exist, remove 'unknown'
+      let cleanQualities = (item.qualities && item.qualities.length > 0) ? [...item.qualities] : ['unknown'];
+      if (cleanQualities.length > 1 && cleanQualities.includes('unknown')) {
+        cleanQualities = cleanQualities.filter(q => q !== 'unknown');
+      }
+
       const canonicalRecord = {
         id: `praflix-${assignedId}`,
         canonicalId: assignedId,
@@ -84,7 +111,7 @@ class CatalogMerger {
         releaseType: item.releaseType || 'WEB-DL',
         poster: item.sourcePosterUrl || 'assets/posters/placeholder.jpg',
         sourcePosterUrl: item.sourcePosterUrl,
-        qualities: item.qualities || ['720p'],
+        qualities: cleanQualities,
         variantCount: (item.variants || []).length,
         variants: item.variants || [],
         screenshots: item.screenshots || [],
@@ -97,8 +124,8 @@ class CatalogMerger {
       const dlEntries = item.downloadLinks.map(l => ({
         sourceName: item.variants?.[0]?.source || 'provider',
         downloadUrl: l.downloadUrl || l.url,
-        resolution: l.quality || '720p',
-        rawQuality: l.rawQuality || l.quality || '720p',
+        resolution: l.quality || 'unknown',
+        rawQuality: l.rawQuality || l.sourceLabel || l.quality || 'Unknown',
         episode: l.episode || null,
         verificationStatus: 'verified',
         verificationEvidence: l.evidence || 'destination_resolved'
@@ -115,7 +142,48 @@ class CatalogMerger {
 
     // 2. Process existing title updates
     for (const update of existingUpdates) {
-      approvedExistingUpdates.push(update);
+      const target = currentCatalog.find(c => c.canonicalId === update.canonicalId);
+      if (!target) continue;
+
+      const incoming = update.incomingRecord || update;
+      const existingQuals = new Set(target.qualities || []);
+      const incQuals = incoming.qualities || [];
+
+      // Merge verified qualities, never letting 'unknown' wipe out or contaminate verified qualities
+      for (const q of incQuals) {
+        if (q && q !== 'unknown') {
+          existingQuals.add(q);
+        }
+      }
+      if (existingQuals.size === 0 && incQuals.includes('unknown')) {
+        existingQuals.add('unknown');
+      }
+      if (existingQuals.size > 1 && existingQuals.has('unknown')) {
+        existingQuals.delete('unknown');
+      }
+
+      const mergedQualities = Array.from(existingQuals);
+      const newVariant = incoming.variants?.[0] || null;
+
+      // Extract new download links
+      const incomingLinks = Array.isArray(incoming.downloadLinks) ? incoming.downloadLinks : [];
+      const newDlEntries = incomingLinks.map(l => ({
+        sourceName: newVariant?.source || 'provider',
+        downloadUrl: l.downloadUrl || l.url,
+        resolution: l.quality || 'unknown',
+        rawQuality: l.rawQuality || l.sourceLabel || l.quality || 'Unknown',
+        episode: l.episode || null,
+        verificationStatus: 'verified',
+        verificationEvidence: l.evidence || 'destination_resolved'
+      }));
+
+      approvedExistingUpdates.push({
+        canonicalId: target.canonicalId,
+        displayTitle: target.displayTitle,
+        mergedQualities,
+        newVariant,
+        newDownloadEntries: newDlEntries
+      });
     }
 
     return {
@@ -166,11 +234,34 @@ class CatalogMerger {
       catalog.push(newTitle);
     }
 
-    // 4. Update downloads.json entries (strictly array of entry objects)
+    // 3b. Apply approved existing title updates safely
+    for (const update of plan.approvedExistingUpdates) {
+      const target = catalog.find(c => c.canonicalId === update.canonicalId);
+      if (target) {
+        if (update.mergedQualities && update.mergedQualities.length > 0) {
+          target.qualities = update.mergedQualities;
+        }
+        if (update.newVariant) {
+          target.variants = target.variants || [];
+          const exists = target.variants.some(v =>
+            v.source === update.newVariant.source &&
+            (v.sourceUrl === update.newVariant.sourceUrl || v.sourceId === update.newVariant.sourceId)
+          );
+          if (!exists) {
+            target.variants.push(update.newVariant);
+            target.variantCount = target.variants.length;
+          }
+        }
+      }
+    }
+
+    // 4. Update downloads.json entries
     if (!Array.isArray(downloads.entries)) {
       downloads.entries = [];
     }
     const nowIso = new Date().toISOString();
+
+    // 4a. Add entries for new canonical titles
     for (const dlItem of plan.downloadEntriesToAdd) {
       downloads.entries.push({
         catalogueId: dlItem.canonicalId,
@@ -184,6 +275,22 @@ class CatalogMerger {
         links: dlItem.entries
       });
     }
+
+    // 4b. Append new links for existing canonical title updates
+    for (const update of plan.approvedExistingUpdates) {
+      if (!update.newDownloadEntries || update.newDownloadEntries.length === 0) continue;
+      const dlItem = downloads.entries.find(e => e.catalogueId === update.canonicalId);
+      if (dlItem) {
+        dlItem.links = dlItem.links || [];
+        for (const newLink of update.newDownloadEntries) {
+          const alreadyHasLink = dlItem.links.some(l => (l.downloadUrl || l.url) === (newLink.downloadUrl || newLink.url));
+          if (!alreadyHasLink) {
+            dlItem.links.push(newLink);
+          }
+        }
+      }
+    }
+
     downloads.totalTitlesWithLinks = downloads.entries.filter(e => e.links && e.links.length > 0).length;
     downloads.totalLinks = downloads.entries.reduce((sum, e) => sum + (e.links ? e.links.length : 0), 0);
     downloads.lastUpdated = nowIso;

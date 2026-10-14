@@ -140,6 +140,69 @@ class HDWallV2Adapter extends BaseV2Adapter {
       }
     }
 
+    // Extract download links
+    const verifiedLinks = [];
+
+    // Strategy 1: HDWall button cards: <a href="...">...<div class="dll">...</div>
+    const dlinkRegex = /<a[^>]+href="([^"]+)"[^>]*>[\s\S]*?<div class="dll"[^>]*>([\s\S]*?)<\/div>/gi;
+    let m;
+    while ((m = dlinkRegex.exec(html)) !== null) {
+      const href = m[1].trim();
+      const text = m[2].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+      const val = this.validateLink({
+        downloadUrl: href,
+        rawQuality: text,
+        isSeries: type === 'Web Series',
+        type: type,
+        titleContext: rawHeading
+      }, pageUrl);
+
+      if (val.isValid) {
+        verifiedLinks.push({
+          url: href,
+          downloadUrl: href,
+          quality: val.resolution,
+          rawQuality: text || val.resolution,
+          sourceLabel: text,
+          hasQualityConflict: val.hasQualityConflict || false,
+          resolutionSource: val.resolutionSource || 'unknown',
+          evidence: val.evidence
+        });
+      }
+    }
+
+    // Strategy 2: Direct CDN / drive links fallback
+    if (verifiedLinks.length === 0) {
+      const linkRegex = /<a[^>]+href="([^">]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+      let lm;
+      while ((lm = linkRegex.exec(html)) !== null) {
+        const href = lm[1].trim();
+        const text = lm[2].replace(/<[^>]+>/g, '').trim();
+        if (href.startsWith('/') || href.startsWith('#') || href.startsWith('javascript:')) continue;
+
+        const val = this.validateLink({
+          downloadUrl: href,
+          rawQuality: text,
+          isSeries: type === 'Web Series',
+          type: type,
+          titleContext: rawHeading
+        }, pageUrl);
+
+        if (val.isValid) {
+          verifiedLinks.push({
+            url: href,
+            downloadUrl: href,
+            quality: val.resolution,
+            rawQuality: text || val.resolution,
+            sourceLabel: text,
+            hasQualityConflict: val.hasQualityConflict || false,
+            resolutionSource: val.resolutionSource || 'unknown',
+            evidence: val.evidence
+          });
+        }
+      }
+    }
+
     return {
       provider: this.displayName,
       providerId: this.id,
@@ -150,7 +213,8 @@ class HDWallV2Adapter extends BaseV2Adapter {
       sourceUrl: pageUrl,
       sourcePosterUrl: posterUrl,
       screenshots: screenshotUrl ? [screenshotUrl] : [],
-      downloadLinks: []
+      downloadLinks: verifiedLinks,
+      verifiedCount: verifiedLinks.length
     };
   }
 }
