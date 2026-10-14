@@ -46,5 +46,13 @@
     "newTitlesCount": 0,
     "existingUpdatedCount": 0,
     "deploymentStatus": "Failed"
+  },
+  "HDWall_2026-10-14_run_38562244084_13693_13694_13695_13696_13697_13698_13699_13700_13701_13702_13703_13704_13705_13706_13707_13708_13709_13710_13711_13712": {
+    "sent": true,
+    "sentAt": "2026-10-14T12:16:17.565Z",
+    "provider": "HDWall",
+    "newTitlesCount": 20,
+    "existingUpdatedCount": 5,
+    "deploymentStatus": "Confirmed successful"
   }
 }
