@@ -27,6 +27,17 @@ if (provIdx !== -1 && args[provIdx + 1]) {
   targetProvider = args[provIdx + 1].trim();
 }
 
+if (targetProvider && (targetProvider.toLowerCase() === '10moviez' || targetProvider.toLowerCase() === 'hdwall')) {
+  console.log('='.repeat(65));
+  console.log('PRAFLIX — 24-HOUR AUTOMATED CATALOG SYNCHRONIZATION');
+  console.log('='.repeat(65));
+  console.log(`\n[RETIRED SOURCE] Provider "${targetProvider}" has been officially retired as an active content source.`);
+  console.log(`[RETIRED SOURCE] Automated crawling, scheduled jobs, and imports for "${targetProvider}" are permanently disabled.`);
+  console.log(`[RETIRED SOURCE] All existing historical download links and canonical catalog entries are preserved intact.`);
+  console.log(`[RETIRED SOURCE] Ingestion halted safely with zero changes.`);
+  process.exit(0);
+}
+
 async function main() {
   console.log('='.repeat(65));
   console.log('PRAFLIX — 24-HOUR AUTOMATED CATALOG SYNCHRONIZATION');
@@ -45,7 +56,7 @@ async function main() {
 
   const providerLabel = targetProvider && targetProvider.toLowerCase() !== 'all'
     ? `provider: ${targetProvider}`
-    : 'providers: HDHub4u, 10Moviez, HDWall';
+    : 'provider: HDHub4u (active; 10Moviez & HDWall retired)';
   console.log(`\n[1/3] Synchronizing ${providerLabel}...`);
   const { summary, reportText, totalAdded, totalUpdated } = await runFullSync(catalog, sourceRecords, {
     provider: targetProvider,

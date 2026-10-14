@@ -47,9 +47,12 @@ const DEFAULT_PROVIDERS = [
       'hdhub4u.guru'
     ],
     txtFileName: 'HDHUB4U TITLE.txt',
+    status: 'active',
+    active: true,
     schedule: {
       istTime: '10:00 AM IST',
-      utcCron: '30 4 * * *'
+      utcCron: '30 4 * * *',
+      active: true
     },
     categories: [
       { name: 'Bollywood Movies', path: '/category/bollywood-movies/' },
@@ -75,6 +78,10 @@ const DEFAULT_PROVIDERS = [
   {
     id: '10moviez',
     displayName: '10Moviez',
+    status: 'retired',
+    active: false,
+    retiredAt: '2026-10-14T21:00:00.000Z',
+    retiredReason: 'Retired as active ingestion source; historical download links and catalog entries preserved.',
     baseUrl: 'https://10moviez.biz/',
     allowedDomains: [
       '10moviez.biz',
@@ -84,7 +91,8 @@ const DEFAULT_PROVIDERS = [
     txtFileName: '10MOVIEZ TITLE.txt',
     schedule: {
       istTime: '11:00 AM IST',
-      utcCron: '30 5 * * *'
+      utcCron: '30 5 * * *',
+      disabled: true
     },
     categories: [
       { name: 'Web Series', path: '/category/web-series/' },
@@ -114,6 +122,10 @@ const DEFAULT_PROVIDERS = [
   {
     id: 'hdwall',
     displayName: 'HDWall',
+    status: 'retired',
+    active: false,
+    retiredAt: '2026-10-14T21:00:00.000Z',
+    retiredReason: 'Retired as active ingestion source; historical download links and catalog entries preserved.',
     baseUrl: 'https://hdwall.xyz/',
     allowedDomains: [
       'hdwall.xyz',
@@ -123,7 +135,8 @@ const DEFAULT_PROVIDERS = [
     txtFileName: 'HDWALL TITLE.txt',
     schedule: {
       istTime: '12:00 PM IST',
-      utcCron: '30 6 * * *'
+      utcCron: '30 6 * * *',
+      disabled: true
     },
     categories: [
       { name: 'Movies', path: '/category/movies/' },
@@ -206,14 +219,44 @@ function getProvider(identifier) {
 }
 
 /**
- * Get all registered providers
+ * Get all registered providers (active and historical/retired)
  */
 function getAllProviders() {
   return Array.from(registry.values());
 }
 
 /**
- * Check if a provider exists
+ * Get only currently active ingestion providers (HDHub4u)
+ */
+function getActiveProviders() {
+  return Array.from(registry.values()).filter(p => p.status === 'active' || p.active === true);
+}
+
+/**
+ * Get retired providers (10Moviez, HDWall)
+ */
+function getRetiredProviders() {
+  return Array.from(registry.values()).filter(p => p.status === 'retired' || p.active === false);
+}
+
+/**
+ * Check if a provider is actively crawled and imported
+ */
+function isProviderActive(identifier) {
+  const p = getProvider(identifier);
+  return Boolean(p && (p.status === 'active' || p.active === true));
+}
+
+/**
+ * Check if a provider has been retired as an ingestion source
+ */
+function isProviderRetired(identifier) {
+  const p = getProvider(identifier);
+  return Boolean(p && (p.status === 'retired' || p.active === false));
+}
+
+/**
+ * Check if a provider exists in registry
  */
 function hasProvider(identifier) {
   return Boolean(getProvider(identifier));
@@ -343,6 +386,10 @@ module.exports = {
   getProvider,
   getProviderConfig: getProvider,
   getAllProviders,
+  getActiveProviders,
+  getRetiredProviders,
+  isProviderActive,
+  isProviderRetired,
   hasProvider,
   loadSourceCatalog,
   saveSourceCatalog,

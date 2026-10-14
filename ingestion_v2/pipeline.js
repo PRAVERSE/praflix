@@ -73,16 +73,13 @@ async function runPipeline(options = {}) {
   const stagingEngine = new StagingEngine({ b2Client });
   const telegramReporter = new TelegramV2Reporter(testingConfig.telegram);
 
-  // 4. Select and run provider adapters
+  // 4. Select and run provider adapters (HDHub4u is active; 10Moviez and HDWall are retired)
   const adaptersToRun = [];
   if (provider === 'all' || provider === 'hdhub4u') {
     adaptersToRun.push(new HDHub4uV2Adapter());
   }
-  if (provider === 'all' || provider === '10moviez') {
-    adaptersToRun.push(new TenMoviezV2Adapter());
-  }
-  if (provider === 'all' || provider === 'hdwall') {
-    adaptersToRun.push(new HDWallV2Adapter());
+  if (provider === '10moviez' || provider === 'hdwall') {
+    console.log(`[RETIRED SOURCE] Provider "${provider}" is officially retired. Ingestion pipeline V2 will not crawl or import from this source.`);
   }
 
   const allNormalizedCandidates = [];

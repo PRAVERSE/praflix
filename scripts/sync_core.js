@@ -28,8 +28,10 @@ const resolver = require(path.join(BASE_DIR, 'destination_resolver'));
 const providerRegistry = require('./provider_registry');
 const adapters = require('./adapters');
 
-// Provider Constants
-const PROVIDERS = ['HDHub4u', '10Moviez', 'HDWall'];
+// Provider Constants (10Moviez and HDWall are officially retired as active ingestion sources)
+const ACTIVE_PROVIDERS = ['HDHub4u'];
+const RETIRED_PROVIDERS = ['10Moviez', 'HDWall'];
+const PROVIDERS = ACTIVE_PROVIDERS;
 
 const PROVIDER_KEYS = {
   'hdhub4u': 'HDHub4u',
@@ -532,6 +534,18 @@ async function syncProvider(providerName, catalog, sourceRecords, options = {}) 
   };
 
   try {
+    // Strict guard: Ingestion from retired providers is permanently blocked
+    const normProvider = (providerName || '').toLowerCase().trim();
+    if (normProvider === '10moviez' || normProvider === 'hdwall') {
+      if (!options.mockItems && !options.mockFailures) {
+        console.log(`[RETIRED SOURCE] Provider "${providerName}" has been retired as an active content source.`);
+        console.log(`[RETIRED SOURCE] Skipping automated crawling, imports, and sync for "${providerName}".`);
+        result.retired = true;
+        result.failed = false;
+        return result;
+      }
+    }
+
     if (providerName.toLowerCase() === 'hdhub4u' && !options.mockItems && !options.mockFailures) {
       try {
         const hdhubSync = require('./hdhub4u_sync');
@@ -1003,9 +1017,18 @@ async function runFullSync(catalog, sourceRecords, options = {}) {
   const syncStartTime = new Date();
   const providerResults = {};
 
-  const targetProviders = options.provider && options.provider !== 'all'
-    ? [PROVIDER_KEYS[options.provider.toLowerCase()] || options.provider]
-    : PROVIDERS;
+  let targetProviders;
+  if (options.provider && options.provider !== 'all') {
+    targetProviders = [PROVIDER_KEYS[options.provider.toLowerCase()] || options.provider];
+  } else if (options.mockItems || options.mockFailures) {
+    const provSet = new Set([
+      ...Object.keys(options.mockItems || {}),
+      ...Object.keys(options.mockFailures || {})
+    ]);
+    targetProviders = Array.from(provSet);
+  } else {
+    targetProviders = PROVIDERS;
+  }
 
   // Sync selected providers
   for (const provider of targetProviders) {
@@ -1400,7 +1423,7 @@ function formatTelegramReport(summary) {
   const syncTime = summary.runTimeIst || summary.formattedTime || formatDateTime(new Date());
   const provs = summary.providers || {};
   const target = summary.targetProvider || summary.provider;
-  const targetProvs = target ? [target] : PROVIDERS;
+  const targetProvs = target ? [target] : (provs && Object.keys(provs).length > 0 ? Object.keys(provs) : PROVIDERS);
 
   let text = '━━━━━━━━━━━━━━━━━━━━━━\n';
   text += '       PRAFLIX REPORT\n';

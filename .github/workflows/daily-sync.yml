@@ -1,24 +1,23 @@
 name: PRAFLIX 24-Hour Catalog Synchronization & Deployment
 
-# Note: Scheduled crawl replaced by three independent daily provider jobs:
-# - HDHub4u: .github/workflows/hdhub4u-sync.yml (10:00 AM IST / 04:30 UTC)
-# - 10Moviez: .github/workflows/10moviez-sync.yml (11:00 AM IST / 05:30 UTC)
-# - HDWall: .github/workflows/hdwall-sync.yml (12:00 PM IST / 06:30 UTC)
+# Note: Active scheduled crawl runs via independent provider workflow:
+# - HDHub4u: .github/workflows/hdhub4u-sync.yml (10:00 AM IST / 04:30 UTC) [ACTIVE]
+# Retired providers (scheduled crawlers & imports permanently disabled):
+# - 10Moviez: .github/workflows/10moviez-sync.yml [RETIRED]
+# - HDWall: .github/workflows/hdwall-sync.yml [RETIRED]
 # Legacy combined schedule was: cron: '0 0 * * *'
 # Active schedule disabled here to prevent duplicate scheduled crawls.
 on:
   workflow_dispatch:
     inputs:
       provider:
-        description: 'Provider to synchronize (or all)'
+        description: 'Provider to synchronize (active: hdhub4u)'
         required: false
-        default: 'all'
+        default: 'hdhub4u'
         type: choice
         options:
-          - all
           - hdhub4u
-          - 10moviez
-          - hdwall
+          - all
 
 concurrency:
   group: praflix-catalog-sync
@@ -55,7 +54,7 @@ jobs:
             console.log('✓ Pre-sync catalog verified: ' + c.length.toLocaleString() + ' canonical titles.');
           "
 
-      - name: 1. Provider Sync (HDHub4u, 10Moviez, HDWall)
+      - name: 1. Provider Sync (HDHub4u Active Provider)
         run: npm run sync -- --provider ${{ inputs.provider || 'all' }} --defer-telegram
 
       - name: 2. Catalog Integrity Validation

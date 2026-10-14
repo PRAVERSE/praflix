@@ -1,21 +1,26 @@
-name: PRAFLIX HDWall Daily Synchronization & Deployment
+name: PRAFLIX HDWall Daily Synchronization & Deployment (RETIRED)
+
+# SOURCE RETIRED: HDWall has been officially retired as an active content source.
+# Scheduled crawlers, cron jobs, sync pipelines, and automatic imports are permanently disabled.
+# Existing historical download links and canonical records are preserved intact.
 
 on:
-  schedule:
-    # 12:00 PM IST (Asia/Kolkata, UTC+05:30) = 06:30 UTC every day
-    - cron: '30 6 * * *'
+  # Automated schedule permanently disabled for retired source:
+  # Former schedule: cron: '30 6 * * *'
   workflow_dispatch:
-    # Allows manual trigger testing via GitHub Actions UI
+    # Manual trigger disabled for retired source
 
 concurrency:
   group: praflix-catalog-sync
   cancel-in-progress: false
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   sync-and-deploy:
+    # PERMANENTLY DISABLED: Source is retired. Ingestion is blocked.
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
