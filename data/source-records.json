@@ -769,5 +769,44 @@
         "discoveredAt": "2026-10-14T18:12:36.404Z"
       }
     ]
+  },
+  {
+    "id": 1371500,
+    "source": "hdhub4u",
+    "sourceId": "src-hdhub4u-13715-0",
+    "displayTitle": "Enna Vilai",
+    "originalSourceTitle": "&#xE02C; Enna Vilai (2026) WEB-DL [Hindi (DD5.1) &#038; Tamil] 4K 1080p 720p &#038; 480p Dual Audio [x264/10Bit-HEVC] | Full Movie",
+    "normalizedTitle": "enna vilai",
+    "year": "2026",
+    "type": "Movie",
+    "season": null,
+    "sourceUrl": "https://new7.hdhub4u.cl/enna-vilai-2026-hindi-webrip-full-movie/",
+    "sourcePosterUrl": "https://image.tmdb.org/t/p/w500/NkklX4xp3BlLmlMT0LXehkStJZ.jpg",
+    "qualities": [
+      {
+        "link": "https://hubdrive.pics/file/2372382162",
+        "quality": "720p",
+        "rawText": "720p 10Bit HEVC [950MB]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/5972890714",
+        "quality": "1080p",
+        "rawText": "1080p MULTi WEB-DL [7GB]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/14460890391",
+        "quality": "4K",
+        "rawText": "4K [2160p SDR MULTi WEB-DL – 18.9GB]",
+        "isComplete": false
+      }
+    ],
+    "sightings": [
+      {
+        "surface": "hdhub4u_sync",
+        "discoveredAt": "2026-10-15T04:01:02.792Z"
+      }
+    ]
   }
 ]
