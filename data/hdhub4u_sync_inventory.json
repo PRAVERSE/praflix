@@ -1,5 +1,5 @@
 {
-  "syncTimestamp": "2026-10-15T04:24:02.567Z",
+  "syncTimestamp": "2026-10-15T09:16:11.648Z",
   "liveCrawl": {
     "attempted": true,
     "liveReachable": true,
@@ -19,8 +19,8 @@
   },
   "metrics": {
     "totalDiscovered": 14482,
-    "uniqueMovies": 12715,
-    "uniqueWebSeries": 1767,
+    "uniqueMovies": 12714,
+    "uniqueWebSeries": 1768,
     "alreadyPresentInCatalog": 12066,
     "newlyAddedToCatalog": 0,
     "newlyAddedMovies": 0,

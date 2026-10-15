@@ -2,7 +2,7 @@
   "catalog": "PRAFLIX Master Cinema & Web Series Catalog",
   "publisher": "A PRAVERSE Company",
   "version": "20261011_p13",
-  "buildTimestamp": "2026-10-15T04:24:04.559Z",
+  "buildTimestamp": "2026-10-15T09:16:13.444Z",
   "totalRecords": 13715,
   "uniqueCanonicalIds": 13715,
   "chunkCount": 4,
@@ -51,8 +51,8 @@
       "endCanonicalId": 13715,
       "jsonFile": "data/catalog-chunk-4.json",
       "jsFile": "data/catalog_chunk_4.js",
-      "jsonSizeBytes": 5547091,
-      "jsSizeBytes": 5547151
+      "jsonSizeBytes": 5547473,
+      "jsSizeBytes": 5547533
     }
   ]
 }
