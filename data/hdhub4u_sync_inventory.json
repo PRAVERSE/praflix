@@ -1,12 +1,12 @@
 {
-  "syncTimestamp": "2026-10-15T04:01:02.792Z",
+  "syncTimestamp": "2026-10-15T04:24:02.567Z",
   "liveCrawl": {
     "attempted": true,
     "liveReachable": true,
     "succeeded": true,
     "interrupted": false,
     "liveDiscoveredCount": 45,
-    "newlyDiscoveredCount": 11,
+    "newlyDiscoveredCount": 10,
     "error": null
   },
   "durableSnapshot": {
@@ -21,13 +21,13 @@
     "totalDiscovered": 14482,
     "uniqueMovies": 12715,
     "uniqueWebSeries": 1767,
-    "alreadyPresentInCatalog": 12065,
-    "newlyAddedToCatalog": 1,
-    "newlyAddedMovies": 1,
+    "alreadyPresentInCatalog": 12066,
+    "newlyAddedToCatalog": 0,
+    "newlyAddedMovies": 0,
     "newlyAddedSeries": 0,
-    "newlyDiscoveredLive": 11,
+    "newlyDiscoveredLive": 10,
     "existingUpdatedWithLinks": 0,
-    "duplicatesPrevented": 43150,
+    "duplicatesPrevented": 43153,
     "ambiguousTitlesCount": 0,
     "downloadOptionsCollected": 41336,
     "destinationsVerified": 41103,
@@ -38,100 +38,10 @@
     "titlesWithoutDownloads": 7,
     "incompleteTitlesCount": 7
   },
-  "newlyAddedTitles": [
-    {
-      "canonicalId": 13715,
-      "title": "Enna Vilai",
-      "displayTitle": "Enna Vilai",
-      "year": "2026",
-      "type": "Movie",
-      "provider": "HDHub4u"
-    }
-  ],
-  "newlyAddedCanonicalItems": [
-    {
-      "id": "praflix-13715",
-      "canonicalId": 13715,
-      "displayTitle": "Enna Vilai",
-      "originalSourceTitle": "&#xE02C; Enna Vilai (2026) WEB-DL [Hindi (DD5.1) &#038; Tamil] 4K 1080p 720p &#038; 480p Dual Audio [x264/10Bit-HEVC] | Full Movie",
-      "normalizedTitle": "enna vilai",
-      "year": "2026",
-      "type": "Movie",
-      "season": null,
-      "episodeStatus": null,
-      "genres": [
-        "Cinema"
-      ],
-      "languages": [
-        "Hindi"
-      ],
-      "audioTracks": [
-        "DD 5.1"
-      ],
-      "audio": "DD 5.1",
-      "platform": null,
-      "platforms": [],
-      "releaseType": "WEB-DL",
-      "poster": "https://image.tmdb.org/t/p/w500/NkklX4xp3BlLmlMT0LXehkStJZ.jpg",
-      "sourcePosterUrl": "https://image.tmdb.org/t/p/w500/NkklX4xp3BlLmlMT0LXehkStJZ.jpg",
-      "qualities": [
-        "720p",
-        "1080p",
-        "4K"
-      ],
-      "variantCount": 1,
-      "variants": [
-        {
-          "sourceId": 1371500,
-          "sourceUrl": "https://new7.hdhub4u.cl/enna-vilai-2026-hindi-webrip-full-movie/",
-          "source": "hdhub4u",
-          "originalSourceTitle": "&#xE02C; Enna Vilai (2026) WEB-DL [Hindi (DD5.1) &#038; Tamil] 4K 1080p 720p &#038; 480p Dual Audio [x264/10Bit-HEVC] | Full Movie",
-          "languages": [
-            "Hindi"
-          ],
-          "qualities": [
-            {
-              "resolution": "720p",
-              "label": "720p"
-            },
-            {
-              "resolution": "1080p",
-              "label": "1080p"
-            },
-            {
-              "resolution": "4K",
-              "label": "4K"
-            }
-          ],
-          "releaseType": "WEB-DL",
-          "audio": "DD 5.1",
-          "poster": "https://image.tmdb.org/t/p/w500/NkklX4xp3BlLmlMT0LXehkStJZ.jpg"
-        }
-      ],
-      "status": "active"
-    }
-  ],
+  "newlyAddedTitles": [],
+  "newlyAddedCanonicalItems": [],
   "existingTitlesUpdated": [],
-  "newProviderLinks": [
-    {
-      "canonicalId": 13715,
-      "provider": "HDHub4u",
-      "downloadUrl": "https://hubdrive.pics/file/2372382162",
-      "resolution": "720p"
-    },
-    {
-      "canonicalId": 13715,
-      "provider": "HDHub4u",
-      "downloadUrl": "https://hubdrive.pics/file/5972890714",
-      "resolution": "1080p"
-    },
-    {
-      "canonicalId": 13715,
-      "provider": "HDHub4u",
-      "downloadUrl": "https://hubdrive.pics/file/14460890391",
-      "resolution": "4K"
-    }
-  ],
+  "newProviderLinks": [],
   "duplicateLinksSkipped": [
     {
       "canonicalId": 9379,
@@ -72953,6 +72863,24 @@
       "canonicalId": 13714,
       "provider": "HDHub4u",
       "downloadUrl": "https://hubdrive.pics/file/1828448262",
+      "reason": "duplicate_link"
+    },
+    {
+      "canonicalId": 13715,
+      "provider": "HDHub4u",
+      "downloadUrl": "https://hubdrive.pics/file/2372382162",
+      "reason": "duplicate_link"
+    },
+    {
+      "canonicalId": 13715,
+      "provider": "HDHub4u",
+      "downloadUrl": "https://hubdrive.pics/file/5972890714",
+      "reason": "duplicate_link"
+    },
+    {
+      "canonicalId": 13715,
+      "provider": "HDHub4u",
+      "downloadUrl": "https://hubdrive.pics/file/14460890391",
       "reason": "duplicate_link"
     },
     {
@@ -244642,19 +244570,10 @@
     "success": true,
     "provider": "hdhub4u",
     "filePath": "/home/runner/work/praflix/praflix/title list/HDHUB4U TITLE.txt",
-    "appendedCount": 1,
+    "appendedCount": 0,
     "skippedCount": 0,
-    "appendedTitles": [
-      "15/10/26 Enna Vilai"
-    ],
-    "appendedEntries": [
-      {
-        "title": "Enna Vilai",
-        "date": "15/10/26",
-        "provider": "hdhub4u",
-        "formattedEntry": "15/10/26 Enna Vilai"
-      }
-    ]
+    "appendedTitles": [],
+    "appendedEntries": []
   },
   "ambiguousTitles": []
 }
