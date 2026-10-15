@@ -63,11 +63,20 @@ const DEFAULT_PROVIDERS = [
     eligibilityRules: {
       requireStorageDestination: true,
       allowedDestinationDomains: [
-        'hubdrive.pics'
+        'hubdrive.pics',
+        'hblinks.lol'
       ],
       seriesPolicy: 'complete_season_only', // individual episodes excluded
       requireExactHubDrivePrefix: true,
-      requiredHubDrivePrefix: 'https://hubdrive.pics/file/'
+      requiredHubDrivePrefix: 'https://hubdrive.pics/file/',
+      approvedPrefixes: [
+        'https://hubdrive.pics/file/',
+        'https://hblinks.lol/archives/'
+      ],
+      eligibleUrlPrefixes: [
+        'https://hubdrive.pics/file/',
+        'https://hblinks.lol/archives/'
+      ]
     },
     rateLimit: {
       timeoutMs: 10000,

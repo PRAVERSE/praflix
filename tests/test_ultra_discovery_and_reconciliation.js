@@ -295,20 +295,23 @@ runTest('C', 'Multiple distinct links at the same quality level are preserved as
   assert.notStrictEqual(verified[0].downloadUrl, verified[1].downloadUrl);
 });
 
-runTest('C', 'HDHub4u HubDrive prefix restriction strictly rejects non-qualifying URLs', () => {
+runTest('C', 'HDHub4u HubDrive and HBLinks prefix restriction strictly rejects non-qualifying URLs', () => {
   const candidate = {
     title: 'Prefix Rule Test',
     articleUrl: 'https://new2.hdhub4u.free/prefix-test',
     type: 'Movie',
     downloadLinks: [
       { downloadUrl: 'https://hubdrive.pics/other/not-a-file', resolution: '720p' }, // Invalid prefix
-      { downloadUrl: 'https://hubdrive.pics/file/valid-uuid-file', resolution: '720p' } // Valid prefix
+      { downloadUrl: 'https://hubdrive.pics/file/valid-uuid-file', resolution: '720p' }, // Valid prefix 1
+      { downloadUrl: 'https://hblinks.lol/file/not-an-archive', resolution: '720p' }, // Invalid prefix
+      { downloadUrl: 'https://hblinks.lol/archives/valid-archive-id', resolution: '1080p' } // Valid prefix 2
     ]
   };
 
   const verified = extractAndVerifyCandidateLinks(candidate, 'HDHub4u').verified;
-  assert.strictEqual(verified.length, 1);
+  assert.strictEqual(verified.length, 2);
   assert.strictEqual(verified[0].downloadUrl, 'https://hubdrive.pics/file/valid-uuid-file');
+  assert.strictEqual(verified[1].downloadUrl, 'https://hblinks.lol/archives/valid-archive-id');
 });
 
 runTest('C', 'Series individual episodes are filtered; complete season packages are preserved', () => {

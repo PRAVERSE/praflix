@@ -34,6 +34,8 @@
   'use strict';
 
   const HUBDRIVE_PREFIX = 'https://hubdrive.pics/file/';
+  const HBLINKS_PREFIX = 'https://hblinks.lol/archives/';
+  const APPROVED_HDHUB4U_PREFIXES = [HUBDRIVE_PREFIX, HBLINKS_PREFIX];
   const INVENTORY_IDEA_EXACT = 'https://inventoryidea.com/homelander/';
 
   /**
@@ -69,7 +71,7 @@
       if (host.includes('hdwall.xyz') && (parsed.pathname.endsWith('.html') || parsed.pathname.includes('/posts/'))) return true;
       // Slugs resembling informational article pages
       if (/\/(free-[a-z0-9-]+|[\w-]+-(?:full-movie|all-episodes|web-series|full-series))\/?$/i.test(parsed.pathname)) {
-        if (!host.includes('hubdrive') && !host.includes('hubcdn') && !host.includes('hubcloud') && !host.includes('filesdl')) {
+        if (!host.includes('hubdrive') && !host.includes('hubcdn') && !host.includes('hubcloud') && !host.includes('filesdl') && !host.includes('hblinks')) {
           return true;
         }
       }
@@ -148,6 +150,7 @@
                           parsed.pathname.startsWith('/drive/') ||
                           parsed.pathname.startsWith('/download/') ||
                           parsed.pathname.startsWith('/cloud/') ||
+                          parsed.pathname.startsWith('/archives/') ||
                           (parsed.pathname.length > 5 && !parsed.pathname.endsWith('/'));
 
     if (!isStoragePath) {
@@ -190,6 +193,7 @@
     const isVerifiedHost = host.includes('hubcdn.') ||
                            host.includes('hubcloud.') ||
                            host.includes('hubdrive.') ||
+                           host.includes('hblinks.') ||
                            host.includes('filesdl.in') ||
                            host.includes('gdflix.') ||
                            host.includes('linkmake.') ||
@@ -315,71 +319,181 @@
   }
 
   /**
-   * Determine if a link or episode string represents a genuine complete season / all episodes package.
-   * A qualifying link must represent a complete season or all episodes bundled into one package.
-   * Individual episode links (e.g. Episode 1, Ep 2, etc.) are strictly rejected.
+   * Distinguish explicitly between:
+   *  - Individual episode links ('episode')
+   *  - Complete-season packs ('complete_season')
+   *  - Complete-series packs ('complete_series')
+   *  - Unknown/unclassified ('unknown')
+   *
+   * Require POSITIVE EVIDENCE for each classification.
+   * Missing episode information alone must NEVER imply a complete season or series.
+   *
+   * @param {Object|string} linkOrItem
+   * @returns {{
+   *   packageType: 'complete_series' | 'complete_season' | 'episode' | 'unknown',
+   *   isCompleteSeries: boolean,
+   *   isCompleteSeason: boolean,
+   *   isEpisode: boolean,
+   *   isComplete: boolean,
+   *   evidence: string
+   * }}
    */
-  function isCompleteSeason(linkOrEpisode) {
-    if (!linkOrEpisode) return false;
+  function classifySeriesPackage(linkOrItem) {
+    if (!linkOrItem) {
+      return {
+        packageType: 'unknown',
+        isCompleteSeries: false,
+        isCompleteSeason: false,
+        isEpisode: false,
+        isComplete: false,
+        evidence: 'missing_input'
+      };
+    }
+
     let epStr = '';
     let url = '';
-    let isCompleteFlag = false;
+    let explicitPackageType = null;
+    let explicitCompleteSeasonFlag = false;
+    let explicitCompleteSeriesFlag = false;
 
-    if (typeof linkOrEpisode === 'object') {
-      epStr = String(linkOrEpisode.episode || linkOrEpisode.rawLabel || linkOrEpisode.label || '').trim();
-      url = String(linkOrEpisode.downloadUrl || linkOrEpisode.url || '').trim();
-      if (linkOrEpisode.isCompleteSeason === true || linkOrEpisode.packageType === 'complete_season' || linkOrEpisode.packageType === 'all_episodes') {
-        isCompleteFlag = true;
+    if (typeof linkOrItem === 'object') {
+      epStr = String(linkOrItem.episode || linkOrItem.rawLabel || linkOrItem.label || linkOrItem.rawText || '').trim();
+      url = String(linkOrItem.downloadUrl || linkOrItem.url || '').trim();
+      if (linkOrItem.packageType) {
+        explicitPackageType = String(linkOrItem.packageType).toLowerCase();
+      }
+      if (linkOrItem.isCompleteSeries === true) {
+        explicitCompleteSeriesFlag = true;
+      }
+      if (linkOrItem.isCompleteSeason === true) {
+        explicitCompleteSeasonFlag = true;
       }
     } else {
-      epStr = String(linkOrEpisode).trim();
+      epStr = String(linkOrItem).trim();
     }
-
-    // Strict negative check: If it has explicit individual episode number, it is NOT complete season!
-    // Check if there is a single episode number in the episode string
-    if (epStr) {
-      const singleEpMatch = epStr.match(/\b(?:EPISODE|EP|E)\s*0*(\d+)\b/i);
-      if (singleEpMatch && !/\b(?:ALL|COMPLETE|PACK|BATCH|FULL)\b/i.test(epStr)) {
-        return false;
-      }
-      if (/^\s*(?:EPISODE|EP|E)?\s*0*\d+\s*$/i.test(epStr)) {
-        return false;
-      }
-    }
-
-    // Check URL for individual episode indicators: e.g. -ep01-, -e01-, .ep1., .e01.
-    if (url && /(?:[._\/-]e(?:p)?0*\d+(?:[._\/-]|$))/i.test(url) && !/(?:complete|batch|all[._-]?ep|pack|zip|rar)/i.test(url)) {
-      return false;
-    }
-
-    if (isCompleteFlag) return true;
 
     const s = epStr.toUpperCase();
+    const u = url.toLowerCase();
 
-    // Positive indicators: must have verified complete pack / all episodes evidence
-    if (s === 'FULL SERIES' || s === 'COMPLETE SEASON' || s === 'ALL EPISODES' || s === 'FULL BATCH' || s === 'SEASON PACK' || s === 'COMPLETE') {
-      return true;
+    // 1. Check Explicit Flags first
+    if (explicitCompleteSeriesFlag || explicitPackageType === 'complete_series' || explicitPackageType === 'all_seasons') {
+      return {
+        packageType: 'complete_series',
+        isCompleteSeries: true,
+        isCompleteSeason: false,
+        isEpisode: false,
+        isComplete: true,
+        evidence: 'explicit_series_pack_flag'
+      };
     }
 
-    const hasCompleteKeyword = s.includes('FULL SERIES') ||
-                               s.includes('ALL EPISODES') ||
-                               s.includes('COMPLETE SEASON') ||
-                               s.includes('FULL BATCH') ||
-                               s.includes('SEASON PACK') ||
-                               s.includes('PACK') ||
-                               s.includes('ZIP') ||
-                               s.includes('BATCH');
-
-    if (hasCompleteKeyword) {
-      return true;
+    if (explicitCompleteSeasonFlag || explicitPackageType === 'complete_season' || explicitPackageType === 'all_episodes') {
+      return {
+        packageType: 'complete_season',
+        isCompleteSeries: false,
+        isCompleteSeason: true,
+        isEpisode: false,
+        isComplete: true,
+        evidence: 'explicit_season_pack_flag'
+      };
     }
 
-    if (/^SEASON\s*\d+\s*(?:COMPLETE|PACK|FULL)$/i.test(s) || /^S\d+\s*(?:COMPLETE|PACK|FULL)$/i.test(s)) {
-      return true;
+    if (explicitPackageType === 'episode' || explicitPackageType === 'single_episode') {
+      return {
+        packageType: 'episode',
+        isCompleteSeries: false,
+        isCompleteSeason: false,
+        isEpisode: true,
+        isComplete: false,
+        evidence: 'explicit_episode_flag'
+      };
     }
 
-    return false;
+    // 2. Complete Series Positive Evidence:
+    // Requires positive evidence for entire series / multi-season complete pack
+    const isSeriesCompletePattern =
+      /\b(?:COMPLETE\s*SERIES|FULL\s*SERIES|ALL\s*SEASONS|ENTIRE\s*SERIES|COMPLETE\s*SHOW)\b/i.test(s) ||
+      /\b(?:S0*1\s*-\s*S0*[2-9]\d*|SEASONS?\s*0*1\s*-\s*0*[2-9]\d*|SEASONS?\s*0*1\s*TO\s*0*[2-9]\d*)\s*(?:COMPLETE|FULL|PACK|ALL\s*EPISODES)?\b/i.test(s) ||
+      /\bCOMPLETE\s*PACK\s*\(\s*ALL\s*SEASONS\s*\)/i.test(s) ||
+      /\b(?:all\.seasons|complete\.series|full\.series)\b/i.test(u);
+
+    if (isSeriesCompletePattern) {
+      return {
+        packageType: 'complete_series',
+        isCompleteSeries: true,
+        isCompleteSeason: false,
+        isEpisode: false,
+        isComplete: true,
+        evidence: 'positive_complete_series_evidence'
+      };
+    }
+
+    // 3. Individual Episode Link Positive Evidence:
+    // Check if there is explicit individual episode numbering without complete/pack keywords
+    const hasEpisodeNumber =
+      /\b(?:EPISODE|EP|E)\s*0*(\d+)\b/i.test(s) ||
+      /^\s*(?:EPISODE|EP|E)?\s*0*\d+\s*$/i.test(s) ||
+      (/\b(?:episode|ep|e)0*\d+\b|(?:[._\/-]|s\d+)e(?:p)?0*\d+(?:[._\/-]|$)/i.test(u) && !/(?:complete|batch|all[._-]?ep|pack|zip|rar)/i.test(u));
+
+    const hasCompleteKeywords =
+      /\b(?:COMPLETE\s*SEASON|SEASON\s*PACK|FULL\s*BATCH|ALL\s*EPISODES|BATCH|ZIP|RAR|PACK)\b/i.test(s) ||
+      /^SEASON\s*\d+\s*(?:COMPLETE|PACK|FULL)$/i.test(s) ||
+      /^S\d+\s*(?:COMPLETE|PACK|FULL)$/i.test(s) ||
+      /\b(?:complete\.season|season\.pack|all\.episodes|full\.batch)\b/i.test(u);
+
+    if (hasEpisodeNumber && !hasCompleteKeywords) {
+      return {
+        packageType: 'episode',
+        isCompleteSeries: false,
+        isCompleteSeason: false,
+        isEpisode: true,
+        isComplete: false,
+        evidence: 'positive_individual_episode_evidence'
+      };
+    }
+
+    // 4. Complete Season Positive Evidence:
+    // Requires positive evidence for a single complete season or all episodes of a season
+    if (hasCompleteKeywords || s === 'COMPLETE' || s === 'COMPLETE SEASON' || s === 'ALL EPISODES' || s === 'SEASON PACK' || s === 'FULL BATCH') {
+      return {
+        packageType: 'complete_season',
+        isCompleteSeries: false,
+        isCompleteSeason: true,
+        isEpisode: false,
+        isComplete: true,
+        evidence: 'positive_complete_season_evidence'
+      };
+    }
+
+    // 5. Unknown / Missing:
+    // Missing episode information alone must never imply a complete season or series!
+    return {
+      packageType: 'unknown',
+      isCompleteSeries: false,
+      isCompleteSeason: false,
+      isEpisode: false,
+      isComplete: false,
+      evidence: 'missing_or_insufficient_evidence'
+    };
   }
+
+  /**
+   * Determine if a link or episode string represents a genuine complete season / all episodes package.
+   * Delegates to classifySeriesPackage to ensure strict positive evidence.
+   */
+  function isCompleteSeason(linkOrEpisode) {
+    const pkg = classifySeriesPackage(linkOrEpisode);
+    return pkg.isComplete;
+  }
+
+  /**
+   * Determine if a link or episode string represents a complete series package.
+   */
+  function isCompleteSeries(linkOrEpisode) {
+    const pkg = classifySeriesPackage(linkOrEpisode);
+    return pkg.isCompleteSeries;
+  }
+
 
   /**
    * Extract integer episode number.
@@ -427,17 +541,17 @@
    * Note: Source article pages are strictly rejected as download destinations.
    */
   function resolveHDHub4u(candidateLinks, candidateVariants, episodeFilter) {
-    // Priority 1: HubDrive download endpoint
+    // Priority 1: HubDrive or HBLinks download endpoint
     for (const link of candidateLinks) {
       if (matchesEpisode(episodeFilter, link.episode)) {
         const url = link.downloadUrl;
-        if (isValidDownloadDestination(url, link.sourceUrl) && url.startsWith(HUBDRIVE_PREFIX)) {
+        if (isValidDownloadDestination(url, link.sourceUrl) && (url.startsWith(HUBDRIVE_PREFIX) || url.startsWith(HBLINKS_PREFIX))) {
           return {
             url,
             provider: 'HDHub4u',
             priority: 1,
             type: 'download_endpoint',
-            reason: 'Qualifying HubDrive download endpoint',
+            reason: 'Qualifying HDHub4u download endpoint',
             isDirect: true,
             isValid: true,
             linkRecord: link
@@ -859,13 +973,17 @@
     normalizeProvider,
     formatProviderName,
     formatLinkLabel,
+    classifySeriesPackage,
     isCompleteSeason,
+    isCompleteSeries,
     parseEpisodeNumber,
     parseSeasonNumber,
     matchesEpisode,
     resolveDestination,
     groupAndOrderDownloads,
     HUBDRIVE_PREFIX,
+    HBLINKS_PREFIX,
+    APPROVED_HDHUB4U_PREFIXES,
     INVENTORY_IDEA_EXACT
   };
 });

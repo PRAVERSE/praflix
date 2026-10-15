@@ -83,45 +83,256 @@ function detectContentType(title, rawCategory) {
 }
 
 /**
- * Match a candidate item against the existing canonical catalog
+ * Safely inspect and persist ambiguous candidate matches to data/review_queue.json
+ * Preserves existing review records and operates idempotently.
  */
-function matchExistingTitle(candidate, catalog) {
+function saveToReviewQueue(records, options = {}) {
+  if (!records || records.length === 0) return { saved: 0, total: 0 };
+  const reviewQueuePath = options.reviewQueuePath || path.join(DATA_DIR, 'review_queue.json');
+
+  let existingData = {
+    version: '1.0',
+    lastUpdated: new Date().toISOString(),
+    records: []
+  };
+
+  if (fs.existsSync(reviewQueuePath)) {
+    try {
+      const raw = fs.readFileSync(reviewQueuePath, 'utf8');
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        existingData.records = parsed;
+      } else if (parsed && Array.isArray(parsed.records)) {
+        existingData = parsed;
+      } else if (parsed && Array.isArray(parsed.items)) {
+        existingData.records = parsed.items;
+      }
+    } catch (e) {
+      console.warn(`[ReviewQueue Warning] Could not read existing review queue: ${e.message}`);
+    }
+  }
+
+  // Idempotency: dedup by url + reason or title + year + reason
+  const existingKeys = new Set(existingData.records.map(r => {
+    const cand = r.candidate || r;
+    const url = (cand.sourceUrl || r.sourceUrl || '').trim().toLowerCase();
+    const title = (cand.displayTitle || cand.title || r.title || '').trim().toLowerCase();
+    const reason = r.reason || r.ambiguityReason || '';
+    return url ? `${url}__${reason}` : `${title}__${cand.year || ''}__${reason}`;
+  }));
+
+  let savedCount = 0;
+  for (const rec of records) {
+    const cand = rec.candidate || rec;
+    const url = (cand.sourceUrl || rec.sourceUrl || '').trim().toLowerCase();
+    const title = (cand.displayTitle || cand.title || rec.title || '').trim().toLowerCase();
+    const reason = rec.reason || rec.ambiguityReason || 'ambiguous_match';
+    const key = url ? `${url}__${reason}` : `${title}__${cand.year || ''}__${reason}`;
+
+    if (!existingKeys.has(key)) {
+      existingKeys.add(key);
+      const queueRecord = {
+        id: `review-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        queuedAt: new Date().toISOString(),
+        candidate: cand,
+        reason: reason,
+        potentialMatches: rec.potentialMatches || [],
+        status: 'pending_review'
+      };
+      existingData.records.push(queueRecord);
+      savedCount++;
+    }
+  }
+
+  existingData.lastUpdated = new Date().toISOString();
+  existingData.totalPending = existingData.records.filter(r => r.status === 'pending_review').length;
+
+  if (options.persist !== false && savedCount > 0) {
+    fs.writeFileSync(reviewQueuePath, JSON.stringify(existingData, null, 2), 'utf8');
+  }
+
+  return { saved: savedCount, total: existingData.records.length };
+}
+
+/**
+ * Detailed hierarchical matching with ambiguity detection
+ * Evaluates candidate against catalog across:
+ * - Canonical ID
+ * - Source URL in variants
+ * - Content Type (Movie vs Web Series NEVER merge)
+ * - Season partitioning for Web Series (Season 1 vs Season 2 NEVER merge)
+ * - Edition (Director's Cut, Extended, Theatrical, etc. NEVER merge blindly)
+ * - Release Year (Remakes with different years or year discrepancies routed to review)
+ *
+ * @param {Object} candidate
+ * @param {Array<Object>} catalog
+ * @returns {{ match: Object|null, isAmbiguous: boolean, reason: string, potentialMatches: Array<Object> }}
+ */
+function findMatchDetailed(candidate, catalog) {
+  if (!candidate) {
+    return { match: null, isAmbiguous: false, reason: 'missing_candidate', potentialMatches: [] };
+  }
+
   const candRawTitle = candidate.displayTitle || candidate.title || candidate.originalSourceTitle || '';
   const candMeta = titleDecoder.extractTitleMetadata(candRawTitle);
-  const candYear = candidate.year ? String(candidate.year).trim() : candMeta.year;
-  const candNorm = titleDecoder.normalizeForMatching(candMeta.displayTitle, candYear);
-  const candSourceUrl = (candidate.sourceUrl || '').toLowerCase();
-  const candType = candidate.type || (candidate.isSeries ? 'Web Series' : null);
+  const candYear = candidate.year ? String(candidate.year).trim() : (candMeta.year || '');
+  const candType = candidate.type || (candidate.isSeries ? 'Web Series' : (candMeta.type === 'Web Series' ? 'Web Series' : 'Movie'));
+  const candSeason = candidate.season || candMeta.season || null;
+  const candEdition = candidate.edition || candMeta.edition || null;
+  const candSourceUrl = (candidate.sourceUrl || '').trim().toLowerCase();
 
-  for (const item of catalog) {
-    // Disallow collision between different content types (Movie vs Web Series)
-    if (candType && item.type && candType !== item.type) {
-      continue;
+  // Extract base normalized title (pure title without year suffix)
+  function getBaseNormalizedTitle(t, y) {
+    if (!t) return '';
+    const norm = titleDecoder.normalizeForMatching(t, '');
+    if (y) {
+      return norm.replace(new RegExp(`\\s*${y}$`), '').trim();
     }
+    return norm.replace(/\s*(?:19\d{2}|20\d{2})$/, '').trim();
+  }
 
-    // 1. Direct source URL match in variants
-    if (candSourceUrl && (item.variants || []).some(v => v.sourceUrl && v.sourceUrl.toLowerCase() === candSourceUrl)) {
-      return item;
+  const candNormTitle = getBaseNormalizedTitle(candMeta.displayTitle || candRawTitle, candYear);
+
+  // 1. Direct canonical ID match if provided
+  if (candidate.canonicalId) {
+    const cId = Number(candidate.canonicalId);
+    const item = catalog.find(i => Number(i.canonicalId) === cId || Number(i.id) === cId);
+    if (item) {
+      return { match: item, isAmbiguous: false, reason: 'canonical_id', potentialMatches: [item] };
     }
+  }
 
-    // 2. Normalized title + year match
-    const itemNorm = titleDecoder.normalizeForMatching(item.displayTitle, item.year);
-    if (candNorm && itemNorm && candNorm === itemNorm) {
-      return item;
-    }
-
-    // 3. Match without year if either year is missing
-    const candNormNoYear = titleDecoder.normalizeForMatching(candMeta.displayTitle, '');
-    const itemNormNoYear = titleDecoder.normalizeForMatching(item.displayTitle, '');
-    if (candNormNoYear && itemNormNoYear && candNormNoYear === itemNormNoYear) {
-      if (!candYear || !item.year || candYear === item.year) {
-        return item;
+  // 2. Direct source URL match in variants
+  if (candSourceUrl) {
+    for (const item of catalog) {
+      if ((item.variants || []).some(v => v.sourceUrl && v.sourceUrl.toLowerCase().trim() === candSourceUrl)) {
+        return { match: item, isAmbiguous: false, reason: 'source_url', potentialMatches: [item] };
       }
     }
   }
 
-  return null;
+  // 3. Find candidates with matching normalized title
+  const titleMatches = [];
+  for (const item of catalog) {
+    const itemNormTitle = item.normalizedTitle
+      ? getBaseNormalizedTitle(item.normalizedTitle, item.year)
+      : getBaseNormalizedTitle(item.displayTitle || item.originalSourceTitle, item.year);
+    if (itemNormTitle && candNormTitle && itemNormTitle === candNormTitle) {
+      titleMatches.push(item);
+    }
+  }
+
+  if (titleMatches.length === 0) {
+    return { match: null, isAmbiguous: false, reason: 'no_match', potentialMatches: [] };
+  }
+
+  // Filter by Content Type: Movie vs Web Series NEVER merge
+  const typeCompatibleMatches = titleMatches.filter(item => {
+    const itemType = item.type || 'Movie';
+    const cType = candType || 'Movie';
+    return itemType === cType;
+  });
+
+  if (typeCompatibleMatches.length === 0) {
+    // Distinct titles by content type (e.g. Movie vs Web Series with identical title)
+    return { match: null, isAmbiguous: false, reason: 'distinct_content_type', potentialMatches: titleMatches };
+  }
+
+  // Filter by Season if Web Series: Season 1 vs Season 2 NEVER merge
+  let seasonCompatibleMatches = typeCompatibleMatches;
+  if (candType === 'Web Series') {
+    const candNormSeason = candSeason ? candSeason.toLowerCase().replace(/\s+/g, '') : null;
+    seasonCompatibleMatches = typeCompatibleMatches.filter(item => {
+      if (!candNormSeason || !item.season) return true;
+      const itemNormSeason = String(item.season).toLowerCase().replace(/\s+/g, '');
+      return itemNormSeason === candNormSeason;
+    });
+
+    if (seasonCompatibleMatches.length === 0) {
+      // Different seasons of same series are distinct canonical titles
+      return { match: null, isAmbiguous: false, reason: 'distinct_season', potentialMatches: typeCompatibleMatches };
+    }
+  }
+
+  // Check Edition separation:
+  // "Do not merge remakes or distinct editions merely because their titles are similar."
+  for (const item of seasonCompatibleMatches) {
+    const itemMeta = titleDecoder.extractTitleMetadata(item.originalSourceTitle || item.displayTitle);
+    const itemEdition = item.edition || itemMeta.edition || null;
+
+    if (candEdition && itemEdition && candEdition.toLowerCase() !== itemEdition.toLowerCase()) {
+      // Conflicting distinct editions (e.g. Director's Cut vs Theatrical Cut)
+      return {
+        match: null,
+        isAmbiguous: true,
+        reason: `distinct_edition_uncertain: candidate is "${candEdition}" while existing is "${itemEdition}"`,
+        potentialMatches: [item]
+      };
+    }
+
+    if ((candEdition && !itemEdition) || (!candEdition && itemEdition)) {
+      // One has explicit edition and the other does not
+      return {
+        match: null,
+        isAmbiguous: true,
+        reason: `distinct_edition_uncertain: edition mismatch ("${candEdition || 'Standard'}" vs "${itemEdition || 'Standard'}")`,
+        potentialMatches: [item]
+      };
+    }
+  }
+
+  // Check Release Year / Remakes:
+  // "Do not use a simple year-gap threshold as definitive proof that two titles are different."
+  // "Do not merge remakes or distinct editions merely because their titles are similar."
+  // "Route uncertain matches to review rather than silently choosing a candidate or creating a duplicate."
+  const exactYearMatches = [];
+  const yearMismatchCandidates = [];
+
+  for (const item of seasonCompatibleMatches) {
+    const itemYear = (item.year ? String(item.year).trim() : '');
+    if (candYear && itemYear) {
+      if (candYear === itemYear) {
+        exactYearMatches.push(item);
+      } else {
+        yearMismatchCandidates.push(item);
+      }
+    } else {
+      // Year missing on candidate or item
+      yearMismatchCandidates.push(item);
+    }
+  }
+
+  if (exactYearMatches.length === 1) {
+    return { match: exactYearMatches[0], isAmbiguous: false, reason: 'exact_title_year_type', potentialMatches: exactYearMatches };
+  }
+
+  if (exactYearMatches.length > 1) {
+    // Multiple exact matches in catalog
+    return { match: exactYearMatches[0], isAmbiguous: false, reason: 'exact_title_year_multiple', potentialMatches: exactYearMatches };
+  }
+
+  // If we reach here, normalized titles match but years differ or are missing!
+  // Same title with differing year -> Potential remake or year discrepancy!
+  // Route to review rather than merging or blindly creating duplicate
+  return {
+    match: null,
+    isAmbiguous: true,
+    reason: candYear
+      ? `year_discrepancy_uncertain: candidate year is "${candYear}", existing catalog has "${seasonCompatibleMatches.map(m => m.year).join(', ')}"`
+      : 'missing_year_metadata_uncertain: title matches existing catalog but release year is missing',
+    potentialMatches: seasonCompatibleMatches
+  };
 }
+
+/**
+ * Match a candidate item against the existing canonical catalog
+ * Preserves backward compatibility while leveraging findMatchDetailed
+ */
+function matchExistingTitle(candidate, catalog) {
+  const result = findMatchDetailed(candidate, catalog);
+  return result.match;
+}
+
 
 /**
  * Extract and strictly verify candidate download links from a provider item.
@@ -182,9 +393,9 @@ function extractAndVerifyCandidateLinks(item, providerName) {
     const rawUrl = (c.downloadUrl || c.url || '').trim();
     if (!rawUrl) continue;
 
-    // Provider specific prefix rules (e.g. HDHub4u HubDrive prefix restriction)
+    // Provider specific prefix rules (e.g. HDHub4u approved prefixes restriction)
     if (providerName && providerName.toLowerCase() === 'hdhub4u') {
-      if (!rawUrl.startsWith('https://hubdrive.pics/file/')) {
+      if (!rawUrl.startsWith('https://hubdrive.pics/file/') && !rawUrl.startsWith('https://hblinks.lol/archives/')) {
         continue;
       }
     }
@@ -204,8 +415,8 @@ function extractAndVerifyCandidateLinks(item, providerName) {
     }
 
     const res = normalizeQuality(c.resolution || c.quality || c.rawQuality || '720p');
-    const key = `${rawUrl}__${res}`;
-    if (seenUrls.has(key)) {
+    const normUrl = rawUrl.toLowerCase();
+    if (seenUrls.has(normUrl)) {
       skippedDuplicates.push({
         downloadUrl: rawUrl,
         resolution: res,
@@ -213,7 +424,7 @@ function extractAndVerifyCandidateLinks(item, providerName) {
       });
       continue;
     }
-    seenUrls.add(key);
+    seenUrls.add(normUrl);
 
     verified.push({
       sourceName: providerName,
@@ -657,7 +868,36 @@ async function syncProvider(providerName, catalog, sourceRecords, options = {}) 
         result.duplicateLinksSkippedList.push(...skippedDuplicates);
       }
 
-      const existing = matchExistingTitle(item, catalog);
+      const matchRes = findMatchDetailed(item, catalog);
+
+      if (matchRes.isAmbiguous) {
+        result.unmatchedOrAmbiguous++;
+        if (!result.ambiguousRecords) result.ambiguousRecords = [];
+        result.ambiguousRecords.push({
+          candidate: item,
+          reason: matchRes.reason,
+          potentialMatches: (matchRes.potentialMatches || []).map(m => ({
+            canonicalId: m.canonicalId,
+            displayTitle: m.displayTitle,
+            year: m.year,
+            type: m.type
+          }))
+        });
+
+        // Safely record in persistent review queue
+        if (options.persist !== false && !options.dryRun && !options.mockItems) {
+          saveToReviewQueue([{
+            candidate: item,
+            reason: matchRes.reason,
+            potentialMatches: matchRes.potentialMatches
+          }], options);
+        }
+
+        console.log(`[AMBIGUOUS MATCH] Candidate "${item.displayTitle}" routed to review queue: ${matchRes.reason}`);
+        continue;
+      }
+
+      const existing = matchRes.match;
 
       if (existing) {
         // Update existing title with provider variant & screenshots
@@ -724,14 +964,22 @@ async function syncProvider(providerName, catalog, sourceRecords, options = {}) 
             }
           }
           if (!dlEntry.links) dlEntry.links = [];
-          const existingUrls = new Set(dlEntry.links.map(l => `${l.downloadUrl}__${l.resolution}`));
+
+          // Protect download links: Check existing URLs before adding variants.
+          // Duplicate URLs must NOT overwrite existing provider attribution, quality, or verification status.
+          const existingUrlMap = new Map();
+          dlEntry.links.forEach(l => {
+            if (l.downloadUrl) {
+              existingUrlMap.set(l.downloadUrl.trim().toLowerCase(), l);
+            }
+          });
 
           verifiedLinks.forEach(vl => {
             const resNorm = vl.resolution || '720p';
             result.qualityCounts[resNorm] = (result.qualityCounts[resNorm] || 0) + 1;
-            const k = `${vl.downloadUrl}__${vl.resolution}`;
-            if (!existingUrls.has(k)) {
-              existingUrls.add(k);
+            const normUrl = (vl.downloadUrl || '').trim().toLowerCase();
+            if (!existingUrlMap.has(normUrl)) {
+              existingUrlMap.set(normUrl, vl);
               dlEntry.links.push(vl);
               newLinksCountForThisTitle++;
               result.newProviderLinks.push({
@@ -746,7 +994,7 @@ async function syncProvider(providerName, catalog, sourceRecords, options = {}) 
                 canonicalId: existing.canonicalId,
                 provider: providerName,
                 downloadUrl: vl.downloadUrl,
-                reason: 'already_persisted_for_canonical_title'
+                reason: 'duplicate_link_url_preserved_existing'
               });
             }
           });
@@ -1564,7 +1812,9 @@ module.exports = {
   PROVIDERS,
   normalizeTitle,
   detectContentType,
+  findMatchDetailed,
   matchExistingTitle,
+  saveToReviewQueue,
   fetchProviderLatest,
   parseProviderHtml,
   extractAndVerifyCandidateLinks,
