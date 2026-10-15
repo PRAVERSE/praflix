@@ -49,7 +49,8 @@ const {
   isSourceArticleUrl,
   isValidDownloadDestination,
   classifyLinkVerification,
-  isCompleteSeason
+  isCompleteSeason,
+  classifySeriesPackage
 } = resolver;
 
 const titleDecoder = require('./title_decoder');
@@ -346,8 +347,8 @@ function parseDetailPage(html, pageUrl) {
     const href = lMatch[1].trim();
     const anchorText = lMatch[2].replace(/<[^>]+>/g, '').trim();
 
-    // For HDHub4u, import only download URLs whose exact prefix is https://hubdrive.pics/file/
-    if (!href.startsWith('https://hubdrive.pics/file/')) {
+    // For HDHub4u, import only download URLs matching approved prefixes
+    if (!href.startsWith('https://hubdrive.pics/file/') && !href.startsWith('https://hblinks.lol/archives/')) {
       continue;
     }
 
@@ -752,10 +753,56 @@ async function runHDHub4uSync(options = {}) {
         ambiguousMatchesCount++;
         ambiguousReviewList.push({
           groupKey,
+          reason: 'multiple_candidates_matched',
           items: items.map(i => ({ title: i.rawTitle, url: i.sourceUrl })),
           candidates: candidates.map(c => ({ id: c.canonicalId, title: c.displayTitle }))
         });
         continue;
+      }
+
+      // Check normalized title against catalog for remakes or distinct editions
+      if (!matchedItem) {
+        const titleOnlyCandidates = catalog.filter(c => {
+          const normC = (c.normalizedTitle || titleDecoder.normalizeForMatching(c.displayTitle, '')).toLowerCase().trim();
+          const normItem = primaryItem.normalizedTitle.toLowerCase().trim();
+          return normC === normItem && (c.type || 'Movie') === (primaryItem.type || 'Movie');
+        });
+
+        if (titleOnlyCandidates.length > 0) {
+          const candEdition = primaryItem.edition || titleDecoder.extractEdition(primaryItem.rawTitle);
+          for (const candItem of titleOnlyCandidates) {
+            const itemEdition = candItem.edition || titleDecoder.extractEdition(candItem.displayTitle);
+            const candYear = (primaryItem.year || '').trim();
+            const itemYear = (candItem.year || '').trim();
+
+            if ((candEdition || itemEdition) && candEdition !== itemEdition) {
+              ambiguousMatchesCount++;
+              ambiguousReviewList.push({
+                groupKey,
+                reason: `distinct_edition_uncertain: candidate is "${candEdition || 'Standard'}", existing is "${itemEdition || 'Standard'}"`,
+                items: items.map(i => ({ title: i.rawTitle, url: i.sourceUrl })),
+                candidates: titleOnlyCandidates.map(c => ({ id: c.canonicalId, title: c.displayTitle, year: c.year }))
+              });
+              matchedItem = null;
+              break;
+            }
+
+            if (candYear && itemYear && candYear !== itemYear) {
+              ambiguousMatchesCount++;
+              ambiguousReviewList.push({
+                groupKey,
+                reason: `year_discrepancy_uncertain: candidate year "${candYear}" vs existing "${itemYear}"`,
+                items: items.map(i => ({ title: i.rawTitle, url: i.sourceUrl })),
+                candidates: titleOnlyCandidates.map(c => ({ id: c.canonicalId, title: c.displayTitle, year: c.year }))
+              });
+              matchedItem = null;
+              break;
+            }
+          }
+          if (ambiguousReviewList.some(a => a.groupKey === groupKey)) {
+            continue; // Routed to review queue! Do not create duplicate canonical title!
+          }
+        }
       }
     }
 
@@ -790,18 +837,22 @@ async function runHDHub4uSync(options = {}) {
         return;
       }
 
-      // Check complete-season requirement for Web Series
+      // Check series package classification for Web Series
+      let packageClass = { packageType: 'unknown', isComplete: false };
       if (isSeries) {
-        const isComplete = isCompleteSeason(q) || isCompleteSeason({ downloadUrl: linkUrl, episode: q.episode || q.rawText });
-        if (!isComplete) {
-          // Individual episode links strictly omitted
+        packageClass = classifySeriesPackage(q);
+        if (!packageClass.isComplete) {
+          packageClass = classifySeriesPackage({ downloadUrl: linkUrl, episode: q.episode || q.rawText });
+        }
+        if (!packageClass.isComplete) {
+          // Individual episode links or unverified packages strictly omitted
           return;
         }
       }
 
       const resKey = normalizeResolution(q.quality || q.rawText);
-      const epKey = isSeries ? 'FULL SERIES' : undefined;
-      const dedupKey = `${linkUrl}__${resKey}__${epKey || ''}`;
+      const epLabel = isSeries ? (packageClass.packageType === 'complete_series' ? 'COMPLETE SERIES' : 'COMPLETE SEASON') : undefined;
+      const dedupKey = `${linkUrl}__${resKey}__${epLabel || ''}`;
 
       if (!seenLinks.has(dedupKey)) {
         seenLinks.add(dedupKey);
@@ -810,7 +861,8 @@ async function runHDHub4uSync(options = {}) {
           downloadUrl: linkUrl,
           resolution: resKey,
           rawQuality: q.quality || undefined,
-          episode: isSeries ? 'FULL SERIES' : undefined,
+          episode: epLabel,
+          packageType: isSeries ? packageClass.packageType : undefined,
           season: isSeries ? (primaryItem.season || 'Season 1') : undefined,
           format: 'WEB-DL',
           verificationStatus: 'verified'
@@ -868,11 +920,19 @@ async function runHDHub4uSync(options = {}) {
             });
           });
         } else {
-          const existingUrls = new Set((existingEntry.links || []).map(l => `${l.downloadUrl}__${l.resolution}`));
+          // Protect download links: Check existing URLs before adding variants.
+          // Duplicate URLs must NOT overwrite existing provider attribution, quality, or verification status.
+          const existingUrlMap = new Map();
+          (existingEntry.links || []).forEach(l => {
+            if (l.downloadUrl) {
+              existingUrlMap.set(l.downloadUrl.trim().toLowerCase(), l);
+            }
+          });
+
           verifiedLinks.forEach(vl => {
-            const k = `${vl.downloadUrl}__${vl.resolution}`;
-            if (!existingUrls.has(k)) {
-              existingUrls.add(k);
+            const normUrl = (vl.downloadUrl || '').trim().toLowerCase();
+            if (!existingUrlMap.has(normUrl)) {
+              existingUrlMap.set(normUrl, vl);
               if (!existingEntry.links) existingEntry.links = [];
               existingEntry.links.push(vl);
               newLinksCountForThisTitle++;
@@ -888,7 +948,7 @@ async function runHDHub4uSync(options = {}) {
                 canonicalId: targetCanonicalId,
                 provider: 'HDHub4u',
                 downloadUrl: vl.downloadUrl,
-                reason: 'duplicate_link'
+                reason: 'duplicate_link_url_preserved_existing'
               });
             }
           });
@@ -1130,6 +1190,20 @@ async function runHDHub4uSync(options = {}) {
   };
   if (!options.dryRun) {
     fs.writeFileSync(AUDIT_INVENTORY_PATH, JSON.stringify(auditReport, null, 2), 'utf8');
+
+    // Safely record ambiguous titles to persistent review queue
+    if (ambiguousReviewList.length > 0) {
+      try {
+        const syncCore = require('./sync_core');
+        syncCore.saveToReviewQueue(ambiguousReviewList.map(a => ({
+          candidate: (a.items && a.items[0]) || { displayTitle: a.groupKey },
+          reason: a.reason || 'ambiguous_candidate_match',
+          potentialMatches: a.candidates || []
+        })));
+      } catch (e) {
+        console.warn(`[ReviewQueue Warning] Could not save ambiguous titles to review queue: ${e.message}`);
+      }
+    }
   }
 
   // 5. Invariant Checks & Atomic Commit

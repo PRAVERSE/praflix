@@ -85,30 +85,44 @@ async function main() {
   });
 
   // -------------------------------------------------------------------------
-  // TEST 2: Verify download links with the exact prefix 'https://hubdrive.pics/file/' are accepted and those without are excluded
+  // TEST 2: Verify download links with approved prefixes ('https://hubdrive.pics/file/' and 'https://hblinks.lol/archives/') are accepted and those without are excluded
   // -------------------------------------------------------------------------
-  await runTest('Download links with exact prefix https://hubdrive.pics/file/ are accepted and other hosts excluded', async () => {
+  await runTest('Download links with approved prefixes (hubdrive.pics/file/ & hblinks.lol/archives/) are accepted and other hosts excluded', async () => {
     const rawLinks = [
       'https://hubdrive.pics/file/108745291',
       'https://hubdrive.pics/file/abc987654',
+      'https://hblinks.lol/archives/54321',
+      'https://hblinks.lol/archives/test-archive-99',
       'https://hubcloud.club/drive/xyz123',
       'https://drive.google.com/uc?id=99999',
       'https://hubdrive.pics/other/12345',
       'http://hubdrive.pics/file/insecure123',
-      'https://otherhubdrive.pics/file/fake'
+      'https://otherhubdrive.pics/file/fake',
+      'https://hblinks.lol/download/123',
+      'https://hblinks.lol/file/123',
+      'https://otherhblinks.lol/archives/123'
     ];
 
     const eligible = adapter.filterEligibleDownloadLinks(rawLinks);
-    assert.strictEqual(eligible.length, 2, 'Only exact https://hubdrive.pics/file/ links accepted');
+    assert.strictEqual(eligible.length, 4, 'Only exact approved prefixes accepted');
     assert.strictEqual(eligible[0], 'https://hubdrive.pics/file/108745291');
     assert.strictEqual(eligible[1], 'https://hubdrive.pics/file/abc987654');
+    assert.strictEqual(eligible[2], 'https://hblinks.lol/archives/54321');
+    assert.strictEqual(eligible[3], 'https://hblinks.lol/archives/test-archive-99');
 
-    // Also verify base_adapter enforceExactHubDrivePrefix check
+    // Also verify base_adapter prefix checks
     const config = getProviderConfig('HDHub4u');
     assert.strictEqual(config.requireExactHubDrivePrefix, true, 'HDHub4u provider configuration specifies requireExactHubDrivePrefix');
+    assert.ok(Array.isArray(config.eligibilityRules.approvedPrefixes), 'approvedPrefixes array configured');
+    assert.ok(config.eligibilityRules.approvedPrefixes.includes('https://hubdrive.pics/file/'));
+    assert.ok(config.eligibilityRules.approvedPrefixes.includes('https://hblinks.lol/archives/'));
+
     assert.strictEqual(adapter.isValidProviderUrl('https://hubdrive.pics/file/123'), true);
+    assert.strictEqual(adapter.isValidProviderUrl('https://hblinks.lol/archives/123'), true);
     assert.strictEqual(adapter.isValidProviderUrl('https://hubcloud.club/drive/123'), false);
     assert.strictEqual(adapter.isValidProviderUrl('https://hubdrive.pics/download/123'), false);
+    assert.strictEqual(adapter.isValidProviderUrl('https://hblinks.lol/download/123'), false);
+    assert.strictEqual(adapter.isValidProviderUrl('https://hblinks.lol/files/123'), false);
   });
 
   // -------------------------------------------------------------------------

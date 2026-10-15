@@ -86,8 +86,14 @@ class BaseAdapter {
 
     const trimmedUrl = rawUrl.trim();
 
-    // Provider specific prefix rules (e.g., HDHub4u hubdrive restriction)
-    if (this.config.eligibilityRules && this.config.eligibilityRules.requireExactHubDrivePrefix) {
+    // Provider specific prefix rules (e.g., HDHub4u approved prefixes restriction)
+    const approvedPrefixes = this.config.eligibilityRules && (this.config.eligibilityRules.approvedPrefixes || this.config.eligibilityRules.eligibleUrlPrefixes);
+    if (Array.isArray(approvedPrefixes) && approvedPrefixes.length > 0) {
+      const matchesAny = approvedPrefixes.some(prefix => trimmedUrl.startsWith(prefix));
+      if (!matchesAny) {
+        return { isValid: false, reason: 'rejected_prefix_violation' };
+      }
+    } else if (this.config.eligibilityRules && this.config.eligibilityRules.requireExactHubDrivePrefix) {
       const requiredPrefix = this.config.eligibilityRules.requiredHubDrivePrefix || 'https://hubdrive.pics/file/';
       if (!trimmedUrl.startsWith(requiredPrefix)) {
         return { isValid: false, reason: 'rejected_hubdrive_prefix_violation' };

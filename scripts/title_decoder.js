@@ -186,9 +186,86 @@ function normalizeForMatching(title, optionalYear) {
 }
 
 /**
- * Extract display title and year from raw string
+ * Extract distinct edition information from raw title string
  * @param {string} raw
- * @returns {{ displayTitle: string, year: string, type: string }}
+ * @returns {string|null}
+ */
+function extractEdition(raw) {
+  if (!raw) return null;
+  const s = String(raw);
+  const m = s.match(/\b(director'?s\s*cut|extended\s*(?:cut|edition)|unrated(?:\s*cut)?|uncut|special\s*edition|theatrical\s*(?:cut|edition)|remastered(?:\s*edition)?|ultimate\s*edition|criterion(?:\s*collection|\s*edition)?|imax\s*(?:enhanced|edition)?)\b/i);
+  if (!m) return null;
+  const matchStr = m[1].toLowerCase();
+  if (matchStr.includes('director')) return "Director's Cut";
+  if (matchStr.includes('extended')) return "Extended Edition";
+  if (matchStr.includes('unrated') || matchStr.includes('uncut')) return "Unrated Cut";
+  if (matchStr.includes('special')) return "Special Edition";
+  if (matchStr.includes('theatrical')) return "Theatrical Cut";
+  if (matchStr.includes('remastered')) return "Remastered Edition";
+  if (matchStr.includes('ultimate')) return "Ultimate Edition";
+  if (matchStr.includes('criterion')) return "Criterion Collection";
+  if (matchStr.includes('imax')) return "IMAX Edition";
+  return m[1];
+}
+
+/**
+ * Extract audio languages from raw title string
+ * @param {string} raw
+ * @returns {Array<string>}
+ */
+function extractLanguages(raw) {
+  if (!raw) return [];
+  const s = String(raw).toLowerCase();
+  const langs = new Set();
+
+  const langPatterns = [
+    { pattern: /\bhindi\b/i, name: 'Hindi' },
+    { pattern: /\benglish\b/i, name: 'English' },
+    { pattern: /\btamil\b/i, name: 'Tamil' },
+    { pattern: /\btelugu\b/i, name: 'Telugu' },
+    { pattern: /\bmalayalam\b/i, name: 'Malayalam' },
+    { pattern: /\bkannada\b/i, name: 'Kannada' },
+    { pattern: /\bbengali\b/i, name: 'Bengali' },
+    { pattern: /\bmarathi\b/i, name: 'Marathi' },
+    { pattern: /\bpunjabi\b/i, name: 'Punjabi' },
+    { pattern: /\bgujarati\b/i, name: 'Gujarati' },
+    { pattern: /\bkorean\b/i, name: 'Korean' },
+    { pattern: /\bjapanese\b/i, name: 'Japanese' },
+    { pattern: /\bchinese\b/i, name: 'Chinese' },
+    { pattern: /\bspanish\b/i, name: 'Spanish' },
+    { pattern: /\bfrench\b/i, name: 'French' },
+    { pattern: /\bgerman\b/i, name: 'German' }
+  ];
+
+  for (const { pattern, name } of langPatterns) {
+    if (pattern.test(s)) {
+      langs.add(name);
+    }
+  }
+
+  if (langs.size === 0 && (s.includes('dual audio') || s.includes('multi audio'))) {
+    langs.add('Hindi');
+    langs.add('English');
+  }
+
+  return Array.from(langs);
+}
+
+/**
+ * Extract season information for web series
+ * @param {string} raw
+ * @returns {string|null}
+ */
+function extractSeasonInfo(raw) {
+  if (!raw) return null;
+  const m = String(raw).match(/(?:Season|S)\s*0*(\d+)/i);
+  return m ? `Season ${parseInt(m[1], 10)}` : null;
+}
+
+/**
+ * Extract display title, year, season, edition, and metadata from raw string
+ * @param {string} raw
+ * @returns {{ displayTitle: string, year: string, type: string, season: string|null, edition: string|null, languages: Array<string>, audio: string|null, platform: string|null, releaseType: string|null }}
  */
 function extractTitleMetadata(raw) {
   const cleaned = cleanTitle(raw);
@@ -202,11 +279,36 @@ function extractTitleMetadata(raw) {
   }
 
   const isSeries = /season|series|episode|s\d{2}/i.test(raw);
+  const season = isSeries ? extractSeasonInfo(raw) : null;
+  const edition = extractEdition(raw);
+  const languages = extractLanguages(raw);
+
+  // Platform detection
+  let platform = null;
+  const rLower = String(raw).toLowerCase();
+  if (rLower.includes('netflix')) platform = 'Netflix';
+  else if (rLower.includes('prime') || rLower.includes('amazon')) platform = 'Amazon Prime';
+  else if (rLower.includes('hotstar') || rLower.includes('disney')) platform = 'Disney+ Hotstar';
+  else if (rLower.includes('sonyliv')) platform = 'SonyLIV';
+  else if (rLower.includes('zee5')) platform = 'Zee5';
+  else if (rLower.includes('jiocinema') || rLower.includes('jio')) platform = 'JioCinema';
+
+  // Release type
+  let releaseType = 'WEB-DL';
+  if (/\bbluray\b/i.test(raw)) releaseType = 'BluRay';
+  else if (/\bwebrip\b/i.test(raw)) releaseType = 'WEBRip';
+  else if (/\bhdrip\b/i.test(raw)) releaseType = 'HDRip';
 
   return {
     displayTitle: display || cleaned,
     year,
-    type: isSeries ? 'Web Series' : 'Cinema'
+    type: isSeries ? 'Web Series' : 'Cinema',
+    season,
+    edition,
+    languages: languages.length > 0 ? languages : ['Hindi'],
+    audio: languages.length > 1 ? 'Dual Audio' : (languages[0] || null),
+    platform,
+    releaseType
   };
 }
 
@@ -215,5 +317,9 @@ module.exports = {
   stripGlyphsAndResidualEntities,
   cleanTitle,
   normalizeForMatching,
+  extractEdition,
+  extractLanguages,
+  extractSeasonInfo,
   extractTitleMetadata
 };
+

@@ -113,7 +113,32 @@ class MatchingEngine {
           }
         }
 
-        // Release year check
+        // Edition check: Do not merge distinct editions
+        const candMeta = titleDecoder.extractTitleMetadata(candidate.originalSourceTitle || candidate.displayTitle);
+        const itemMeta = titleDecoder.extractTitleMetadata(item.originalSourceTitle || item.displayTitle);
+        const candEdition = candidate.edition || candMeta.edition || null;
+        const itemEdition = item.edition || itemMeta.edition || null;
+
+        if (candEdition && itemEdition && candEdition.toLowerCase() !== itemEdition.toLowerCase()) {
+          return {
+            match: null,
+            matchType: 'ambiguous_edition',
+            isAmbiguous: true,
+            reason: `Edition mismatch: candidate is "${candEdition}", existing is "${itemEdition}"`
+          };
+        }
+
+        if ((candEdition && !itemEdition) || (!candEdition && itemEdition)) {
+          return {
+            match: null,
+            matchType: 'ambiguous_edition',
+            isAmbiguous: true,
+            reason: `Edition discrepancy: candidate is "${candEdition || 'Standard'}", existing is "${itemEdition || 'Standard'}"`
+          };
+        }
+
+        // Release year check: Do not use a simple year-gap threshold as definitive proof that two titles are different.
+        // Route uncertain matches to review rather than silently choosing a candidate or creating a duplicate.
         const itemYear = (item.year || '').trim();
         if (candYear && itemYear) {
           const candYNum = parseInt(candYear, 10);
@@ -121,12 +146,25 @@ class MatchingEngine {
           if (!isNaN(candYNum) && !isNaN(itemYNum)) {
             if (candYNum === itemYNum) {
               return { match: item, matchType: 'title_year_loose', isAmbiguous: false };
-            }
-            if (Math.abs(candYNum - itemYNum) > 1) {
-              // Significant year gap: e.g. "Weapons" 2025 vs 2026 -> Ambiguous or distinct!
-              return { match: null, matchType: 'ambiguous_year_gap', isAmbiguous: true, reason: `Year discrepancy between ${candYear} and ${itemYear}` };
+            } else {
+              // Release years differ (e.g. remake 1994 vs 2019, or release schedule 2025 vs 2026)
+              // Uncertain match: route to review rather than merging or blindly creating a duplicate!
+              return {
+                match: null,
+                matchType: 'ambiguous_year_discrepancy',
+                isAmbiguous: true,
+                reason: `Release year discrepancy between candidate (${candYear}) and existing catalog item (${itemYear})`
+              };
             }
           }
+        } else if (!candYear || !itemYear) {
+          // Missing year metadata on either candidate or item makes match uncertain
+          return {
+            match: null,
+            matchType: 'ambiguous_missing_year',
+            isAmbiguous: true,
+            reason: `Missing release year metadata (candidate: "${candYear}", existing: "${itemYear}")`
+          };
         }
       }
     }
