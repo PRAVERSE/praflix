@@ -295,20 +295,86 @@ check(18, "South Indian tab returns matching regional South cinema records",
   `(${southResults.length} South Indian titles)`
 );
 
-// Netflix Platform verification: at least 171 titles (including Black Clover 2023)
+// Netflix Platform verification: validated canonical metadata ground truth
+const expectedNetflix = catalog.filter(item => {
+  const platArr = Array.isArray(item.platforms) ? item.platforms : [];
+  const hasPlat = platArr.some(p => String(p).toLowerCase().includes('netflix'));
+  const isDirectPlat = String(item.platform || '').toLowerCase().includes('netflix');
+  const hasVariantPlat = Array.isArray(item.variants) && item.variants.some(v => 
+    String(v.platform || '').toLowerCase().includes('netflix') ||
+    (v.sourceUrl && String(v.sourceUrl).toLowerCase().includes('/netflix/'))
+  );
+  return hasPlat || isDirectPlat || hasVariantPlat;
+});
+
 const netflixFilters = { ...defaultFilters, platform: 'Netflix' };
 const netflixResults = filterCatalog(netflixFilters);
+
+// Positive controls: Flagship series (Sacred Games) and newly ingested movie (Black Clover 2023)
+const hasSacredGames = netflixResults.some(r => (r.displayTitle || '').toLowerCase().includes('sacred games'));
+const hasBlackClover = netflixResults.some(r => r.canonicalId === 13720);
+
+// Negative controls: Must exclude non-Netflix titles (Aasha on Zee5, Masterplan on Prime Video)
+const excludesAasha = !netflixResults.some(r => r.canonicalId === 13721);
+const excludesMasterplan = !netflixResults.some(r => r.canonicalId === 13722);
+
+// Filter agreement with combined Web Series + Netflix filter
+const combinedNetflixSeries = filterCatalog({ ...defaultFilters, type: 'Web Series', platform: 'Netflix' });
+const seriesInNetflixTab = netflixResults.filter(r => (r.type || '').toLowerCase() === 'web series');
+const filterAgreement = seriesInNetflixTab.length === combinedNetflixSeries.length &&
+  combinedNetflixSeries.every(cs => netflixResults.some(nr => nr.canonicalId === cs.canonicalId));
+
+const test19Pass = 
+  netflixResults.length === expectedNetflix.length &&
+  netflixResults.length >= 170 &&
+  netflixResults.every(r => isPlatformMatch(r, 'Netflix')) &&
+  hasSacredGames &&
+  hasBlackClover &&
+  excludesAasha &&
+  excludesMasterplan &&
+  filterAgreement;
+
 check(19, "Netflix tab returns matching Netflix platform titles",
-  netflixResults.length >= 171 && netflixResults.every(r => isPlatformMatch(r, 'Netflix')),
-  `(${netflixResults.length} Netflix titles)`
+  test19Pass,
+  `(${netflixResults.length} Netflix titles, expected: ${expectedNetflix.length}, positive/negative controls verified)`
 );
 
-// Prime Video Platform verification: at least 16 titles
+// Prime Video Platform verification: validated canonical metadata ground truth
+const expectedPrime = catalog.filter(item => {
+  const matchPrime = (p) => {
+    const s = String(p || '').toLowerCase();
+    return s === 'prime video' || s === 'amazon prime video' || s === 'amazon prime' || s === 'prime' || s.includes('prime-video') || s.includes('amazon-prime');
+  };
+  const platArr = Array.isArray(item.platforms) ? item.platforms : [];
+  const hasPlat = platArr.some(matchPrime);
+  const isDirectPlat = matchPrime(item.platform);
+  const hasVariantPlat = Array.isArray(item.variants) && item.variants.some(v => 
+    matchPrime(v.platform) || (v.sourceUrl && (v.sourceUrl.toLowerCase().includes('/prime video/') || v.sourceUrl.toLowerCase().includes('category/amazon-prime')))
+  );
+  return hasPlat || isDirectPlat || hasVariantPlat;
+});
+
 const primeFilters = { ...defaultFilters, platform: 'Prime Video' };
 const primeResults = filterCatalog(primeFilters);
+
+// Positive controls: Masterplan (canonicalId 13722)
+const hasMasterplan = primeResults.some(r => r.canonicalId === 13722);
+
+// Negative controls: Exclude Zee5 (Aasha) and Netflix (Black Clover)
+const primeExcludesAasha = !primeResults.some(r => r.canonicalId === 13721);
+const primeExcludesBlackClover = !primeResults.some(r => r.canonicalId === 13720);
+
+const test20Pass =
+  primeResults.length === expectedPrime.length &&
+  primeResults.length >= 16 &&
+  primeResults.every(r => isPlatformMatch(r, 'Prime Video')) &&
+  hasMasterplan &&
+  primeExcludesAasha &&
+  primeExcludesBlackClover;
+
 check(20, "Prime Video tab returns matching Prime Video platform titles",
-  primeResults.length >= 16 && primeResults.every(r => isPlatformMatch(r, 'Prime Video')),
-  `(${primeResults.length} Prime Video titles)`
+  test20Pass,
+  `(${primeResults.length} Prime Video titles, expected: ${expectedPrime.length}, positive/negative controls verified)`
 );
 
 // Search within Category: Bollywood + 'Awarapan'
