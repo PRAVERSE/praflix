@@ -39,20 +39,29 @@ class BaseAdapter {
     const c = (category || '').toLowerCase();
     const u = (url || '').toLowerCase();
 
+    // Explicit movie indicators take high precedence unless explicit season/series package is present
+    const hasExplicitMovie = t.includes('full movie') || t.includes('full-movie') || t.includes('dual audio movie') || u.includes('full-movie');
+    const hasExplicitSeries = t.includes('season') || t.includes('all episodes') || t.includes('all-episodes') ||
+                              /\bs0*\d+\b/i.test(t) || c.includes('web series') || c.includes('tv series') ||
+                              u.includes('season-') || u.includes('all-episodes') || u.includes('web-series');
+
+    if (hasExplicitMovie && !hasExplicitSeries) {
+      return 'Movie';
+    }
+
+    // Check for movie franchise chapter numbering e.g. "Star Wars Episode I/II/IV/V/VI/IX"
+    const isFranchiseEpisodeMovie = /\bepisode\s+[ivxlcdm]+\b/i.test(t) && !hasExplicitSeries;
+    if (isFranchiseEpisodeMovie) {
+      return 'Movie';
+    }
+
     if (
-      t.includes('season') ||
+      hasExplicitSeries ||
       t.includes('series') ||
-      t.includes('episode') ||
-      t.includes('s01') ||
-      t.includes('s02') ||
-      t.includes('s03') ||
-      c.includes('web series') ||
-      c.includes('tv series') ||
       c.includes('series') ||
-      u.includes('season-') ||
-      u.includes('all-episodes') ||
       u.includes('full-series') ||
-      u.includes('web-series')
+      /\bepisode\s*\d+\b/i.test(t) ||
+      /\bep-?\d+\b/i.test(t)
     ) {
       return 'Web Series';
     }
