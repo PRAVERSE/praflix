@@ -988,5 +988,44 @@
         "discoveredAt": "2026-10-16T09:09:36.168Z"
       }
     ]
+  },
+  {
+    "id": 1368900,
+    "source": "hdhub4u",
+    "sourceId": "src-hdhub4u-13720-0",
+    "displayTitle": "Black Clover: Sword of the Wizard King",
+    "originalSourceTitle": "Black Clover: Sword of the Wizard King (2023) WEB-DL [Hindi (DD5.1) & English] 1080p 720p & 480p Dual Audio [x264/ESubs] | Full Movie",
+    "normalizedTitle": "black clover sword of the wizard king",
+    "year": "2023",
+    "type": "Movie",
+    "season": null,
+    "sourceUrl": "https://new7.hdhub4u.cl/black-clover-sword-of-the-wizard-king-2023-webrip-hindi-full-movie/",
+    "sourcePosterUrl": "https://image.tmdb.org/t/p/original/rzpHPSEgPTpRs8EHbygwsOw7jC0.jpg",
+    "qualities": [
+      {
+        "link": "https://hubcloud.ist/drive/n1432gzjsnzvlvg",
+        "quality": "480p",
+        "rawText": "480p [450MB]",
+        "isComplete": true
+      },
+      {
+        "link": "https://hubcloud.ist/drive/uwodgynnjvwyuvl",
+        "quality": "720p",
+        "rawText": "720p [1.1GB]",
+        "isComplete": true
+      },
+      {
+        "link": "https://hubcloud.ist/drive/1gxwwffd5bpoqgq",
+        "quality": "1080p",
+        "rawText": "1080p [2.8GB]",
+        "isComplete": true
+      }
+    ],
+    "sightings": [
+      {
+        "surface": "hdhub4u_sync",
+        "discoveredAt": "2026-10-16T11:09:46.222Z"
+      }
+    ]
   }
 ]

@@ -45,7 +45,10 @@
       },
       "reason": "no_eligible_links",
       "potentialMatches": [],
-      "status": "pending_review"
+      "status": "resolved",
+      "resolvedAt": "2026-10-16T11:09:46.216Z",
+      "resolution": "imported_with_verified_hubcloud_links",
+      "canonicalId": 13720
     },
     {
       "id": "review-1792078989218-zeeig",

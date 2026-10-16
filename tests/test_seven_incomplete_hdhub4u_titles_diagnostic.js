@@ -62,7 +62,12 @@ runTest('Review queue / inventory records the 7 incomplete titles with reason no
     const item = rq.records[idx];
     assert.strictEqual(item.candidate.displayTitle, expectedTitle);
     assert.strictEqual(item.reason, 'no_eligible_links');
-    assert.strictEqual(item.status, 'pending_review');
+    if (expectedTitle.includes('Black Clover')) {
+      assert.strictEqual(item.status, 'resolved');
+      assert.strictEqual(item.resolution, 'imported_with_verified_hubcloud_links');
+    } else {
+      assert.strictEqual(item.status, 'pending_review');
+    }
     assert.ok(item.candidate.sourceUrl.startsWith('https://new7.hdhub4u.cl/'));
   });
 });
