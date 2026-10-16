@@ -37,11 +37,13 @@ class HDHub4uV2Adapter extends BaseV2Adapter {
         requiredHubDrivePrefix: 'https://hubdrive.pics/file/',
         approvedPrefixes: [
           'https://hubdrive.pics/file/',
-          'https://hblinks.lol/archives/'
+          'https://hblinks.lol/archives/',
+          'https://hubcloud.ist/drive/'
         ],
         eligibleUrlPrefixes: [
           'https://hubdrive.pics/file/',
-          'https://hblinks.lol/archives/'
+          'https://hblinks.lol/archives/',
+          'https://hubcloud.ist/drive/'
         ]
       },
       ...providerConfig
@@ -169,7 +171,7 @@ class HDHub4uV2Adapter extends BaseV2Adapter {
       const href = m[1].trim();
       const text = m[2].replace(/<[^>]+>/g, '').trim();
 
-      if (href.startsWith('https://hubdrive.pics/file/') || href.startsWith('https://hblinks.lol/archives/')) {
+      if (href.startsWith('https://hubdrive.pics/file/') || href.startsWith('https://hblinks.lol/archives/') || href.startsWith('https://hubcloud.ist/drive/')) {
         const val = this.validateLink({
           downloadUrl: href,
           rawQuality: text,

@@ -64,18 +64,21 @@ const DEFAULT_PROVIDERS = [
       requireStorageDestination: true,
       allowedDestinationDomains: [
         'hubdrive.pics',
-        'hblinks.lol'
+        'hblinks.lol',
+        'hubcloud.ist'
       ],
       seriesPolicy: 'complete_season_only', // individual episodes excluded
       requireExactHubDrivePrefix: true,
       requiredHubDrivePrefix: 'https://hubdrive.pics/file/',
       approvedPrefixes: [
         'https://hubdrive.pics/file/',
-        'https://hblinks.lol/archives/'
+        'https://hblinks.lol/archives/',
+        'https://hubcloud.ist/drive/'
       ],
       eligibleUrlPrefixes: [
         'https://hubdrive.pics/file/',
-        'https://hblinks.lol/archives/'
+        'https://hblinks.lol/archives/',
+        'https://hubcloud.ist/drive/'
       ]
     },
     rateLimit: {

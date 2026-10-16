@@ -35,7 +35,8 @@
 
   const HUBDRIVE_PREFIX = 'https://hubdrive.pics/file/';
   const HBLINKS_PREFIX = 'https://hblinks.lol/archives/';
-  const APPROVED_HDHUB4U_PREFIXES = [HUBDRIVE_PREFIX, HBLINKS_PREFIX];
+  const HUBCLOUD_PREFIX = 'https://hubcloud.ist/drive/';
+  const APPROVED_HDHUB4U_PREFIXES = [HUBDRIVE_PREFIX, HBLINKS_PREFIX, HUBCLOUD_PREFIX];
   const INVENTORY_IDEA_EXACT = 'https://inventoryidea.com/homelander/';
 
   /**
@@ -541,11 +542,11 @@
    * Note: Source article pages are strictly rejected as download destinations.
    */
   function resolveHDHub4u(candidateLinks, candidateVariants, episodeFilter) {
-    // Priority 1: HubDrive or HBLinks download endpoint
+    // Priority 1: HubDrive, HBLinks, or HubCloud drive download endpoint
     for (const link of candidateLinks) {
       if (matchesEpisode(episodeFilter, link.episode)) {
         const url = link.downloadUrl;
-        if (isValidDownloadDestination(url, link.sourceUrl) && (url.startsWith(HUBDRIVE_PREFIX) || url.startsWith(HBLINKS_PREFIX))) {
+        if (isValidDownloadDestination(url, link.sourceUrl) && (url.startsWith(HUBDRIVE_PREFIX) || url.startsWith(HBLINKS_PREFIX) || url.startsWith(HUBCLOUD_PREFIX))) {
           return {
             url,
             provider: 'HDHub4u',
@@ -983,6 +984,7 @@
     groupAndOrderDownloads,
     HUBDRIVE_PREFIX,
     HBLINKS_PREFIX,
+    HUBCLOUD_PREFIX,
     APPROVED_HDHUB4U_PREFIXES,
     INVENTORY_IDEA_EXACT
   };

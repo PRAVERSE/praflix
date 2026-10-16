@@ -631,6 +631,154 @@ check(45, "10Moviez and HDWall remain retired while HDHub4u is active",
   !isProviderRetired('hdhub4u') && phd.status === 'active' && phd.active
 );
 
+// ============================================================================
+// 14. HubCloud /drive/ Approval, Attribution, and Black Clover Staging
+// ============================================================================
+console.log('\n--- Category 14: HubCloud /drive/ Approval & Staging Invariants ---');
+
+// Approved prefix 3: hubcloud.ist/drive/
+const hubcloudValidUrl = 'https://hubcloud.ist/drive/bc-wizard-king-720p';
+check(46, "HDHub4u accepts approved prefix https://hubcloud.ist/drive/",
+  hdhubAdapter.isValidProviderUrl(hubcloudValidUrl) === true
+);
+
+// Rejected prefix on hubcloud (e.g. /file/, /download/, /view/)
+check(47, "HDHub4u rejects non-qualifying paths on hubcloud.ist (e.g. /file/, /download/)",
+  hdhubAdapter.isValidProviderUrl('https://hubcloud.ist/file/bc-wizard-king') === false &&
+  hdhubAdapter.isValidProviderUrl('https://hubcloud.ist/download/bc-wizard-king') === false &&
+  hdhubAdapter.isValidProviderUrl('https://hubcloud.ist/view/bc-wizard-king') === false
+);
+
+// Rejected lookalike domains / insecure protocols for HubCloud
+check(48, "HDHub4u rejects lookalike domains and non-HTTPS protocols for HubCloud",
+  hdhubAdapter.isValidProviderUrl('http://hubcloud.ist/drive/insecure') === false &&
+  hdhubAdapter.isValidProviderUrl('https://hubcloud.club/drive/fake') === false &&
+  hdhubAdapter.isValidProviderUrl('https://otherhubcloud.ist/drive/fake') === false
+);
+
+// Staging item and download entry for HubCloud tests
+const stagingItem = {
+  canonicalId: 9999,
+  displayTitle: 'Black Clover: Sword of the Wizard King',
+  type: 'Movie',
+  year: '2023'
+};
+const stagingDlEntry = {
+  catalogueId: 9999,
+  title: 'Black Clover: Sword of the Wizard King',
+  type: 'Movie',
+  links: [
+    {
+      sourceName: 'HDHub4u',
+      downloadUrl: 'https://hubcloud.ist/drive/bc-wizard-king-480p',
+      resolution: '480p',
+      format: 'WEB-DL',
+      verificationStatus: 'verified'
+    },
+    {
+      sourceName: 'HDHub4u',
+      downloadUrl: hubcloudValidUrl,
+      resolution: '720p',
+      format: 'WEB-DL',
+      verificationStatus: 'verified'
+    },
+    {
+      sourceName: 'HDHub4u',
+      downloadUrl: 'https://hubcloud.ist/drive/bc-wizard-king-1080p',
+      resolution: '1080p',
+      format: 'WEB-DL',
+      verificationStatus: 'verified'
+    }
+  ]
+};
+
+// Priority 1 resolution with correct provider attribution as HDHub4u
+const hubcloudResolved = resolver.resolveDestination(
+  stagingItem,
+  { downloadEntry: stagingDlEntry, qualityKey: '720p', providerPreference: 'HDHub4u' }
+);
+check(49, "resolveDestination resolves HubCloud drive endpoint with provider attribution as HDHub4u",
+  hubcloudResolved &&
+  hubcloudResolved.provider === 'HDHub4u' &&
+  hubcloudResolved.url === hubcloudValidUrl &&
+  hubcloudResolved.priority === 1 &&
+  hubcloudResolved.isValid === true
+);
+
+// Duplicate HubCloud URL across different qualities is prevented without overwrite
+const mockDlWithHubcloud = {
+  catalogueId: 9999,
+  title: "Black Clover Staging Movie",
+  links: [
+    {
+      sourceName: "HDHub4u",
+      downloadUrl: hubcloudValidUrl,
+      resolution: "720p",
+      verificationStatus: "verified"
+    }
+  ]
+};
+const incomingDuplicateHubcloud = [
+  {
+    sourceName: "AnotherProvider",
+    downloadUrl: hubcloudValidUrl,
+    resolution: "1080p",
+    verificationStatus: "unverified"
+  }
+];
+const hubcloudUrlMap = new Map();
+mockDlWithHubcloud.links.forEach(l => hubcloudUrlMap.set(l.downloadUrl.toLowerCase().trim(), l));
+let hubcloudDupSkipped = false;
+incomingDuplicateHubcloud.forEach(vl => {
+  const norm = vl.downloadUrl.toLowerCase().trim();
+  if (hubcloudUrlMap.has(norm)) {
+    hubcloudDupSkipped = true;
+  } else {
+    mockDlWithHubcloud.links.push(vl);
+  }
+});
+check(50, "Deduplicating HubCloud URL preserves existing quality and HDHub4u attribution without overwrite",
+  hubcloudDupSkipped === true &&
+  mockDlWithHubcloud.links.length === 1 &&
+  mockDlWithHubcloud.links[0].resolution === "720p" &&
+  mockDlWithHubcloud.links[0].sourceName === "HDHub4u" &&
+  mockDlWithHubcloud.links[0].verificationStatus === "verified"
+);
+
+// Available Versions displays accepted HubCloud records correctly grouped with sequential Link labels
+const avGroups = resolver.groupAndOrderDownloads(stagingItem, stagingDlEntry);
+check(51, "Available Versions displays accepted HubCloud records correctly grouped by quality with Link 1 label",
+  avGroups.isSeries === false &&
+  avGroups.hasLinks === true &&
+  avGroups.movieQualityGroups.length === 3 &&
+  avGroups.movieQualityGroups.some(q => q.qualityKey === '1080p' && q.links[0].downloadUrl.includes('bc-wizard-king-1080p') && q.links[0].label === 'Link 1') &&
+  avGroups.movieQualityGroups.some(q => q.qualityKey === '720p' && q.links[0].downloadUrl.includes('bc-wizard-king-720p') && q.links[0].label === 'Link 1') &&
+  avGroups.movieQualityGroups.some(q => q.qualityKey === '480p' && q.links[0].downloadUrl.includes('bc-wizard-king-480p') && q.links[0].label === 'Link 1')
+);
+
+// Controlled Staging Test: Black Clover (2023) 3 quality variants matching and zero-duplicate guarantees
+const stagingCandidateItem = {
+  originalSourceTitle: 'Black Clover: Sword of the Wizard King (2023) WEB-DL [Hindi (DD5.1) & English] 1080p 720p & 480p Dual Audio [x264/ESubs] | Full Movie',
+  displayTitle: 'Black Clover: Sword of the Wizard King',
+  year: '2023',
+  type: 'Movie',
+  sourceUrl: 'https://new7.hdhub4u.cl/black-clover-sword-of-the-wizard-king-2023-webrip-hindi-full-movie/',
+  qualities: [
+    { resolution: '480p', link: 'https://hubcloud.ist/drive/bc-480p-file' },
+    { resolution: '720p', link: 'https://hubcloud.ist/drive/bc-720p-file' },
+    { resolution: '1080p', link: 'https://hubcloud.ist/drive/bc-1080p-file' }
+  ]
+};
+const extractedBcLinks = syncCore.extractAndVerifyCandidateLinks(stagingCandidateItem, 'HDHub4u');
+check(52, "Controlled staging test: Black Clover extracts all 3 HubCloud quality variants with HDHub4u attribution and 0 duplicates",
+  extractedBcLinks.verified.length === 3 &&
+  extractedBcLinks.verified.every(v => v.sourceName === 'HDHub4u') &&
+  extractedBcLinks.verified.some(v => v.resolution === '480p' && v.downloadUrl === 'https://hubcloud.ist/drive/bc-480p-file') &&
+  extractedBcLinks.verified.some(v => v.resolution === '720p' && v.downloadUrl === 'https://hubcloud.ist/drive/bc-720p-file') &&
+  extractedBcLinks.verified.some(v => v.resolution === '1080p' && v.downloadUrl === 'https://hubcloud.ist/drive/bc-1080p-file') &&
+  extractedBcLinks.skippedDuplicates.length === 0
+);
+
 console.log('='.repeat(75));
 console.log(`DUPLICATE DETECTION & INGESTION SAFEGUARDS SUITE: ${passed}/${total} PASSED`);
 console.log('='.repeat(75));

@@ -1,0 +1,112 @@
+{
+  "version": "1.0",
+  "lastUpdated": "2026-10-15T15:43:09.218Z",
+  "records": [
+    {
+      "id": "review-1792078989218-br4u8",
+      "queuedAt": "2026-10-15T15:43:09.218Z",
+      "candidate": {
+        "displayTitle": "VisionQuest (Season 1)",
+        "rawTitle": "&#xE02C; VisionQuest (Season 1) WEB-DL [Hindi (DD5.1) &#038; English] 4K 1080p 720p &#038; 480p [x264/10Bit-HEVC] | DisneyPlus Series | [EP-02 Added]",
+        "year": "",
+        "type": "Web Series",
+        "sourceUrl": "https://new7.hdhub4u.cl/visionquest-season-1-hindi-webrip-all-episodes/",
+        "provider": "HDHub4u"
+      },
+      "reason": "no_eligible_links",
+      "potentialMatches": [],
+      "status": "pending_review"
+    },
+    {
+      "id": "review-1792078989218-ecfhz",
+      "queuedAt": "2026-10-15T15:43:09.218Z",
+      "candidate": {
+        "displayTitle": "Papa's Friend (Season 1)",
+        "rawTitle": "&#xE02C; Papa&#8217;s Friend (Season 1) WEB-DL [Hindi 2.0] 1080p 720p &#038; 480p [x264/ESub] HD | ALL Episodes [Atrangii Series]",
+        "year": "",
+        "type": "Web Series",
+        "sourceUrl": "https://new7.hdhub4u.cl/papas-friend-season-1-hindi-webrip-all-episodes/",
+        "provider": "HDHub4u"
+      },
+      "reason": "no_eligible_links",
+      "potentialMatches": [],
+      "status": "pending_review"
+    },
+    {
+      "id": "review-1792078989218-pb1ce",
+      "queuedAt": "2026-10-15T15:43:09.218Z",
+      "candidate": {
+        "displayTitle": "Black Clover: Sword of the Wizard King",
+        "rawTitle": "&#xE02C; Black Clover: Sword of the Wizard King (2023) WEB-DL [Hindi (DD5.1) &#038; English] 1080p 720p &#038; 480p Dual Audio [x264/ESubs] | Full Movie",
+        "year": "2023",
+        "type": "Movie",
+        "sourceUrl": "https://new7.hdhub4u.cl/black-clover-sword-of-the-wizard-king-2023-webrip-hindi-full-movie/",
+        "provider": "HDHub4u"
+      },
+      "reason": "no_eligible_links",
+      "potentialMatches": [],
+      "status": "pending_review"
+    },
+    {
+      "id": "review-1792078989218-zeeig",
+      "queuedAt": "2026-10-15T15:43:09.218Z",
+      "candidate": {
+        "displayTitle": "Doomsday",
+        "rawTitle": "&#xE02C; Doomsday (2008) BluRay [Hindi (DD5.1) &#038; English] 1080p 720p &#038; 480p Dual Audio [x264] | Full Movie",
+        "year": "2008",
+        "type": "Movie",
+        "sourceUrl": "https://new7.hdhub4u.cl/doomsday-2008-hindi-bluray-full-movie/",
+        "provider": "HDHub4u"
+      },
+      "reason": "no_eligible_links",
+      "potentialMatches": [],
+      "status": "pending_review"
+    },
+    {
+      "id": "review-1792078989218-5nfn1",
+      "queuedAt": "2026-10-15T15:43:09.218Z",
+      "candidate": {
+        "displayTitle": "The Iron Giant",
+        "rawTitle": "&#xE02C; The Iron Giant (1999) BluRay [Hindi (DD2.0) &#038; English] 1080p 720p &#038; 480p Dual Audio [x264] | Full Movie",
+        "year": "1999",
+        "type": "Movie",
+        "sourceUrl": "https://new7.hdhub4u.cl/the-iron-giant-1999-hindi-bluray-full-movie/",
+        "provider": "HDHub4u"
+      },
+      "reason": "no_eligible_links",
+      "potentialMatches": [],
+      "status": "pending_review"
+    },
+    {
+      "id": "review-1792078989218-j92ey",
+      "queuedAt": "2026-10-15T15:43:09.218Z",
+      "candidate": {
+        "displayTitle": "The Raven",
+        "rawTitle": "&#xE02C; The Raven (2012) BluRay [Hindi (DD5.1) &#038; English] 1080p 720p &#038; 480p Dual Audio [x264] | Full Movie",
+        "year": "2012",
+        "type": "Movie",
+        "sourceUrl": "https://new7.hdhub4u.cl/the-raven-2012-hindi-bluray-full-movie/",
+        "provider": "HDHub4u"
+      },
+      "reason": "no_eligible_links",
+      "potentialMatches": [],
+      "status": "pending_review"
+    },
+    {
+      "id": "review-1792078989218-qyxov",
+      "queuedAt": "2026-10-15T15:43:09.218Z",
+      "candidate": {
+        "displayTitle": "The Royal Cat",
+        "rawTitle": "&#xE02C; The Royal Cat (2024) BluRay [Hindi (DD5.1) &#038; English] 1080p 720p &#038; 480p Dual Audio [x264] | Full Movie",
+        "year": "2024",
+        "type": "Movie",
+        "sourceUrl": "https://new7.hdhub4u.cl/the-royal-cat-2024-hindi-bluray-full-movie/",
+        "provider": "HDHub4u"
+      },
+      "reason": "no_eligible_links",
+      "potentialMatches": [],
+      "status": "pending_review"
+    }
+  ],
+  "totalPending": 7
+}

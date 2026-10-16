@@ -395,7 +395,7 @@ function extractAndVerifyCandidateLinks(item, providerName) {
 
     // Provider specific prefix rules (e.g. HDHub4u approved prefixes restriction)
     if (providerName && providerName.toLowerCase() === 'hdhub4u') {
-      if (!rawUrl.startsWith('https://hubdrive.pics/file/') && !rawUrl.startsWith('https://hblinks.lol/archives/')) {
+      if (!rawUrl.startsWith('https://hubdrive.pics/file/') && !rawUrl.startsWith('https://hblinks.lol/archives/') && !rawUrl.startsWith('https://hubcloud.ist/drive/')) {
         continue;
       }
     }

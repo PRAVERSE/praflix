@@ -13,6 +13,7 @@ credentials.json
 data/cache/
 data/backup_*/
 data/*.backup*.json
+backups/
 staging_v2/
 
 # Dependencies

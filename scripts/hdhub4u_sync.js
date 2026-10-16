@@ -348,7 +348,7 @@ function parseDetailPage(html, pageUrl) {
     const anchorText = lMatch[2].replace(/<[^>]+>/g, '').trim();
 
     // For HDHub4u, import only download URLs matching approved prefixes
-    if (!href.startsWith('https://hubdrive.pics/file/') && !href.startsWith('https://hblinks.lol/archives/')) {
+    if (!href.startsWith('https://hubdrive.pics/file/') && !href.startsWith('https://hblinks.lol/archives/') && !href.startsWith('https://hubcloud.ist/drive/')) {
       continue;
     }
 

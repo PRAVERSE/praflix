@@ -25,7 +25,8 @@ class HDHub4uAdapter extends BaseAdapter {
   filterEligibleDownloadLinks(urls = []) {
     return (urls || []).filter(u => u && typeof u === 'string' && (
       u.startsWith('https://hubdrive.pics/file/') ||
-      u.startsWith('https://hblinks.lol/archives/')
+      u.startsWith('https://hblinks.lol/archives/') ||
+      u.startsWith('https://hubcloud.ist/drive/')
     ));
   }
 
@@ -51,7 +52,7 @@ class HDHub4uAdapter extends BaseAdapter {
     while ((m = linkRegex.exec(html)) !== null) {
       const href = m[1].trim();
       const text = m[2].replace(/<[^>]+>/g, '').trim();
-      if (href.startsWith('https://hubdrive.pics/file/') || href.startsWith('https://hblinks.lol/archives/')) {
+      if (href.startsWith('https://hubdrive.pics/file/') || href.startsWith('https://hblinks.lol/archives/') || href.startsWith('https://hubcloud.ist/drive/')) {
         const val = this.validateLink({ downloadUrl: href, rawQuality: text }, pageUrl);
         const lower = text.toLowerCase();
         let quality = val.resolution || '1080p';
@@ -227,7 +228,7 @@ class HDHub4uAdapter extends BaseAdapter {
       const text = linkMatch[2].replace(/<[^>]+>/g, '').trim();
 
       // For HDHub4u, import only download URLs matching approved prefixes
-      if (!href.startsWith('https://hubdrive.pics/file/') && !href.startsWith('https://hblinks.lol/archives/')) {
+      if (!href.startsWith('https://hubdrive.pics/file/') && !href.startsWith('https://hblinks.lol/archives/') && !href.startsWith('https://hubcloud.ist/drive/')) {
         continue;
       }
 
