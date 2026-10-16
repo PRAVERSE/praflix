@@ -808,5 +808,185 @@
         "discoveredAt": "2026-10-15T04:01:02.792Z"
       }
     ]
+  },
+  {
+    "id": 1371600,
+    "source": "hdhub4u",
+    "sourceId": "src-hdhub4u-13716-0",
+    "displayTitle": "Jeet Ki Zid (2026) DS4K",
+    "originalSourceTitle": "&#xE02C; Jeet Ki Zid (2026) DS4K WEB-DL [Hindi DD5.1] 4K 1080p 720p &#038; 480p [x264/HEVC] | Full Movie",
+    "normalizedTitle": "jeet ki zid ds4k 2026",
+    "year": "2026",
+    "type": "Movie",
+    "season": null,
+    "sourceUrl": "https://new7.hdhub4u.cl/jeet-ki-zid-2026-hindi-webrip-full-movie/",
+    "sourcePosterUrl": "https://image.tmdb.org/t/p/w500/jmr0w0g2v7xHW14CexSAGIlSBuk.jpg",
+    "qualities": [
+      {
+        "link": "https://hubdrive.pics/file/2164371169",
+        "quality": "480p",
+        "rawText": "480p⚡[450MB]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/2225826895",
+        "quality": "720p",
+        "rawText": "720p HEVC [810MB]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/3052119358",
+        "quality": "1080p",
+        "rawText": "1080p HEVC [1.8GB]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/3414376544",
+        "quality": "4K",
+        "rawText": "4K [2160p SDR WEB-DL – 7GB]",
+        "isComplete": false
+      }
+    ],
+    "sightings": [
+      {
+        "surface": "hdhub4u_sync",
+        "discoveredAt": "2026-10-16T09:09:36.168Z"
+      }
+    ]
+  },
+  {
+    "id": 1371700,
+    "source": "hdhub4u",
+    "sourceId": "src-hdhub4u-13717-0",
+    "displayTitle": "Colony",
+    "originalSourceTitle": "&#xE02C; Colony (2026) WEB-DL [Hindi (DD2.0) &#038; English] 4K 1080p 720p &#038; 480p Dual Audio [x264/10Bit-HEVC] | Full Movie",
+    "normalizedTitle": "colony",
+    "year": "2026",
+    "type": "Movie",
+    "season": null,
+    "sourceUrl": "https://new7.hdhub4u.cl/colony-2026-hindi-webrip-full-movie/",
+    "sourcePosterUrl": "https://image.tmdb.org/t/p/w500/wC69brhk65GvrgNQdqLRUqtneUH.jpg",
+    "qualities": [
+      {
+        "link": "https://hubdrive.pics/file/2126447169",
+        "quality": "720p",
+        "rawText": "720p 10Bit HEVC [910MB]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/3267781935",
+        "quality": "1080p",
+        "rawText": "1080p 10Bit HEVC [2GB]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/8803273804",
+        "quality": "1080p",
+        "rawText": "1080p WEB-DL [9.2GB]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/21458322657",
+        "quality": "4K",
+        "rawText": "4K [2160p SDR WEB-DL – 18.3GB]",
+        "isComplete": false
+      }
+    ],
+    "sightings": [
+      {
+        "surface": "hdhub4u_sync",
+        "discoveredAt": "2026-10-16T09:09:36.168Z"
+      }
+    ]
+  },
+  {
+    "id": 1371800,
+    "source": "hdhub4u",
+    "sourceId": "src-hdhub4u-13718-0",
+    "displayTitle": "Jailer 2 (2026) V2 HQ-HDTC (",
+    "originalSourceTitle": "&#xE02C; Jailer 2 (2026) V2 HQ-HDTC [Hindi-Tamil-Telugu-Kannada] (LiNE) 1080p 720p &#038; 480p Multi Audio [x264/HEVC] | Full Movie",
+    "normalizedTitle": "jailer 2 v2 hq hdtc 2026",
+    "year": "2026",
+    "type": "Movie",
+    "season": null,
+    "sourceUrl": "https://new7.hdhub4u.cl/jailer-2-2026-hindi-line-v2-hdtc-full-movie/",
+    "sourcePosterUrl": "https://image.tmdb.org/t/p/w500/qp3n8sYBrYCueo6uYKXafRAwfP0.jpg",
+    "qualities": [
+      {
+        "link": "https://hubdrive.pics/file/1912649807",
+        "quality": "720p",
+        "rawText": "[SAMPLE]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/2680189836",
+        "quality": "720p",
+        "rawText": "720p HEVC [1.1GB]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/4521596623",
+        "quality": "1080p",
+        "rawText": "1080p HEVC [2.7GB]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/7998721712",
+        "quality": "1080p",
+        "rawText": "HQ-Rip 1080p [12.1GB]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/22598238405",
+        "quality": "1080p",
+        "rawText": "HQ 1080p [23.1GB]",
+        "isComplete": false
+      }
+    ],
+    "sightings": [
+      {
+        "surface": "hdhub4u_sync",
+        "discoveredAt": "2026-10-16T09:09:36.168Z"
+      }
+    ]
+  },
+  {
+    "id": 1371900,
+    "source": "hdhub4u",
+    "sourceId": "src-hdhub4u-13719-0",
+    "displayTitle": "Jihne Mera Ghar Patteya",
+    "originalSourceTitle": "&#xE02C; Jihne Mera Ghar Patteya (2026) WEB-DL [Punjabi DD5.1] 4K 1080p 720p &#038; 480p [x264/ESubs] | Full Movie",
+    "normalizedTitle": "jihne mera ghar patteya",
+    "year": "2026",
+    "type": "Movie",
+    "season": null,
+    "sourceUrl": "https://new7.hdhub4u.cl/jihne-mera-ghar-patteya-2026-webrip-punjabi-full-movie/",
+    "sourcePosterUrl": "https://catimages.org/images/2026/10/15/Jihne-Mera-Ghar-Patteya-Poster.png",
+    "qualities": [
+      {
+        "link": "https://hubdrive.pics/file/1997586148",
+        "quality": "480p",
+        "rawText": "480p⚡[330MB]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/3680820151",
+        "quality": "1080p",
+        "rawText": "1080p WEB-DL [3.7GB]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/8088385638",
+        "quality": "4K",
+        "rawText": "4K [2160p SDR WEB-DL – 10.1GB]",
+        "isComplete": false
+      }
+    ],
+    "sightings": [
+      {
+        "surface": "hdhub4u_sync",
+        "discoveredAt": "2026-10-16T09:09:36.168Z"
+      }
+    ]
   }
 ]
