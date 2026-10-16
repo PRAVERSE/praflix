@@ -30,7 +30,10 @@
       },
       "reason": "no_eligible_links",
       "potentialMatches": [],
-      "status": "pending_review"
+      "status": "resolved",
+      "resolvedAt": "2026-10-16T17:38:39.365Z",
+      "resolution": "imported_with_verified_hubdrive_and_hubcloud_destinations",
+      "canonicalId": 13723
     },
     {
       "id": "review-1792078989218-pb1ce",

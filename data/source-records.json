@@ -1111,5 +1111,101 @@
         "discoveredAt": "2026-10-16T14:19:42.236Z"
       }
     ]
+  },
+  {
+    "id": 1372300,
+    "source": "hdhub4u",
+    "sourceId": "src-hdhub4u-13723-0",
+    "displayTitle": "Papa's Friend (Season 1)",
+    "originalSourceTitle": "Papa's Friend (Season 1) WEB-DL [Hindi 2.0] 1080p 720p & 480p [x264/ESub] HD | ALL Episodes [Atrangii Series]",
+    "normalizedTitle": "papa's friend season 1",
+    "year": "2024",
+    "type": "Web Series",
+    "season": "Season 1",
+    "sourceUrl": "https://new7.hdhub4u.cl/papas-friend-season-1-hindi-webrip-all-episodes/",
+    "sourcePosterUrl": "https://catimages.org/images/2026/10/12/Papas-Friend-Season-1-Hindi-HDRip-Full-Series-HDHub4u.Ms.jpg",
+    "qualities": [
+      {
+        "link": "https://hubdrive.pics/file/2174160177",
+        "quality": "480p",
+        "rawText": "COMPLETE SEASON (E01-E06) - 480p [458MB]",
+        "isComplete": true
+      },
+      {
+        "link": "https://hubcloud.ist/drive/7tgm3fkoinnivr7",
+        "quality": "480p",
+        "rawText": "COMPLETE SEASON (E01-E06) - 480p [HubCloud 458MB]",
+        "isComplete": true
+      },
+      {
+        "link": "https://hubdrive.pics/file/1927603662",
+        "quality": "720p",
+        "rawText": "COMPLETE SEASON (E01-E06) - 720p [1.1GB]",
+        "isComplete": true
+      },
+      {
+        "link": "https://hubcloud.ist/drive/d17keuk6mk6m8ss",
+        "quality": "720p",
+        "rawText": "COMPLETE SEASON (E01-E06) - 720p [HubCloud 1.1GB]",
+        "isComplete": true
+      },
+      {
+        "link": "https://hubdrive.pics/file/2593093836",
+        "quality": "1080p",
+        "rawText": "COMPLETE SEASON (E01-E06) - 1080p [2.49GB]",
+        "isComplete": true
+      },
+      {
+        "link": "https://hubcloud.ist/drive/ehkgbtqzh7m9k99",
+        "quality": "1080p",
+        "rawText": "COMPLETE SEASON (E01-E06) - 1080p [HubCloud 2.49GB]",
+        "isComplete": true
+      },
+      {
+        "link": "https://hubdrive.pics/file/3740048806",
+        "quality": "1080p",
+        "rawText": "COMPLETE SEASON (E01-E06) - 1080p ATRANGi WEB-DL [3.2GB]",
+        "isComplete": true
+      }
+    ],
+    "sightings": [
+      {
+        "surface": "hdhub4u_sync",
+        "discoveredAt": "2026-10-16T17:38:39.365Z"
+      }
+    ]
+  },
+  {
+    "id": 1372400,
+    "source": "hdhub4u",
+    "sourceId": "src-hdhub4u-13724-0",
+    "displayTitle": "Star Wars: Episode II - Attack of the Clones",
+    "originalSourceTitle": "Star Wars: Episode II - Attack of the Clones (2002) BluRay [Hindi (DD5.1) & English] 1080p Dual Audio [x264/ESubs] | Full Movie",
+    "normalizedTitle": "star wars episode ii attack of the clones",
+    "year": "2002",
+    "type": "Movie",
+    "season": null,
+    "sourceUrl": "https://new8.hdhub4u.cl/star-wars-episode-ii-attack-of-the-clones-2002-dual-audio-movie/",
+    "sourcePosterUrl": "https://imgshare.info/images/2026/10/15/Star-Wars-Episode-II---Attack-of-the-Clones-2002.jpg",
+    "qualities": [
+      {
+        "link": "https://hubdrive.pics/file/3669666127",
+        "quality": "1080p",
+        "rawText": "1080p BluRay [Hindi (DD5.1) & English] [2.57GB]",
+        "isComplete": true
+      },
+      {
+        "link": "https://hubcloud.ist/drive/fz5hveyl0znvnxl",
+        "quality": "1080p",
+        "rawText": "1080p BluRay [Hindi (DD5.1) & English] [HubCloud 2.57GB]",
+        "isComplete": true
+      }
+    ],
+    "sightings": [
+      {
+        "surface": "hdhub4u_sync",
+        "discoveredAt": "2026-10-16T17:42:55.204Z"
+      }
+    ]
   }
 ]

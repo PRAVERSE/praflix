@@ -12719,7 +12719,6 @@ MOVIES
 - Air Collision 2012 300Mb Hindi Dual Audio 480p BluRay
 - Bhai 2013 Hindi Dual Audio 480p HDRip 400MB
 - Do Lafzon Ki Kahani 2016 Hindi Movie 720p HDRip 850Mb
-
 WEB SERIES
 - MobLand (Season 2) WEB-DL [Hindi (2.0) & English] 4K 1080p 720p & 480p [x264/10Bit-HEVC] | Paramount+ Series | [EP-03 Added]
 - The Traitors (Season 2) WEB-DL Hindi [DD5.1] 4K 1080p 720p & 480p [x264/ESubs] | AMZN Series | ALL EPiSODES [Reunion Episode Added]
@@ -14494,7 +14493,6 @@ WEB SERIES
 - Below (Season 1) WEB-DL [Hindi (DD5.1) & English] 4K 1080p 720p & 480p Dual Audio [x264/10Bit-HEVC] | [ALL Episodes] | NF Series
 - Khalifa (2026) DS4K WEB-DL [Hindi (DD5.1) & Malayalam] 4K 1080p 720p & 480p Dual Audio [x264/10Bit-HEVC] | Full Movie
 - Epic - First Semester (2026) DS4K WEB-DL [Hindi (DD5.1) & Telugu] 4K 1080p 720p & 480p Dual Audio [x264/10Bit-HEVC] | Full Movie
-
 ==================================================
 RECONCILIATION SUMMARY [2026-10-10]
 ==================================================
@@ -15575,3 +15573,5 @@ RECONCILIATION SUMMARY [2026-10-10]
 16/10/26 Black Clover: Sword of the Wizard King
 16/10/26 Aasha
 16/10/26 Masterplan
+16/10/26 Papa's Friend (Season 1)
+16/10/26 Star Wars: Episode II - Attack of the Clones
