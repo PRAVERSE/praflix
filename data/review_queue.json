@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "lastUpdated": "2026-10-15T15:43:09.218Z",
+  "lastUpdated": "2026-10-16T15:21:21.869Z",
   "records": [
     {
       "id": "review-1792078989218-br4u8",
@@ -108,6 +108,23 @@
       },
       "reason": "no_eligible_links",
       "potentialMatches": [],
+      "status": "pending_review"
+    },
+    {
+      "id": "review-1792164081869-z9q30",
+      "queuedAt": "2026-10-16T15:21:21.869Z",
+      "candidate": {
+        "title": "&#xE02C; Doomsday (2008) BluRay [Hindi (DD5.1) &#038; English] 1080p 720p &#038; 480p Dual Audio [x264] | Full Movie",
+        "url": "https://new8.hdhub4u.cl/doomsday-2008-hindi-bluray-full-movie/"
+      },
+      "reason": "year_discrepancy_uncertain: candidate year \"2008\" vs existing \"2015\"",
+      "potentialMatches": [
+        {
+          "id": 7586,
+          "title": "Doomsday",
+          "year": "2015"
+        }
+      ],
       "status": "pending_review"
     }
   ],
