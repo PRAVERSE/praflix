@@ -295,19 +295,19 @@ check(18, "South Indian tab returns matching regional South cinema records",
   `(${southResults.length} South Indian titles)`
 );
 
-// Netflix Platform verification: 170 titles
+// Netflix Platform verification: at least 171 titles (including Black Clover 2023)
 const netflixFilters = { ...defaultFilters, platform: 'Netflix' };
 const netflixResults = filterCatalog(netflixFilters);
 check(19, "Netflix tab returns matching Netflix platform titles",
-  netflixResults.length === 170,
+  netflixResults.length >= 171 && netflixResults.every(r => isPlatformMatch(r, 'Netflix')),
   `(${netflixResults.length} Netflix titles)`
 );
 
-// Prime Video Platform verification: 16 titles
+// Prime Video Platform verification: at least 16 titles
 const primeFilters = { ...defaultFilters, platform: 'Prime Video' };
 const primeResults = filterCatalog(primeFilters);
 check(20, "Prime Video tab returns matching Prime Video platform titles",
-  primeResults.length === 16,
+  primeResults.length >= 16 && primeResults.every(r => isPlatformMatch(r, 'Prime Video')),
   `(${primeResults.length} Prime Video titles)`
 );
 

@@ -1027,5 +1027,89 @@
         "discoveredAt": "2026-10-16T11:09:46.222Z"
       }
     ]
+  },
+  {
+    "id": 1372100,
+    "source": "hdhub4u",
+    "sourceId": "src-hdhub4u-13721-0",
+    "displayTitle": "Aasha",
+    "originalSourceTitle": "Aasha (2026) DS4K WEB-DL [Hindi (2.0) & Malayalam] 4K 1080p 720p & 480p Dual Audio [x264/10Bit-HEVC] | Full Movie",
+    "normalizedTitle": "aasha",
+    "year": "2026",
+    "type": "Movie",
+    "season": null,
+    "sourceUrl": "https://new8.hdhub4u.cl/aasha-2026-hindi-webrip-full-movie/",
+    "sourcePosterUrl": "https://image.tmdb.org/t/p/w500/tPlPfH9dQLgm6utCw4BAQJnZ5ZZ.jpg",
+    "qualities": [
+      {
+        "link": "https://hubdrive.pics/file/2431129839",
+        "quality": "720p",
+        "rawText": "720p 10Bit HEVC [930MB]",
+        "isComplete": true
+      },
+      {
+        "link": "https://hubdrive.pics/file/2865356813",
+        "quality": "1080p",
+        "rawText": "1080p 10Bit HEVC [2GB]",
+        "isComplete": true
+      },
+      {
+        "link": "https://hubdrive.pics/file/2712984047",
+        "quality": "4K",
+        "rawText": "4K [2160p SDR WEB-DL – 3.8GB]",
+        "isComplete": true
+      }
+    ],
+    "sightings": [
+      {
+        "surface": "hdhub4u_sync",
+        "discoveredAt": "2026-10-16T14:19:42.236Z"
+      }
+    ]
+  },
+  {
+    "id": 1372200,
+    "source": "hdhub4u",
+    "sourceId": "src-hdhub4u-13722-0",
+    "displayTitle": "Masterplan",
+    "originalSourceTitle": "Masterplan (2026) WEB-DL [Hindi (DD5.1) & English] 4K 1080p 720p & 480p Dual Audio [x264/10Bit-HEVC] | Full Movie",
+    "normalizedTitle": "masterplan",
+    "year": "2026",
+    "type": "Movie",
+    "season": null,
+    "sourceUrl": "https://new8.hdhub4u.cl/masterplan-2026-hindi-webrip-full-movie/",
+    "sourcePosterUrl": "https://image.tmdb.org/t/p/w500/5xmXVd7nCK3tAo34XkO58SxUCip.jpg",
+    "qualities": [
+      {
+        "link": "https://hubdrive.pics/file/2588279170",
+        "quality": "720p",
+        "rawText": "720p 10Bit HEVC [830MB]",
+        "isComplete": true
+      },
+      {
+        "link": "https://hubdrive.pics/file/1849696875",
+        "quality": "1080p",
+        "rawText": "1080p 10Bit HEVC [1.8GB]",
+        "isComplete": true
+      },
+      {
+        "link": "https://hubdrive.pics/file/2459025584",
+        "quality": "1080p",
+        "rawText": "1080p WEB-DL [8.7GB]",
+        "isComplete": true
+      },
+      {
+        "link": "https://hubdrive.pics/file/13575521701",
+        "quality": "4K",
+        "rawText": "4K [2160p SDR WEB-DL – 13.1GB]",
+        "isComplete": true
+      }
+    ],
+    "sightings": [
+      {
+        "surface": "hdhub4u_sync",
+        "discoveredAt": "2026-10-16T14:19:42.236Z"
+      }
+    ]
   }
 ]

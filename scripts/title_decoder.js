@@ -130,7 +130,7 @@ function cleanTitle(rawTitle) {
     .replace(/\[https?:\/\/[^\]]+\]/gi, ' ')
     .replace(/\|.*$/g, '')
     .replace(/\[(all\s*episodes|nf\s*series|full\s*movie|full\s*show|exclusively\s*on\s*[^\]]+)\]/gi, '')
-    .replace(/\b(1080p|720p|480p|4k|2160p|web-?dl|webrip|bluray|hdr|hevc|x264|x265|dd5\.1|dd2\.0|clean|clean-audio|line|esubs?|hc-esubs?|dual\s*audio)\b.*/gi, '')
+    .replace(/\b(1080p|720p|480p|4k|2160p|ds-?4k|ds4k|web-?dl|webrip|bluray|hdr|hevc|x264|x265|dd5\.1|dd2\.0|clean|clean-audio|line|esubs?|hc-esubs?|dual\s*audio|hdtc|hq-hdtc|hdts|predvd|dvdrip|v\d+)\b.*/gi, '')
     .replace(/\[.*?\]/g, '')
     .replace(/\s+/g, ' ')
     .replace(/^[-–—:\s]+/, '')
