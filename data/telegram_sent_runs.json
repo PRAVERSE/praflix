@@ -118,5 +118,13 @@
     "newTitlesCount": 0,
     "existingUpdatedCount": 0,
     "deploymentStatus": "Confirmed successful"
+  },
+  "HDHub4u_2026-10-17_run_38999636574_13725": {
+    "sent": true,
+    "sentAt": "2026-10-17T03:41:08.829Z",
+    "provider": "HDHub4u",
+    "newTitlesCount": 1,
+    "existingUpdatedCount": 0,
+    "deploymentStatus": "Confirmed successful"
   }
 }
