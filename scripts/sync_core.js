@@ -1121,6 +1121,7 @@ async function syncProvider(providerName, catalog, sourceRecords, options = {}) 
           originalSourceTitle: item.originalSourceTitle,
           year: item.year || '',
           type: item.type || 'Movie',
+          dateAdded: new Date().toISOString(),
           season: isSeries ? (item.season || 'Season 1') : null,
           poster: item.sourcePosterUrl || 'assets/posters/fallback.svg',
           sourceUrl: item.sourceUrl,

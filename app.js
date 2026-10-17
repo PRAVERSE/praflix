@@ -146,16 +146,18 @@
    */
   function hasRealPoster(item) {
     if (!item) return false;
+    // Priority: newly added movies must appear on Page 1 (Section 1) regardless of release year
+    if (item.type === 'Movie' && item.dateAdded) {
+      return true;
+    }
     // Primary: use the build-time Set embedded in poster-valid-ids.js
     const validSet = window.PRAFLIX_POSTER_VALID_IDS;
     if (validSet instanceof Set) {
-      return validSet.has(item.canonicalId);
-    }
-    if (Array.isArray(validSet)) {
-      return validSet.includes(item.canonicalId);
-    }
-    if (validSet && typeof validSet.has === 'function') {
-      return validSet.has(item.canonicalId);
+      if (validSet.has(item.canonicalId)) return true;
+    } else if (Array.isArray(validSet)) {
+      if (validSet.includes(item.canonicalId)) return true;
+    } else if (validSet && typeof validSet.has === 'function') {
+      if (validSet.has(item.canonicalId)) return true;
     }
     // Fallback: trust confirmed local or remote poster paths (excluding fallback SVG)
     const p = String(item.poster || '').trim();
@@ -165,6 +167,64 @@
       p !== FALLBACK_POSTER &&
       (p.startsWith('assets/posters/') || p.startsWith('https://') || p.startsWith('http://'))
     );
+  }
+
+  /**
+   * Newly Added Movie Detection
+   * Evaluates if item is a genuinely new movie with a valid addition timestamp.
+   *
+   * @param {Object} item
+   * @returns {boolean}
+   */
+  function isNewlyAddedMovie(item) {
+    return Boolean(
+      item &&
+      item.type === 'Movie' &&
+      item.dateAdded &&
+      !isNaN(Date.parse(item.dateAdded))
+    );
+  }
+
+  /**
+   * Default release-year descending comparator:
+   * 1. Newly added movies, ordered by addition timestamp, newest first.
+   * 2. All other movies & titles, retaining existing newest-release-first sorting.
+   * 3. For equal timestamps or missing timestamps, deterministic tie-breaker.
+   *
+   * @param {Object} a
+   * @param {Object} b
+   * @returns {number}
+   */
+  function yearDescComparator(a, b) {
+    const isNewA = isNewlyAddedMovie(a);
+    const isNewB = isNewlyAddedMovie(b);
+
+    if (isNewA && isNewB) {
+      const timeA = Date.parse(a.dateAdded);
+      const timeB = Date.parse(b.dateAdded);
+      if (timeB !== timeA) return timeB - timeA;
+      // Deterministic tie-breaker for equal timestamps:
+      const yA = parseInt(a.year || '0', 10) || 0;
+      const yB = parseInt(b.year || '0', 10) || 0;
+      if (yB !== yA) return yB - yA;
+      const titleCmp = (a.displayTitle || '').localeCompare(b.displayTitle || '', undefined, { sensitivity: 'base' });
+      if (titleCmp !== 0) return titleCmp;
+      return Number(a.canonicalId || 0) - Number(b.canonicalId || 0);
+    }
+
+    if (isNewA && !isNewB) return -1;
+    if (!isNewA && isNewB) return 1;
+
+    // Neither is a newly added movie: retain existing newest-release-first sorting
+    const yA = parseInt(a.year || '0', 10) || 0;
+    const yB = parseInt(b.year || '0', 10) || 0;
+    if (yB !== yA) return yB - yA;
+    const tA = (a.type === 'Movie') ? 0 : 1;
+    const tB = (b.type === 'Movie') ? 0 : 1;
+    if (tA !== tB) return tA - tB;
+    const titleCmp = (a.displayTitle || '').localeCompare(b.displayTitle || '', undefined, { sensitivity: 'base' });
+    if (titleCmp !== 0) return titleCmp;
+    return Number(a.canonicalId || 0) - Number(b.canonicalId || 0);
   }
 
   /**
@@ -980,25 +1040,22 @@
       }
     }
 
-    // Default release-year descending comparator:
-    // 1. Release year descending (numeric years newest to oldest; unspecified/missing year = 0 at end)
-    // 2. Content Type: Movies first (0), Web Series second (1)
-    // 3. Alphabetical by displayTitle
-    const yearDescComparator = (a, b) => {
-      const yA = parseInt(a.year || '0', 10) || 0;
-      const yB = parseInt(b.year || '0', 10) || 0;
-      if (yB !== yA) return yB - yA;
-      const tA = (a.type === 'Movie') ? 0 : 1;
-      const tB = (b.type === 'Movie') ? 0 : 1;
-      if (tA !== tB) return tA - tB;
-      return (a.displayTitle || '').localeCompare(b.displayTitle || '', undefined, { sensitivity: 'base' });
-    };
-
     const orderMap = window.PRAFLIX_POSTER_ORDER_MAP;
 
     if (sort === 'year-desc') {
       if (orderMap && orderMap.size > 0) {
         posterItems.sort((a, b) => {
+          const isNewA = isNewlyAddedMovie(a);
+          const isNewB = isNewlyAddedMovie(b);
+          if (isNewA && isNewB) {
+            const timeA = Date.parse(a.dateAdded);
+            const timeB = Date.parse(b.dateAdded);
+            if (timeB !== timeA) return timeB - timeA;
+            return yearDescComparator(a, b);
+          }
+          if (isNewA && !isNewB) return -1;
+          if (!isNewA && isNewB) return 1;
+
           const rA = orderMap.get(a.canonicalId);
           const rB = orderMap.get(b.canonicalId);
           if (rA !== undefined && rB !== undefined) return rA - rB;
@@ -2258,10 +2315,28 @@
     });
   }
 
+  // Expose comparator and helpers for test suites and node environments
+  if (typeof window !== 'undefined') {
+    window.PRAFLIX_SORT = {
+      isNewlyAddedMovie,
+      yearDescComparator,
+      hasRealPoster
+    };
+  }
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+      isNewlyAddedMovie,
+      yearDescComparator,
+      hasRealPoster
+    };
+  }
+
   // Start app on DOMContentLoaded
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
   }
 })();

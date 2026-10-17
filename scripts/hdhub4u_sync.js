@@ -1020,6 +1020,7 @@ async function runHDHub4uSync(options = {}) {
         normalizedTitle: primaryItem.normalizedTitle,
         year: primaryItem.year || '',
         type: primaryItem.type,
+        dateAdded: nowIso,
         season: isSeries ? (primaryItem.season || 'Season 1') : null,
         episodeStatus: null,
         genres: [isSeries ? 'Web Series' : 'Cinema'],
