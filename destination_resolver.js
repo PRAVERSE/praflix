@@ -70,6 +70,7 @@
       if (host.includes('hdhub4u.free') || host.includes('hdhub4u.ms') || host.includes('hdhub4u.tv') || host.includes('hdhub4u.lat')) return true;
       if (host.includes('10moviez.biz')) return true;
       if (host.includes('hdwall.xyz') && (parsed.pathname.endsWith('.html') || parsed.pathname.includes('/posts/'))) return true;
+      if (host.includes('multishows.top')) return true;
       // Slugs resembling informational article pages
       if (/\/(free-[a-z0-9-]+|[\w-]+-(?:full-movie|all-episodes|web-series|full-series))\/?$/i.test(parsed.pathname)) {
         if (!host.includes('hubdrive') && !host.includes('hubcdn') && !host.includes('hubcloud') && !host.includes('filesdl') && !host.includes('hblinks')) {

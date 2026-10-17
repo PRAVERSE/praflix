@@ -163,18 +163,21 @@ async function runTests() {
   const storageCheck = resolver.classifyLinkVerification('https://gdflix.dev/file/test_abc123', 'https://multishows.top');
   check(19, 'Direct GDFlix storage links classified as verified', storageCheck.status === 'verified');
 
+  const sourceArticleCheck = resolver.classifyLinkVerification('https://multishows.top/movie/pushpa-2-the-rule-2024');
+  check(20, 'MultiShows source article page rejected as direct download destination', sourceArticleCheck.status === 'broken' && sourceArticleCheck.evidence === 'source_article_url');
+
   // ---------------------------------------------------------------------------
   // 7. MultiShows scan failures/challenges are NOT treated as successful zero-results
   // ---------------------------------------------------------------------------
   const blockedRes = await adapter.queryMatchingFallback({ displayTitle: 'Alien Earth' }, {
     multishowsOptions: { mockFailure: { status: 'blocked', error: 'HTTP 403 Cloudflare' } }
   });
-  check(20, 'Anti-bot challenge/403 reported as blocked and NOT success', blockedRes.success === false && blockedRes.status === 'blocked');
+  check(21, 'Anti-bot challenge/403 reported as blocked and NOT success', blockedRes.success === false && blockedRes.status === 'blocked');
 
   const timeoutRes = await adapter.queryMatchingFallback({ displayTitle: 'Alien Earth' }, {
     multishowsOptions: { mockFailure: { status: 'timeout', error: 'AbortError: timeout' } }
   });
-  check(21, 'Network timeout reported as timeout and NOT success', timeoutRes.success === false && timeoutRes.status === 'timeout');
+  check(22, 'Network timeout reported as timeout and NOT success', timeoutRes.success === false && timeoutRes.status === 'timeout');
 
   // ---------------------------------------------------------------------------
   // 8. End-to-end conditional queryMatchingFallback simulation
@@ -215,13 +218,13 @@ async function runTests() {
     }
   );
 
-  check(22, 'Successful MultiShows fallback produces verifiedLinks',
+  check(23, 'Successful MultiShows fallback produces verifiedLinks',
     fallbackResult.success === true && fallbackResult.status === 'links_found' && fallbackResult.verifiedLinks.length === 2
   );
-  check(23, 'Provider attribution on fallback links is MultiShows',
+  check(24, 'Provider attribution on fallback links is MultiShows',
     fallbackResult.verifiedLinks.every(vl => vl.provider === 'MultiShows')
   );
-  check(24, 'Exact source URL preserved without alteration',
+  check(25, 'Exact source URL preserved without alteration',
     fallbackResult.sourceUrl === 'https://multishows.top/movie/pushpa-2-the-rule-2024'
   );
 
@@ -229,12 +232,12 @@ async function runTests() {
   // 9. Existing-title safeguards & Provider Registry isolation
   // ---------------------------------------------------------------------------
   const registeredMs = providerRegistry.getProvider('multishows');
-  check(25, 'MultiShows registered in provider registry', Boolean(registeredMs && registeredMs.id === 'multishows'));
-  check(26, 'MultiShows marked as isFallbackOnly and active: false', registeredMs.isFallbackOnly === true && registeredMs.active === false);
+  check(26, 'MultiShows registered in provider registry', Boolean(registeredMs && registeredMs.id === 'multishows'));
+  check(27, 'MultiShows marked as isFallbackOnly and active: false', registeredMs.isFallbackOnly === true && registeredMs.active === false);
 
   const retired10m = providerRegistry.getProvider('10moviez');
   const retiredHdw = providerRegistry.getProvider('hdwall');
-  check(27, 'Retired providers remain strictly disabled (10Moviez and HDWall)',
+  check(28, 'Retired providers remain strictly disabled (10Moviez and HDWall)',
     retired10m.status === 'retired' && retired10m.active === false &&
     retiredHdw.status === 'retired' && retiredHdw.active === false
   );
