@@ -1,47 +1,156 @@
 {
-  "syncTimestamp": "2026-10-16T15:21:21.225Z",
+  "syncTimestamp": "2026-10-17T03:40:19.171Z",
   "liveCrawl": {
     "attempted": true,
     "liveReachable": true,
     "succeeded": true,
     "interrupted": false,
     "liveDiscoveredCount": 55,
-    "newlyDiscoveredCount": 15,
+    "newlyDiscoveredCount": 13,
     "error": null
   },
   "durableSnapshot": {
     "loaded": true,
-    "recordCount": 14515,
-    "moviesCount": 12740,
+    "recordCount": 14516,
+    "moviesCount": 12741,
     "webSeriesCount": 1775,
     "source": "hdhub4u_catalog_complete.json",
     "preserved": true
   },
   "metrics": {
     "totalDiscovered": 14492,
-    "uniqueMovies": 12717,
-    "uniqueWebSeries": 1775,
-    "alreadyPresentInCatalog": 12016,
-    "newlyAddedToCatalog": 0,
-    "newlyAddedMovies": 0,
+    "uniqueMovies": 12723,
+    "uniqueWebSeries": 1769,
+    "alreadyPresentInCatalog": 12018,
+    "newlyAddedToCatalog": 1,
+    "newlyAddedMovies": 1,
     "newlyAddedSeries": 0,
-    "newlyDiscoveredLive": 15,
+    "newlyDiscoveredLive": 13,
     "existingUpdatedWithLinks": 0,
     "duplicatesPrevented": 43230,
-    "ambiguousTitlesCount": 1,
-    "downloadOptionsCollected": 41363,
-    "destinationsVerified": 41130,
+    "ambiguousTitlesCount": 0,
+    "downloadOptionsCollected": 41368,
+    "destinationsVerified": 41135,
     "destinationsBroken": 126,
     "destinationsTemporarilyUnavailable": 0,
     "destinationsUnverified": 107,
-    "titlesWithDownloads": 4840,
-    "titlesWithoutDownloads": 8,
-    "incompleteTitlesCount": 8
+    "titlesWithDownloads": 4841,
+    "titlesWithoutDownloads": 6,
+    "incompleteTitlesCount": 6
   },
-  "newlyAddedTitles": [],
-  "newlyAddedCanonicalItems": [],
+  "newlyAddedTitles": [
+    {
+      "canonicalId": 13725,
+      "title": "Prahaar",
+      "displayTitle": "Prahaar",
+      "year": "2026",
+      "type": "Movie",
+      "provider": "HDHub4u"
+    }
+  ],
+  "newlyAddedCanonicalItems": [
+    {
+      "id": "praflix-13725",
+      "canonicalId": 13725,
+      "displayTitle": "Prahaar",
+      "originalSourceTitle": "&#xE02C; Prahaar (2026) HQ-HDTC Hindi (CLEAN) 1080p 720p &#038; 480p [x264/HEVC] | Full Movie",
+      "normalizedTitle": "prahaar",
+      "year": "2026",
+      "type": "Movie",
+      "season": null,
+      "episodeStatus": null,
+      "genres": [
+        "Cinema"
+      ],
+      "languages": [
+        "Hindi"
+      ],
+      "audioTracks": [
+        "DD 5.1"
+      ],
+      "audio": "DD 5.1",
+      "platform": null,
+      "platforms": [],
+      "releaseType": "WEB-DL",
+      "poster": "https://image.tmdb.org/t/p/w500/kiLxv4HlFDGxV8j95vbjJAgbXKl.jpg",
+      "sourcePosterUrl": "https://image.tmdb.org/t/p/w500/kiLxv4HlFDGxV8j95vbjJAgbXKl.jpg",
+      "qualities": [
+        "720p",
+        "1080p"
+      ],
+      "variantCount": 1,
+      "variants": [
+        {
+          "sourceId": 1372500,
+          "sourceUrl": "https://new8.hdhub4u.cl/prahaar-2026-hindi-hdtc-full-movie/",
+          "source": "hdhub4u",
+          "originalSourceTitle": "&#xE02C; Prahaar (2026) HQ-HDTC Hindi (CLEAN) 1080p 720p &#038; 480p [x264/HEVC] | Full Movie",
+          "languages": [
+            "Hindi"
+          ],
+          "qualities": [
+            {
+              "resolution": "720p",
+              "label": "720p"
+            },
+            {
+              "resolution": "720p",
+              "label": "720p"
+            },
+            {
+              "resolution": "1080p",
+              "label": "1080p"
+            },
+            {
+              "resolution": "1080p",
+              "label": "1080p"
+            },
+            {
+              "resolution": "1080p",
+              "label": "1080p"
+            }
+          ],
+          "releaseType": "WEB-DL",
+          "audio": "DD 5.1",
+          "poster": "https://image.tmdb.org/t/p/w500/kiLxv4HlFDGxV8j95vbjJAgbXKl.jpg"
+        }
+      ],
+      "status": "active"
+    }
+  ],
   "existingTitlesUpdated": [],
-  "newProviderLinks": [],
+  "newProviderLinks": [
+    {
+      "canonicalId": 13725,
+      "provider": "HDHub4u",
+      "downloadUrl": "https://hubdrive.pics/file/1802460804",
+      "resolution": "720p"
+    },
+    {
+      "canonicalId": 13725,
+      "provider": "HDHub4u",
+      "downloadUrl": "https://hubdrive.pics/file/2068485246",
+      "resolution": "720p"
+    },
+    {
+      "canonicalId": 13725,
+      "provider": "HDHub4u",
+      "downloadUrl": "https://hubdrive.pics/file/2521079212",
+      "resolution": "1080p"
+    },
+    {
+      "canonicalId": 13725,
+      "provider": "HDHub4u",
+      "downloadUrl": "https://hubdrive.pics/file/7518749018",
+      "resolution": "1080p"
+    },
+    {
+      "canonicalId": 13725,
+      "provider": "HDHub4u",
+      "downloadUrl": "https://hubdrive.pics/file/17005597974",
+      "resolution": "1080p"
+    }
+  ],
   "duplicateLinksSkipped": [
     {
       "canonicalId": 9379,
@@ -72953,6 +73062,48 @@
       "canonicalId": 13719,
       "provider": "HDHub4u",
       "downloadUrl": "https://hubdrive.pics/file/8088385638",
+      "reason": "duplicate_link_url_preserved_existing"
+    },
+    {
+      "canonicalId": 13721,
+      "provider": "HDHub4u",
+      "downloadUrl": "https://hubdrive.pics/file/2431129839",
+      "reason": "duplicate_link_url_preserved_existing"
+    },
+    {
+      "canonicalId": 13721,
+      "provider": "HDHub4u",
+      "downloadUrl": "https://hubdrive.pics/file/2865356813",
+      "reason": "duplicate_link_url_preserved_existing"
+    },
+    {
+      "canonicalId": 13721,
+      "provider": "HDHub4u",
+      "downloadUrl": "https://hubdrive.pics/file/2712984047",
+      "reason": "duplicate_link_url_preserved_existing"
+    },
+    {
+      "canonicalId": 13722,
+      "provider": "HDHub4u",
+      "downloadUrl": "https://hubdrive.pics/file/2588279170",
+      "reason": "duplicate_link_url_preserved_existing"
+    },
+    {
+      "canonicalId": 13722,
+      "provider": "HDHub4u",
+      "downloadUrl": "https://hubdrive.pics/file/1849696875",
+      "reason": "duplicate_link_url_preserved_existing"
+    },
+    {
+      "canonicalId": 13722,
+      "provider": "HDHub4u",
+      "downloadUrl": "https://hubdrive.pics/file/2459025584",
+      "reason": "duplicate_link_url_preserved_existing"
+    },
+    {
+      "canonicalId": 13722,
+      "provider": "HDHub4u",
+      "downloadUrl": "https://hubdrive.pics/file/13575521701",
       "reason": "duplicate_link_url_preserved_existing"
     },
     {
@@ -244578,96 +244729,38 @@
       "provider": "HDHub4u",
       "downloadUrl": "https://hubdrive.pics/file/45154063936",
       "reason": "duplicate_link_url_preserved_existing"
-    },
-    {
-      "canonicalId": 13721,
-      "provider": "HDHub4u",
-      "downloadUrl": "https://hubdrive.pics/file/2431129839",
-      "reason": "duplicate_link_url_preserved_existing"
-    },
-    {
-      "canonicalId": 13721,
-      "provider": "HDHub4u",
-      "downloadUrl": "https://hubdrive.pics/file/2865356813",
-      "reason": "duplicate_link_url_preserved_existing"
-    },
-    {
-      "canonicalId": 13721,
-      "provider": "HDHub4u",
-      "downloadUrl": "https://hubdrive.pics/file/2712984047",
-      "reason": "duplicate_link_url_preserved_existing"
-    },
-    {
-      "canonicalId": 13722,
-      "provider": "HDHub4u",
-      "downloadUrl": "https://hubdrive.pics/file/2588279170",
-      "reason": "duplicate_link_url_preserved_existing"
-    },
-    {
-      "canonicalId": 13722,
-      "provider": "HDHub4u",
-      "downloadUrl": "https://hubdrive.pics/file/1849696875",
-      "reason": "duplicate_link_url_preserved_existing"
-    },
-    {
-      "canonicalId": 13722,
-      "provider": "HDHub4u",
-      "downloadUrl": "https://hubdrive.pics/file/2459025584",
-      "reason": "duplicate_link_url_preserved_existing"
-    },
-    {
-      "canonicalId": 13722,
-      "provider": "HDHub4u",
-      "downloadUrl": "https://hubdrive.pics/file/13575521701",
-      "reason": "duplicate_link_url_preserved_existing"
     }
   ],
   "incompleteTitles": [
     {
       "displayTitle": "VisionQuest (Season 1)",
-      "rawTitle": "VisionQuest (Season 1) WEB-DL [Hindi (DD5.1) & English] 4K 1080p 720p & 480p [x264/10Bit-HEVC] | DisneyPlus Series | [EP-02 Added]",
+      "rawTitle": "&#xE02C; VisionQuest (Season 1) WEB-DL [Hindi (DD5.1) &#038; English] 4K 1080p 720p &#038; 480p [x264/10Bit-HEVC] | DisneyPlus Series | [EP-02 Added]",
       "year": "",
       "type": "Web Series",
       "sourceUrl": "https://new8.hdhub4u.cl/visionquest-season-1-hindi-webrip-all-episodes/",
       "reason": "no_eligible_links"
     },
     {
-      "displayTitle": "Papa's Friend (Season 1)",
-      "rawTitle": "Papa&#8217;s Friend (Season 1) WEB-DL [Hindi 2.0] 1080p 720p & 480p [x264/ESub] HD | ALL Episodes [Atrangii Series]",
-      "year": "",
-      "type": "Web Series",
-      "sourceUrl": "https://new8.hdhub4u.cl/papas-friend-season-1-hindi-webrip-all-episodes/",
-      "reason": "no_eligible_links"
-    },
-    {
       "displayTitle": "Star Wars: Episode I - The Phantom Menace 1999 Hindi ORG",
       "rawTitle": "&#xE02C; Star Wars: Episode I &#8211; The Phantom Menace 1999 Hindi ORG Dual Audio Movie DD5.1 1080p 720p 480p BluRay ESubs x264",
       "year": "1999",
-      "type": "Web Series",
+      "type": "Movie",
       "sourceUrl": "https://new8.hdhub4u.cl/star-wars-episode-i-the-phantom-menace-1999-hindi-bluray-full-movie/",
       "reason": "no_eligible_links"
     },
     {
-      "displayTitle": "Star Wars: Episode II - Attack of the Clones",
-      "rawTitle": "&#xE02C; Star Wars: Episode II &#8211; Attack of the Clones (2002) BluRay [Hindi (DD5.1) &amp; English] 1080p 720p &amp; 480p Dual Audio [x264] | Full Movie",
-      "year": "2002",
-      "type": "Web Series",
-      "sourceUrl": "https://new8.hdhub4u.cl/star-wars-episode-ii-attack-of-the-clones-2002-hindi-bluray-full-movie/",
-      "reason": "no_eligible_links"
-    },
-    {
       "displayTitle": "Star Wars Episode IV A New Hope",
-      "rawTitle": "Star Wars Episode IV A New Hope (1977) BluRay [Hindi (DD5.1) & English] 1080p 720p & 480p Dual Audio [x264] | Full Movie",
+      "rawTitle": "&#xE02C; Star Wars Episode IV A New Hope (1977) BluRay [Hindi (DD5.1) &#038; English] 1080p 720p &#038; 480p Dual Audio [x264] | Full Movie",
       "year": "1977",
-      "type": "Web Series",
+      "type": "Movie",
       "sourceUrl": "https://new8.hdhub4u.cl/star-wars-episode-iv-a-new-hope-1977-hindi-bluray-full-movie/",
       "reason": "no_eligible_links"
     },
     {
       "displayTitle": "Star Wars: Episode V - The Empire Strikes Back",
-      "rawTitle": "Star Wars: Episode V - The Empire Strikes Back (1980) BluRay [Hindi (DD5.1) & English] 1080p 720p &a 480p Dual Audio [x264] | Full Movie",
+      "rawTitle": "&#xE02C; Star Wars: Episode V &#8211; The Empire Strikes Back (1980) BluRay [Hindi (DD5.1) &#038; English] 1080p 720p &#038;a 480p Dual Audio [x264] | Full Movie",
       "year": "1980",
-      "type": "Web Series",
+      "type": "Movie",
       "sourceUrl": "https://new8.hdhub4u.cl/star-wars-episode-v-the-empire-strikes-back-1980-hindi-bluray-full-movie/",
       "reason": "no_eligible_links"
     },
@@ -244675,7 +244768,7 @@
       "displayTitle": "Star Wars: Episode VI - Return of the Jedi",
       "rawTitle": "&#xE02C; Star Wars: Episode VI &#8211; Return of the Jedi (1983) BluRay [Hindi (DD5.1) &#038; English] 1080p 720p &#038; 480p Dual Audio [x264] | Full Movie",
       "year": "1983",
-      "type": "Web Series",
+      "type": "Movie",
       "sourceUrl": "https://new8.hdhub4u.cl/star-wars-episode-vi-return-of-the-jedi-1983-hindi-bluray-full-movie/",
       "reason": "no_eligible_links"
     },
@@ -244683,7 +244776,7 @@
       "displayTitle": "Star Wars: Episode IX - The Rise of Skywalker",
       "rawTitle": "&#xE02C; Star Wars: Episode IX &#8211; The Rise of Skywalker (2019) BluRay [Hindi (DD5.1) &#038; English] 1080p 720p &amp; 480p Dual Audio [x264] | Full Movie",
       "year": "2019",
-      "type": "Web Series",
+      "type": "Movie",
       "sourceUrl": "https://new8.hdhub4u.cl/star-wars-episode-ix-the-rise-of-skywalker-2019-hindi-bluray-full-movie/",
       "reason": "no_eligible_links"
     }
@@ -244692,28 +244785,19 @@
     "success": true,
     "provider": "hdhub4u",
     "filePath": "/home/runner/work/praflix/praflix/title list/HDHUB4U TITLE.txt",
-    "appendedCount": 0,
+    "appendedCount": 1,
     "skippedCount": 0,
-    "appendedTitles": [],
-    "appendedEntries": []
+    "appendedTitles": [
+      "17/10/26 Prahaar"
+    ],
+    "appendedEntries": [
+      {
+        "title": "Prahaar",
+        "date": "17/10/26",
+        "provider": "hdhub4u",
+        "formattedEntry": "17/10/26 Prahaar"
+      }
+    ]
   },
-  "ambiguousTitles": [
-    {
-      "groupKey": "doomsday__2008__Movie",
-      "reason": "year_discrepancy_uncertain: candidate year \"2008\" vs existing \"2015\"",
-      "items": [
-        {
-          "title": "&#xE02C; Doomsday (2008) BluRay [Hindi (DD5.1) &#038; English] 1080p 720p &#038; 480p Dual Audio [x264] | Full Movie",
-          "url": "https://new8.hdhub4u.cl/doomsday-2008-hindi-bluray-full-movie/"
-        }
-      ],
-      "candidates": [
-        {
-          "id": 7586,
-          "title": "Doomsday",
-          "year": "2015"
-        }
-      ]
-    }
-  ]
+  "ambiguousTitles": []
 }

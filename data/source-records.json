@@ -1207,5 +1207,56 @@
         "discoveredAt": "2026-10-16T17:42:55.204Z"
       }
     ]
+  },
+  {
+    "id": 1372500,
+    "source": "hdhub4u",
+    "sourceId": "src-hdhub4u-13725-0",
+    "displayTitle": "Prahaar",
+    "originalSourceTitle": "&#xE02C; Prahaar (2026) HQ-HDTC Hindi (CLEAN) 1080p 720p &#038; 480p [x264/HEVC] | Full Movie",
+    "normalizedTitle": "prahaar",
+    "year": "2026",
+    "type": "Movie",
+    "season": null,
+    "sourceUrl": "https://new8.hdhub4u.cl/prahaar-2026-hindi-hdtc-full-movie/",
+    "sourcePosterUrl": "https://image.tmdb.org/t/p/w500/kiLxv4HlFDGxV8j95vbjJAgbXKl.jpg",
+    "qualities": [
+      {
+        "link": "https://hubdrive.pics/file/1802460804",
+        "quality": "720p",
+        "rawText": "[SAMPLE]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/2068485246",
+        "quality": "720p",
+        "rawText": "720p HEVC [800MB]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/2521079212",
+        "quality": "1080p",
+        "rawText": "1080p HEVC [1.8GB]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/7518749018",
+        "quality": "1080p",
+        "rawText": "HQ-Rip 1080p [9.4GB]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/17005597974",
+        "quality": "1080p",
+        "rawText": "HQ 1080p [18.2GB]",
+        "isComplete": false
+      }
+    ],
+    "sightings": [
+      {
+        "surface": "hdhub4u_sync",
+        "discoveredAt": "2026-10-17T03:40:19.171Z"
+      }
+    ]
   }
 ]

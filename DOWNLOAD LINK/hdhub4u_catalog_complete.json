@@ -1,8 +1,8 @@
 {
   "source": "https://new8.hdhub4u.cl/",
-  "lastUpdated": "2026-10-16T15:21:21.225Z",
-  "totalMovies": 12717,
-  "totalWebSeries": 1775,
+  "lastUpdated": "2026-10-17T03:40:19.171Z",
+  "totalMovies": 12723,
+  "totalWebSeries": 1769,
   "movies": [
     {
       "title": "Transporter 2 (2005) BluRay [Hindi (DD5.1) & English] 1080p 720p & 480p Dual Audio [x264] | Full Movie",
@@ -281945,6 +281945,43 @@
           "link": "https://hubdrive.pics/file/13575521701",
           "quality": "4K",
           "rawText": "4K [2160p SDR WEB-DL – 13.1GB]",
+          "isComplete": false
+        }
+      ]
+    },
+    {
+      "title": "&#xE02C; Prahaar (2026) HQ-HDTC Hindi (CLEAN) 1080p 720p &#038; 480p [x264/HEVC] | Full Movie",
+      "sourceUrl": "https://new8.hdhub4u.cl/prahaar-2026-hindi-hdtc-full-movie/",
+      "posterUrl": "https://image.tmdb.org/t/p/w500/kiLxv4HlFDGxV8j95vbjJAgbXKl.jpg",
+      "qualities": [
+        {
+          "link": "https://hubdrive.pics/file/1802460804",
+          "quality": "720p",
+          "rawText": "[SAMPLE]",
+          "isComplete": false
+        },
+        {
+          "link": "https://hubdrive.pics/file/2068485246",
+          "quality": "720p",
+          "rawText": "720p HEVC [800MB]",
+          "isComplete": false
+        },
+        {
+          "link": "https://hubdrive.pics/file/2521079212",
+          "quality": "1080p",
+          "rawText": "1080p HEVC [1.8GB]",
+          "isComplete": false
+        },
+        {
+          "link": "https://hubdrive.pics/file/7518749018",
+          "quality": "1080p",
+          "rawText": "HQ-Rip 1080p [9.4GB]",
+          "isComplete": false
+        },
+        {
+          "link": "https://hubdrive.pics/file/17005597974",
+          "quality": "1080p",
+          "rawText": "HQ 1080p [18.2GB]",
           "isComplete": false
         }
       ]
