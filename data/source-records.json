@@ -1258,5 +1258,83 @@
         "discoveredAt": "2026-10-17T03:40:19.171Z"
       }
     ]
+  },
+  {
+    "id": 1372600,
+    "source": "hdhub4u",
+    "sourceId": "src-hdhub4u-13726-0",
+    "displayTitle": "Nayyi Navelli",
+    "originalSourceTitle": "&#xE02C; Nayyi Navelli (2026) V2 HQ-HDTC Hindi (LiNE) 1080p 720p &#038; 480p [x264/HEVC] | Full Movie",
+    "normalizedTitle": "nayyi navelli",
+    "year": "2026",
+    "type": "Movie",
+    "season": null,
+    "sourceUrl": "https://new8.hdhub4u.cl/nayyi-navelli-2026-hindi-line-v2-hdtc-full-movie/",
+    "sourcePosterUrl": "https://image.tmdb.org/t/p/w500/aZEKuzGt7ObqoKjTM4kcMd0klYy.jpg",
+    "qualities": [
+      {
+        "link": "https://hubdrive.pics/file/1854617014",
+        "quality": "720p",
+        "rawText": "[SAMPLE]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/2150707324",
+        "quality": "720p",
+        "rawText": "720p HEVC [780MB]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/2093725573",
+        "quality": "1080p",
+        "rawText": "1080p HEVC [1.7GB]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/4916338737",
+        "quality": "1080p",
+        "rawText": "HQ-Rip 1080p [7GB]",
+        "isComplete": false
+      },
+      {
+        "link": "https://hubdrive.pics/file/9917477269",
+        "quality": "1080p",
+        "rawText": "HQ 1080p [13.8GB]",
+        "isComplete": false
+      }
+    ],
+    "sightings": [
+      {
+        "surface": "hdhub4u_sync",
+        "discoveredAt": "2026-10-17T08:42:02.481Z"
+      }
+    ]
+  },
+  {
+    "id": 1372700,
+    "source": "hdhub4u",
+    "sourceId": "src-hdhub4u-13727-0",
+    "displayTitle": "Halloween H20: 20 Years Later",
+    "originalSourceTitle": "&#xE02C; Halloween H20: 20 Years Later (1998) BluRay [Hindi (DD5.1) &#038; English] 1080p 720p &#038; 480p Dual Audio [x264] | Full Movie",
+    "normalizedTitle": "halloween h20 20 years later",
+    "year": "1998",
+    "type": "Movie",
+    "season": null,
+    "sourceUrl": "https://new8.hdhub4u.cl/halloween-h20-20-years-later-1998-hindi-bluray-full-movie/",
+    "sourcePosterUrl": "https://imgshare.info/images/2026/10/17/Halloween.H20.20.Years.Later.1998..jpg",
+    "qualities": [
+      {
+        "link": "https://hubdrive.pics/file/5636762640",
+        "quality": "1080p",
+        "rawText": "1080p BluRay [7.46GB]",
+        "isComplete": false
+      }
+    ],
+    "sightings": [
+      {
+        "surface": "hdhub4u_sync",
+        "discoveredAt": "2026-10-17T08:42:02.481Z"
+      }
+    ]
   }
 ]
