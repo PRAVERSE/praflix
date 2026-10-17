@@ -173,6 +173,48 @@ const DEFAULT_PROVIDERS = [
       maxRetries: 3,
       concurrency: 2
     }
+  },
+  {
+    id: 'multishows',
+    displayName: 'MultiShows',
+    status: 'fallback',
+    active: false,
+    isFallbackOnly: true,
+    fallbackFor: 'hdhub4u',
+    baseUrl: 'https://multishows.top/',
+    candidateBaseUrls: [
+      'https://multishows.top/'
+    ],
+    allowedDomains: [
+      'multishows.top'
+    ],
+    searchEndpoint: 'https://multishows.top/search/',
+    txtFileName: 'MULTISHOWS TITLE.txt',
+    categories: [
+      { name: 'Movies', path: '/movies' },
+      { name: 'TV Shows', path: '/tv-shows' }
+    ],
+    eligibilityRules: {
+      requireStorageDestination: true,
+      allowedDestinationDomains: [
+        'gdflix.dev',
+        'gdflix.cfd',
+        'hubcloud.ist',
+        'hubcloud.icu',
+        'hubcloud.club',
+        'hubcloud.foo',
+        'hubdrive.pics',
+        'hblinks.lol',
+        'drive.google.com',
+        'storage.googleapis.com'
+      ],
+      seriesPolicy: 'both' // supports both complete season packs and episode-wise variants
+    },
+    rateLimit: {
+      timeoutMs: 10000,
+      maxRetries: 3,
+      concurrency: 2
+    }
   }
 ];
 

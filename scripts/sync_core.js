@@ -741,6 +741,7 @@ async function syncProvider(providerName, catalog, sourceRecords, options = {}) 
     unmatchedOrAmbiguous: 0,
     variantsImported: 0,
     appendedToTitleListCount: 0,
+    multishowsFallbackRecovered: 0,
     qualityCounts: { '4K': 0, '1080p': 0, '720p': 0, '480p': 0 }
   };
 
@@ -784,6 +785,7 @@ async function syncProvider(providerName, catalog, sourceRecords, options = {}) 
         result.variantsImported = syncReport.metrics ? (syncReport.metrics.downloadOptionsCollected || 0) : 0;
         result.incompleteCount = syncReport.incompleteTitles ? syncReport.incompleteTitles.length : (syncReport.metrics ? (syncReport.metrics.incompleteTitlesCount || 0) : 0);
         result.incompleteTitles = syncReport.incompleteTitles || [];
+        result.multishowsFallbackRecovered = syncReport.metrics ? (syncReport.metrics.multishowsFallbackRecovered || 0) : 0;
         result.newCanonicalTitles = (syncReport.newlyAddedCanonicalItems || []).map(c => ({
           canonicalId: c.canonicalId,
           displayTitle: c.displayTitle || c.title,
@@ -1047,6 +1049,33 @@ async function syncProvider(providerName, catalog, sourceRecords, options = {}) 
         }
       } else {
         // Genuinely new candidate title!
+        // MultiShows conditional fallback: consulted ONLY if HDHub4u has NO verified links
+        if (normProvider === 'hdhub4u' && verifiedLinks.length === 0 && !options.disableMultiShowsFallback) {
+          try {
+            const hdhubSync = require('./hdhub4u_sync');
+            const fallbackRes = await hdhubSync.consultMultiShowsFallback({
+              displayTitle: item.displayTitle,
+              year: item.year || '',
+              type: item.type,
+              season: item.season
+            }, options);
+
+            if (fallbackRes.success && fallbackRes.status === 'links_found' && Array.isArray(fallbackRes.verifiedLinks) && fallbackRes.verifiedLinks.length > 0) {
+              fallbackRes.verifiedLinks.forEach(vl => verifiedLinks.push(vl));
+              result.multishowsFallbackRecovered = (result.multishowsFallbackRecovered || 0) + 1;
+              if (fallbackRes.variant) {
+                item.downloadOptions = item.downloadOptions || [];
+                item.downloadOptions.push(...fallbackRes.verifiedLinks);
+                if (fallbackRes.variant.qualities) {
+                  item.qualities = fallbackRes.variant.qualities;
+                }
+              }
+            }
+          } catch (fbErr) {
+            console.warn(`[MultiShows Fallback Notice] Could not consult fallback for "${item.displayTitle}": ${fbErr.message}`);
+          }
+        }
+
         // INGESTION GATE: Check if eligible verified download links exist
         if (verifiedLinks.length === 0) {
           result.incompleteCount++;
@@ -1187,7 +1216,7 @@ async function syncProvider(providerName, catalog, sourceRecords, options = {}) 
           result.qualityCounts[resNorm] = (result.qualityCounts[resNorm] || 0) + 1;
           result.newProviderLinks.push({
             canonicalId: maxCanonicalId,
-            provider: providerName,
+            provider: vl.provider || providerName,
             downloadUrl: vl.downloadUrl,
             resolution: vl.resolution
           });

@@ -168,6 +168,42 @@ function urlSlug(url) {
 }
 
 /**
+ * Strict Rule: MultiShows is consulted ONLY when a newly discovered movie or web series
+ * does not have any eligible, verified download-link records from HDHub4u (or an existing title has 0 links).
+ */
+function shouldConsultMultiShowsFallback(hdhub4uVerifiedLinksCount, isNewTitle, existingHasLinks = false) {
+  if (hdhub4uVerifiedLinksCount > 0) return false;
+  if (isNewTitle) return true;
+  if (!existingHasLinks) return true;
+  return false;
+}
+
+/**
+ * Query MultiShows conditional fallback adapter for matching title
+ */
+async function consultMultiShowsFallback(candidate, options = {}) {
+  try {
+    const MultiShowsAdapter = require('./adapters/multishows_adapter');
+    const adapter = new MultiShowsAdapter();
+    const fallbackRes = await adapter.queryMatchingFallback({
+      displayTitle: candidate.displayTitle,
+      year: candidate.year || '',
+      type: candidate.type,
+      season: candidate.season
+    }, options.multishowsOptions || {});
+    return fallbackRes;
+  } catch (err) {
+    return {
+      success: false,
+      status: 'error',
+      error: err.message,
+      matched: false,
+      verifiedLinks: []
+    };
+  }
+}
+
+/**
  * Safe fetch with retry, timeout, and backoff
  */
 async function fetchWithRetry(url, options = {}) {
@@ -692,6 +728,7 @@ async function runHDHub4uSync(options = {}) {
   let temporarilyUnavailableCount = 0;
   let titlesWithDownloads = 0;
   let titlesWithoutDownloads = 0;
+  let multishowsFallbackRecovered = 0;
 
   const newlyAddedCanonicalItems = [];
   const existingTitlesUpdated = [];
@@ -903,6 +940,37 @@ async function runHDHub4uSync(options = {}) {
 
       // Update downloads if verified links found
       let existingEntry = downloadsMap.get(targetCanonicalId);
+      const existingHasLinks = Boolean(existingEntry && existingEntry.links && existingEntry.links.length > 0);
+
+      // MultiShows conditional fallback: consulted ONLY if HDHub4u has NO verified links AND existing title has NO links
+      if (shouldConsultMultiShowsFallback(verifiedLinks.length, false, existingHasLinks) && !options.disableMultiShowsFallback) {
+        const fallbackRes = await consultMultiShowsFallback({
+          displayTitle: targetCanonicalItem.displayTitle,
+          year: targetCanonicalItem.year || '',
+          type: targetCanonicalItem.type,
+          season: targetCanonicalItem.season
+        }, options);
+
+        if (fallbackRes.success && fallbackRes.status === 'links_found' && Array.isArray(fallbackRes.verifiedLinks) && fallbackRes.verifiedLinks.length > 0) {
+          fallbackRes.verifiedLinks.forEach(vl => verifiedLinks.push(vl));
+          multishowsFallbackRecovered++;
+          if (!matchedItem.variants) matchedItem.variants = [];
+          const hasMsVariant = matchedItem.variants.some(v => v.source === 'multishows');
+          if (!hasMsVariant && fallbackRes.variant) {
+            matchedItem.variants.push({
+              sourceId: targetCanonicalId * 100 + matchedItem.variants.length,
+              sourceUrl: fallbackRes.sourceUrl,
+              source: 'multishows',
+              originalSourceTitle: fallbackRes.variant.originalSourceTitle || targetCanonicalItem.displayTitle,
+              languages: ['Hindi'],
+              qualities: fallbackRes.variant.qualities || [],
+              releaseType: 'WEB-DL',
+              poster: fallbackRes.variant.poster || matchedItem.poster
+            });
+          }
+        }
+      }
+
       if (verifiedLinks.length > 0) {
         titlesWithDownloads++;
         let newLinksCountForThisTitle = 0;
@@ -924,7 +992,7 @@ async function runHDHub4uSync(options = {}) {
           verifiedLinks.forEach(vl => {
             newProviderLinks.push({
               canonicalId: targetCanonicalId,
-              provider: 'HDHub4u',
+              provider: vl.provider || 'HDHub4u',
               downloadUrl: vl.downloadUrl,
               resolution: vl.resolution
             });
@@ -948,7 +1016,7 @@ async function runHDHub4uSync(options = {}) {
               newLinksCountForThisTitle++;
               newProviderLinks.push({
                 canonicalId: targetCanonicalId,
-                provider: 'HDHub4u',
+                provider: vl.provider || 'HDHub4u',
                 downloadUrl: vl.downloadUrl,
                 resolution: vl.resolution
               });
@@ -956,7 +1024,7 @@ async function runHDHub4uSync(options = {}) {
               duplicatesPrevented++;
               duplicateLinksSkipped.push({
                 canonicalId: targetCanonicalId,
-                provider: 'HDHub4u',
+                provider: vl.provider || 'HDHub4u',
                 downloadUrl: vl.downloadUrl,
                 reason: 'duplicate_link_url_preserved_existing'
               });
@@ -991,15 +1059,55 @@ async function runHDHub4uSync(options = {}) {
     } else {
       // Genuinely missing title from catalog!
       // INGESTION GATE: New title must NEVER be added to catalog without eligible verified download links!
+      let multishowsFallbackUsed = false;
+      let multishowsFallbackReport = null;
+
+      // If HDHub4u has NO eligible verified links, consult MultiShows conditional fallback
+      if (shouldConsultMultiShowsFallback(verifiedLinks.length, true, false) && !options.disableMultiShowsFallback) {
+        const fallbackRes = await consultMultiShowsFallback({
+          displayTitle: primaryItem.displayTitle,
+          year: primaryItem.year || '',
+          type: primaryItem.type,
+          season: primaryItem.season
+        }, options);
+
+        multishowsFallbackReport = fallbackRes;
+
+        if (fallbackRes.success && fallbackRes.status === 'links_found' && Array.isArray(fallbackRes.verifiedLinks) && fallbackRes.verifiedLinks.length > 0) {
+          fallbackRes.verifiedLinks.forEach(vl => {
+            verifiedLinks.push(vl);
+          });
+          multishowsFallbackUsed = true;
+          multishowsFallbackRecovered++;
+
+          if (fallbackRes.variant) {
+            items.push({
+              sourceId: null,
+              sourceUrl: fallbackRes.variant.sourceUrl,
+              source: 'multishows',
+              originalSourceTitle: fallbackRes.variant.originalSourceTitle || primaryItem.rawTitle,
+              languages: fallbackRes.variant.languages || ['Hindi'],
+              qualities: fallbackRes.variant.qualities || [],
+              releaseType: fallbackRes.variant.releaseType || 'WEB-DL',
+              audio: 'DD 5.1',
+              poster: fallbackRes.variant.poster || primaryItem.posterUrl
+            });
+          }
+        }
+      }
+
       if (verifiedLinks.length === 0) {
         titlesWithoutDownloads++;
+        const failReason = (multishowsFallbackReport && !multishowsFallbackReport.success)
+          ? `multishows_${multishowsFallbackReport.status || 'inconclusive'}`
+          : 'no_eligible_links';
         incompleteTitles.push({
           displayTitle: primaryItem.displayTitle,
           rawTitle: primaryItem.rawTitle,
           year: primaryItem.year || '',
           type: primaryItem.type,
           sourceUrl: primaryItem.sourceUrl,
-          reason: 'no_eligible_links'
+          reason: failReason
         });
         console.warn(`[INCOMPLETE IMPORT] "${primaryItem.displayTitle}" excluded from catalog: No eligible verified download links.`);
         continue;
@@ -1037,16 +1145,16 @@ async function runHDHub4uSync(options = {}) {
         variants: items.map((it, idx) => ({
           sourceId: targetCanonicalId * 100 + idx,
           sourceUrl: it.sourceUrl,
-          source: 'hdhub4u',
-          originalSourceTitle: it.rawTitle,
-          languages: ['Hindi'],
+          source: it.source || 'hdhub4u',
+          originalSourceTitle: it.originalSourceTitle || it.rawTitle,
+          languages: it.languages || ['Hindi'],
           qualities: (it.qualities || []).map(q => ({
-            resolution: normalizeResolution(q.quality || q.rawText),
-            label: q.quality || 'HD'
+            resolution: normalizeResolution(q.quality || q.rawText || q.resolution),
+            label: q.label || q.quality || 'HD'
           })),
-          releaseType: 'WEB-DL',
-          audio: 'DD 5.1',
-          poster: (it.posterUrl || primaryItem.posterUrl) ? (it.posterUrl || primaryItem.posterUrl).replace(/^http:\/\//i, 'https://') : null
+          releaseType: it.releaseType || 'WEB-DL',
+          audio: it.audio || 'DD 5.1',
+          poster: (it.poster || it.posterUrl || primaryItem.posterUrl) ? (it.poster || it.posterUrl || primaryItem.posterUrl).replace(/^http:\/\//i, 'https://') : null
         })),
         status: 'active'
       };
@@ -1065,18 +1173,18 @@ async function runHDHub4uSync(options = {}) {
       items.forEach((it, idx) => {
         sourceRecords.push({
           id: targetCanonicalId * 100 + idx,
-          source: 'hdhub4u',
-          sourceId: `src-hdhub4u-${targetCanonicalId}-${idx}`,
+          source: it.source || 'hdhub4u',
+          sourceId: `src-${it.source || 'hdhub4u'}-${targetCanonicalId}-${idx}`,
           displayTitle: primaryItem.displayTitle,
-          originalSourceTitle: it.rawTitle,
+          originalSourceTitle: it.originalSourceTitle || it.rawTitle,
           normalizedTitle: primaryItem.normalizedTitle,
           year: it.year,
           type: it.type,
           season: it.season,
           sourceUrl: it.sourceUrl,
-          sourcePosterUrl: it.posterUrl,
+          sourcePosterUrl: it.poster || it.posterUrl,
           qualities: it.qualities || [],
-          sightings: [{ surface: 'hdhub4u_sync', discoveredAt: nowIso }]
+          sightings: [{ surface: it.source === 'multishows' ? 'multishows_fallback' : 'hdhub4u_sync', discoveredAt: nowIso }]
         });
       });
 
@@ -1099,7 +1207,7 @@ async function runHDHub4uSync(options = {}) {
       verifiedLinks.forEach(vl => {
         newProviderLinks.push({
           canonicalId: targetCanonicalId,
-          provider: 'HDHub4u',
+          provider: vl.provider || (multishowsFallbackUsed ? 'MultiShows' : 'HDHub4u'),
           downloadUrl: vl.downloadUrl,
           resolution: vl.resolution
         });
@@ -1181,16 +1289,21 @@ async function runHDHub4uSync(options = {}) {
       destinationsUnverified: unverifiedDestinationsCount,
       titlesWithDownloads: titlesWithDownloads,
       titlesWithoutDownloads: titlesWithoutDownloads,
-      incompleteTitlesCount: incompleteTitles.length
+      incompleteTitlesCount: incompleteTitles.length,
+      multishowsFallbackRecovered: multishowsFallbackRecovered
     },
-    newlyAddedTitles: newlyAddedCanonicalItems.map(c => ({
-      canonicalId: c.canonicalId,
-      title: c.displayTitle,
-      displayTitle: c.displayTitle,
-      year: c.year,
-      type: c.type,
-      provider: 'HDHub4u'
-    })),
+    newlyAddedTitles: newlyAddedCanonicalItems.map(c => {
+      const hasMsOnly = c.variants && c.variants.every(v => v.source === 'multishows');
+      const hasMsAny = c.variants && c.variants.some(v => v.source === 'multishows');
+      return {
+        canonicalId: c.canonicalId,
+        title: c.displayTitle,
+        displayTitle: c.displayTitle,
+        year: c.year,
+        type: c.type,
+        provider: hasMsOnly ? 'MultiShows' : (hasMsAny ? 'HDHub4u+MultiShows' : 'HDHub4u')
+      };
+    }),
     newlyAddedCanonicalItems: newlyAddedCanonicalItems,
     existingTitlesUpdated: existingTitlesUpdated,
     newProviderLinks: newProviderLinks,
@@ -1267,5 +1380,7 @@ module.exports = {
   fetchWithRetry,
   loadCheckpoint,
   saveCheckpoint,
+  shouldConsultMultiShowsFallback,
+  consultMultiShowsFallback,
   runHDHub4uSync
 };

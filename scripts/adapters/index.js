@@ -7,11 +7,13 @@ const providerRegistry = require('../provider_registry');
 const HDHub4uAdapter = require('./hdhub4u_adapter');
 const TenMoviezAdapter = require('./10moviez_adapter');
 const HDWallAdapter = require('./hdwall_adapter');
+const MultiShowsAdapter = require('./multishows_adapter');
 
 const adapterClasses = {
   'hdhub4u': HDHub4uAdapter,
   '10moviez': TenMoviezAdapter,
-  'hdwall': HDWallAdapter
+  'hdwall': HDWallAdapter,
+  'multishows': MultiShowsAdapter
 };
 
 /**
@@ -39,5 +41,6 @@ module.exports = {
   registerAdapterClass,
   HDHub4uAdapter,
   TenMoviezAdapter,
-  HDWallAdapter
+  HDWallAdapter,
+  MultiShowsAdapter
 };

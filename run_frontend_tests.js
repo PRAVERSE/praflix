@@ -30,7 +30,8 @@ const tests = [
   path.join('tests', 'test_newly_ingested_search_and_consistency.js'),
   path.join('tests', 'test_seven_incomplete_hdhub4u_titles_diagnostic.js'),
   path.join('tests', 'test_incomplete_retry_loop.js'),
-  path.join('tests', 'test_newly_added_movie_priority.js')
+  path.join('tests', 'test_newly_added_movie_priority.js'),
+  path.join('tests', 'test_multishows_fallback.js')
 ];
 
 let failed = false;

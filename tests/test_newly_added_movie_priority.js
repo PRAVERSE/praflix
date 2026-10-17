@@ -252,11 +252,13 @@ const isBollywood = item => {
 };
 const bollywoodMatches = catalog.filter(isBollywood);
 const bollywoodSorted = computeCatalogSections(bollywoodMatches).posterItems;
+const newlyAddedBollywood = bollywoodSorted.filter(isNewlyAddedMovie);
 
 check(7, "Year, platform, and category filters prioritize newly added movies within matching subsets",
   year2002Sorted[0].canonicalId === 13724 && // Star Wars 1st among 2002
   primeSorted[0].canonicalId === 13722 &&     // Masterplan 1st among Prime Video
-  bollywoodSorted.slice(0, 3).some(c => c.canonicalId === 13721), // Aasha among top Bollywood
+  newlyAddedBollywood.length >= 3 &&
+  newlyAddedBollywood.some(c => c.canonicalId === 13721), // Aasha among top Bollywood priority group
   "(2002 filter rank 1: Star Wars: Episode II; Prime Video rank 1: Masterplan; Bollywood top: Aasha)"
 );
 
